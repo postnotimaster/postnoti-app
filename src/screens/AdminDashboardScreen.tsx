@@ -16,7 +16,7 @@ import { masterSendersService } from '../services/masterSendersService';
 export const AdminDashboardScreen = () => {
     const navigation = useNavigation<any>();
     const {
-        selectedCompany,
+        officeInfo,
         mailLogs,
         setMailLogs,
         profiles,
@@ -43,22 +43,24 @@ export const AdminDashboardScreen = () => {
     } = useAppContent();
 
     const handleBack = () => {
-        if (navigation.canGoBack()) {
-            navigation.goBack();
-        } else {
-            navigation.navigate('AdminBranchSelect');
-        }
+        // [1:1 구조 개편] 뒤로가기 시 지점 선택이 아닌 랜딩으로 이동 (혹은 뒤로가기 제한)
+        navigation.replace('Landing');
     };
 
-    if (!selectedCompany) {
-        navigation.replace('AdminBranchSelect');
-        return null;
+    if (!officeInfo) {
+        // 데이터가 없으면 로그인 혹은 초기 로딩 문제
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#4F46E5" />
+                <Text style={{ marginTop: 10 }}>지점 정보를 불러오는 중...</Text>
+            </View>
+        );
     }
 
     return (
         <View style={appStyles.flexContainer}>
             <AppHeader
-                title={`${selectedCompany?.name} 관리`}
+                title={`${officeInfo?.name} 관리`}
                 onBack={handleBack}
                 onMenu={() => setIsAdminMenuVisible(true)}
             />
@@ -190,7 +192,7 @@ export const AdminDashboardScreen = () => {
                 )}
                 onEndReached={() => {
                     if (logPageSize < mailLogs.length) {
-                        setLogPageSize(prev => prev + 20);
+                        setLogPageSize(logPageSize + 20);
                     }
                 }}
                 onEndReachedThreshold={0.5}
@@ -210,13 +212,13 @@ export const AdminDashboardScreen = () => {
                 onRequestClose={() => setIsTenantMgmtVisible(false)}
             >
                 <SafeAreaView style={{ flex: 1 }}>
-                    <AppHeader title={`${selectedCompany?.name} 입주사 관리`} onBack={() => setIsTenantMgmtVisible(false)} />
-                    {selectedCompany && (
+                    <AppHeader title={`${officeInfo?.name} 입주사 관리`} onBack={() => setIsTenantMgmtVisible(false)} />
+                    {officeInfo && (
                         <TenantManagement
-                            companyId={selectedCompany.id}
+                            companyId={officeInfo.id}
                             onComplete={async () => {
                                 setIsTenantMgmtVisible(false);
-                                const p = await profilesService.getProfilesByCompany(selectedCompany.id);
+                                const p = await profilesService.getProfilesByCompany(officeInfo.id);
                                 setProfiles(p);
                             }}
                             onCancel={() => setIsTenantMgmtVisible(false)}
@@ -316,12 +318,12 @@ export const AdminDashboardScreen = () => {
                                 <View style={appStyles.menuBtnTextGroup}>
                                     <Text style={[appStyles.menuBtnLabel, { color: '#4F46E5' }]}>입주자 전용 링크</Text>
                                     <Text style={appStyles.menuBtnDesc} numberOfLines={1}>
-                                        https://postnoti-app.vercel.app/branch/{selectedCompany?.slug}
+                                        https://postnoti-app.vercel.app/branch/{officeInfo?.slug}
                                     </Text>
                                 </View>
                                 <Pressable
                                     onPress={async () => {
-                                        const url = `https://postnoti-app.vercel.app/branch/${selectedCompany?.slug}`;
+                                        const url = `https://postnoti-app.vercel.app/branch/${officeInfo?.slug}`;
                                         await Clipboard.setStringAsync(url);
                                         // Alert needs to be imported from react-native if not already available in scope, 
                                         // but AdminDashboardScreen has it imported.
@@ -340,14 +342,16 @@ export const AdminDashboardScreen = () => {
                             <Pressable
                                 onPress={() => {
                                     setIsAdminMenuVisible(false);
-                                    navigation.navigate('AdminBranchSelect'); // Navigate instead of setMode
+                                    const { supabase } = require('../lib/supabase');
+                                    supabase.auth.signOut();
+                                    navigation.replace('Landing');
                                 }}
                                 style={appStyles.premiumExitBtn}
                             >
-                                <Ionicons name="exit-outline" size={20} color="#E11D48" style={{ marginRight: 12 }} />
+                                <Ionicons name="log-out-outline" size={20} color="#E11D48" style={{ marginRight: 12 }} />
                                 <View style={{ flex: 1 }}>
-                                    <Text style={appStyles.exitBtnLabel}>다른 지점으로 이동</Text>
-                                    <Text style={appStyles.exitBtnDesc}>관리 목록으로 돌아가기</Text>
+                                    <Text style={appStyles.exitBtnLabel}>로그아웃</Text>
+                                    <Text style={appStyles.exitBtnDesc}>현재 계정에서 안전하게 나가기</Text>
                                 </View>
                             </Pressable>
                         </View>

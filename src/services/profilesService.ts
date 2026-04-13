@@ -13,6 +13,7 @@ export interface Profile {
     last_login_at?: string;
     push_token?: string;       // Native App Push Token
     web_push_token?: string;   // PWA Web Push Token
+    mailbox_code?: string;     // [NEW] 사서함 번호 등
     pwa_installed?: boolean;   // PWA Install Status
     last_accessed_at?: string;
 }

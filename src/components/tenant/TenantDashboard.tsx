@@ -541,6 +541,22 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
                 </View>
             )}
 
+            {/* iOS 전용 설치 가이드 (iOS는 beforeinstallprompt가 없으므로 수동 표시) */}
+            {Platform.OS === 'web' && /iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase()) && !window.matchMedia('(display-mode: standalone)').matches && (
+                <View style={[styles.installBanner, { backgroundColor: '#FFF7ED', borderColor: '#FED7AA' }]}>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[styles.installBannerTitle, { color: '#C2410C' }]}>🍏 아이폰 알림 받기</Text>
+                        <Text style={[styles.installBannerDesc, { color: '#EA580C' }]}>
+                            [공유] &gt; [홈 화면에 추가]를 눌러 앱을 설치해야 알림이 작동합니다.
+                        </Text>
+                    </View>
+                    <View style={{ width: 10 }} />
+                    <View style={{ backgroundColor: '#F97316', padding: 8, borderRadius: 10 }}>
+                        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>가이드</Text>
+                    </View>
+                </View>
+            )}
+
             {/* 탭 필터 (하단 알림 배너 중복 제거 및 로직 통합) */}
             {(Platform.OS === 'web' && typeof Notification !== 'undefined' && (Notification.permission === 'default' || Notification.permission === 'denied') && !myProfile.web_push_token) && (
                 /* 위쪽 배너와 역할이 중복되므로, 상태에 따라 하나만 보여주거나 통합하는 것이 좋습니다. 

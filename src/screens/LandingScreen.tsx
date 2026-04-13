@@ -44,9 +44,9 @@ export const LandingScreen = () => {
                     <Text style={appStyles.loginDirectTitle}>관리자 로그인</Text>
                     <LoginScreen
                         onLoginSuccess={() => {
-                            // Sync both state logic (if needed) and new navigation
-                            setMode('admin_branch_select');
-                            navigation.replace('AdminBranchSelect');
+                            // [1:1 구조 개편] 지점 선택 없이 바로 대시보드 진입
+                            setMode('admin_dashboard');
+                            navigation.replace('AdminDashboard');
                         }}
                         onBack={() => { }}
                         isEmbedded={true}

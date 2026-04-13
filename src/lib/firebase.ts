@@ -3,13 +3,13 @@ import { getMessaging, getToken, onMessage, Messaging } from "firebase/messaging
 import { Platform } from "react-native";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDSbcig9-Xba-ISXAnt82GJtTwjrLBr6BY",
-    authDomain: "postnoti-93d2e.firebaseapp.com",
-    projectId: "postnoti-93d2e",
-    storageBucket: "postnoti-93d2e.firebasestorage.app",
-    messagingSenderId: "508156325119",
-    appId: "1:508156325119:web:418d2ebc164990b38470ca",
-    measurementId: "G-Y6K8DSJ7EE"
+    apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
@@ -28,4 +28,4 @@ if (Platform.OS === 'web') {
 }
 
 export { app, messaging, getToken, onMessage };
-export const VAPID_KEY = "BBvo6Mqo2SNK4GXYSWzGng5Av3HV68suzyP-mWmifex2M_kK0LtPb16Ea87oMmkvhf7QDeR5EDTe1KYBQPxQxbg";
+export const VAPID_KEY = process.env.EXPO_PUBLIC_FIREBASE_VAPID_KEY || "";

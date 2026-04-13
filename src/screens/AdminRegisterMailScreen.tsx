@@ -30,16 +30,13 @@ export const AdminRegisterMailScreen = () => {
         setIsManualSearchVisible,
         manualSearchQuery,
         setManualSearchQuery,
-        ocrPreprocess
+        ocrPreprocess,
+        optimizeImage
     } = useAppContent() as any; // Temporary explicit any for complex context
 
     // Handler to wrap logic + navigation
     const onSubmit = async () => {
         await handleRegisterMail();
-        // Upon success within logic, it sets mode, but we should force navigation
-        if (matchedProfile && matchedProfile.is_active) {
-            navigation.navigate('AdminDashboard');
-        }
     };
 
     const handleBack = () => {
@@ -47,6 +44,21 @@ export const AdminRegisterMailScreen = () => {
             navigation.goBack();
         } else {
             navigation.navigate('AdminDashboard');
+        }
+    };
+
+    const handleAddExtraImage = async (camera: boolean) => {
+        try {
+            const result = camera
+                ? await ImagePicker.launchCameraAsync({ quality: 0.8 })
+                : await ImagePicker.launchImageLibraryAsync({ quality: 0.8 });
+
+            if (!result.canceled) {
+                const optimized = await optimizeImage(result.assets[0].uri);
+                setExtraImages([...extraImages, optimized]);
+            }
+        } catch (e) {
+            console.warn('Image addition failed', e);
         }
     };
 
@@ -204,18 +216,8 @@ export const AdminRegisterMailScreen = () => {
                                     <Pressable
                                         onPress={() => {
                                             Alert.alert('이미지 추가', '어디서 사진을 가져올까요?', [
-                                                {
-                                                    text: '📷 촬영하기', onPress: async () => {
-                                                        const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
-                                                        if (!result.canceled) setExtraImages([...extraImages, result.assets[0].uri]);
-                                                    }
-                                                },
-                                                {
-                                                    text: '🖼️ 앨범에서 선택', onPress: async () => {
-                                                        const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.8 });
-                                                        if (!result.canceled) setExtraImages([...extraImages, result.assets[0].uri]);
-                                                    }
-                                                },
+                                                { text: '📷 촬영하기', onPress: () => handleAddExtraImage(true) },
+                                                { text: '🖼️ 앨범에서 선택', onPress: () => handleAddExtraImage(false) },
                                                 { text: '취소', style: 'cancel' }
                                             ]);
                                         }}

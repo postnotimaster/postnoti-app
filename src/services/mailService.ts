@@ -30,7 +30,8 @@ export const mailService = {
             .from('mail_logs')
             .select('*')
             .eq('profile_id', profileId)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .limit(100);
         if (error) throw error;
         return data || [];
     },
@@ -40,7 +41,8 @@ export const mailService = {
             .from('mail_logs')
             .select('*, profiles(id, name, room_number, company_name, phone, role, is_active)')
             .eq('company_id', companyId)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .limit(50); // 최근 50개만 로드하여 성능 최적화
         if (error) throw error;
         return data || [];
     },

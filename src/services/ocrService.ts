@@ -15,20 +15,18 @@ const IGNORE_PATTERNS = [
     /^[0-9A-Z\(\)\-\s\.]+$/
 ];
 
-export const preprocessImage = async (uri: string) => {
+export const preprocessImage = async (uri: string, includeBase64: boolean = true) => {
     try {
-        // [용량 vs 품질 최적화 지점] 1000px, compress 0.7
+        // [용량 최적화] 800px, compress 0.5 (대역폭 절대 사수)
+        // base64는 업로드에 필요한 경우에만 true 처리하여 메모리 아낌
         const result = await ImageManipulator.manipulateAsync(
             uri,
-            [{ resize: { width: 1000 } }],
-            { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+            [{ resize: { width: 800 } }],
+            { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG, base64: includeBase64 }
         );
 
-        const base64Data = `data:image/jpeg;base64,${result.base64}`;
-
-        // 용량 계산 (Base64 -> 실제 바이트 크기 추정)
-        const sizeInKB = Math.round((base64Data.length * 0.75) / 1024);
-        console.log(`📸 이미지 최적화 완료: ${sizeInKB} KB`);
+        const base64Data = includeBase64 ? `data:image/jpeg;base64,${result.base64}` : null;
+        console.log(`📸 이미지 최적화 완료: ${result.uri}`);
 
         return {
             uri: result.uri,
@@ -36,7 +34,7 @@ export const preprocessImage = async (uri: string) => {
         };
     } catch (e) {
         console.warn('Image optimization failed:', e);
-        return { uri, data: uri };
+        return { uri, data: null };
     }
 };
 

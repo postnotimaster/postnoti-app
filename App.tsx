@@ -6,10 +6,10 @@ import { AppProvider, useAppContent } from './src/contexts/AppContext';
 
 // Screens
 import { LandingScreen } from './src/screens/LandingScreen';
-import { AdminBranchSelectScreen } from './src/screens/AdminBranchSelectScreen';
 import { AdminDashboardScreen } from './src/screens/AdminDashboardScreen';
 import { AdminRegisterMailScreen } from './src/screens/AdminRegisterMailScreen';
 import { TenantDashboard } from './src/components/tenant/TenantDashboard';
+import { KakaoGuideOverlay } from './src/components/common/KakaoGuideOverlay';
 // Note: TenantDashboard is still in components, can be moved later. 
 // We will wrap it in a Screen component if needed or use directly if it accepts navigation props, 
 // but existing TenantDashboard uses 'onBack'. We should adapt it.
@@ -86,7 +86,6 @@ function AppContent() {
             We need a navigator reference.
         */}
         <Stack.Screen name="Landing" component={LandingScreen} />
-        <Stack.Screen name="AdminBranchSelect" component={AdminBranchSelectScreen} />
         <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
         <Stack.Screen name="AdminRegisterMail" component={AdminRegisterMailScreen} />
 
@@ -96,6 +95,9 @@ function AppContent() {
 
       {/* Bridge Component to handle Context-driven navigation (Deep Links) */}
       <NavigationBridge />
+
+      {/* KakaoTalk 외부 브라우저 유도 오버레이 */}
+      <KakaoGuideOverlay />
     </NavigationContainer>
   );
 }

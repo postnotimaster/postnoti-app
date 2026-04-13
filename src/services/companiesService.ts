@@ -5,6 +5,9 @@ export type Company = {
     name: string;
     address?: string;
     slug: string;
+    tenant_limit?: number;
+    mail_quota?: number;
+    current_usage?: number;
 };
 
 export const companiesService = {
