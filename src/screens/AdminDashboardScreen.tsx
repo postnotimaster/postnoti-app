@@ -60,7 +60,7 @@ export const AdminDashboardScreen = () => {
     return (
         <View style={appStyles.flexContainer}>
             <AppHeader
-                title={`${officeInfo?.name} 관리`}
+                title="Postnoti Admin"
                 onBack={handleBack}
                 onMenu={() => setIsAdminMenuVisible(true)}
             />
@@ -68,22 +68,36 @@ export const AdminDashboardScreen = () => {
                 style={appStyles.container}
                 contentContainerStyle={{ paddingBottom: 100, paddingTop: 10 }}
                 ListHeaderComponent={
-                    <>
+                    <View style={{ paddingBottom: 10 }}>
+                        {/* 1. 프리미엄 그리팅 섹션 */}
+                        <View style={{ marginBottom: 20 }}>
+                            <Text style={{ fontSize: 13, fontWeight: '700', color: '#4F46E5', marginBottom: 4 }}>HELLO, ADMIN</Text>
+                            <Text style={{ fontSize: 28, fontWeight: '800', color: '#1E293B' }}>{officeInfo?.name}</Text>
+                        </View>
+
+                        {/* 2. 사용량 트래킹 (Commercialization 필드 활용) */}
+                        <View style={[appStyles.premiumInfoCard, { marginBottom: 20, padding: 20 }]}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                <Text style={appStyles.premiumInfoLabel}>이번 달 알림 사용량</Text>
+                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#4F46E5' }}>
+                                    {officeInfo?.current_usage || 0} / {officeInfo?.mail_quota || 100} 건
+                                </Text>
+                            </View>
+                            <View style={{ height: 6, backgroundColor: '#F1F5F9', borderRadius: 3, overflow: 'hidden' }}>
+                                <View
+                                    style={{
+                                        width: `${Math.min(100, ((officeInfo?.current_usage || 0) / (officeInfo?.mail_quota || 100)) * 100)}%`,
+                                        height: '100%',
+                                        backgroundColor: '#4F46E5'
+                                    }}
+                                />
+                            </View>
+                        </View>
+
+                        {/* 3. 메인 액션 버튼 - 속도 최적화 */}
                         <View style={appStyles.premiumQuickActionRow}>
                             <Pressable
-                                style={[appStyles.premiumQuickBtn, { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' }]}
-                                onPress={() => {
-                                    setIsManualSearchVisible(true);
-                                    navigation.navigate('AdminRegisterMail');
-                                }}
-                            >
-                                <Ionicons name="people-outline" size={28} color="#1E293B" style={{ marginBottom: 8 }} />
-                                <Text style={[appStyles.premiumQuickBtnTitle, { color: '#1E293B' }]}>수동선택 알림</Text>
-                                <Text style={[appStyles.premiumQuickBtnSubtitle, { color: '#64748B' }]}>직접 선택 후 발송</Text>
-                            </Pressable>
-
-                            <Pressable
-                                style={[appStyles.premiumQuickBtn, { backgroundColor: '#1E293B' }]}
+                                style={[appStyles.premiumQuickBtn, { backgroundColor: '#1E293B', flex: 2 }]}
                                 onPress={async () => {
                                     const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
                                     if (!result.canceled) {
@@ -92,19 +106,31 @@ export const AdminDashboardScreen = () => {
                                     }
                                 }}
                             >
-                                <Ionicons name="camera-outline" size={28} color="#fff" style={{ marginBottom: 8 }} />
-                                <Text style={appStyles.premiumQuickBtnTitle}>자동인식 알림</Text>
-                                <Text style={appStyles.premiumQuickBtnSubtitle}>AI가 입주사 찾기</Text>
+                                <Ionicons name="camera" size={32} color="#fff" style={{ marginBottom: 8 }} />
+                                <Text style={[appStyles.premiumQuickBtnTitle, { fontSize: 18 }]}>자동인식 알림 발송</Text>
+                                <Text style={appStyles.premiumQuickBtnSubtitle}>가장 빠른 AI 매칭</Text>
+                            </Pressable>
+
+                            <Pressable
+                                style={[appStyles.premiumQuickBtn, { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', flex: 1.2 }]}
+                                onPress={() => {
+                                    setIsManualSearchVisible(true);
+                                    navigation.navigate('AdminRegisterMail');
+                                }}
+                            >
+                                <Ionicons name="people" size={24} color="#64748B" style={{ marginBottom: 8 }} />
+                                <Text style={[appStyles.premiumQuickBtnTitle, { color: '#1E293B', fontSize: 14 }]}>수동 등록</Text>
+                                <Text style={[appStyles.premiumQuickBtnSubtitle, { color: '#94A3B8' }]}>직접 선택</Text>
                             </Pressable>
                         </View>
 
-                        <View style={[appStyles.premiumInfoCard, { marginTop: 10, paddingBottom: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: 0 }]}>
+                        <View style={[appStyles.premiumInfoCard, { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: 0 }]}>
                             <Text style={[appStyles.premiumInfoLabel, { marginBottom: 16 }]}>최근 발송 내역</Text>
                             <View style={[appStyles.premiumSearchBox, { marginBottom: 5 }]}>
                                 <Ionicons name="search-outline" size={18} color="#94A3B8" style={{ position: 'absolute', left: 14, top: 14, zIndex: 1 }} />
                                 <TextInput
                                     style={[appStyles.premiumSearchInput, { paddingLeft: 42 }]}
-                                    placeholder="받는분, 호실, 발신처 검색..."
+                                    placeholder="받는분, 호실 등으로 검색..."
                                     value={logSearchQuery}
                                     onChangeText={setLogSearchQuery}
                                 />
@@ -113,7 +139,7 @@ export const AdminDashboardScreen = () => {
                                 )}
                             </View>
                         </View>
-                    </>
+                    </View>
                 }
                 sections={(() => {
                     const filtered = mailLogs.filter(log => {

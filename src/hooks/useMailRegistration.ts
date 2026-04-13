@@ -11,9 +11,9 @@ export const useMailRegistration = (
     setOcrLoading: (loading: boolean) => void,
     resetOCR: () => void
 ) => {
-    const runNotifications = async (profile: Profile, company: Company, sender: string, type: string) => {
+    const runNotifications = async (profile: Profile, company: Company, sender: string, type: string, customMessage?: string) => {
         const title = `[${company.name}] 우편물 도착 📮`;
-        const body = `${sender ? `${sender}에서 보낸 ` : ''}${type} 우편물이 도착했습니다.`;
+        const body = customMessage || `${sender ? `${sender}에서 보낸 ` : ''}${type} 우편물이 도착했습니다.`;
 
         // Native Push (Expo)
         if (profile.push_token) {
@@ -53,7 +53,8 @@ export const useMailRegistration = (
         selectedImage: string | null,
         detectedMailType: MailType,
         detectedSender: string,
-        extraImages: string[]
+        extraImages: string[],
+        customMessage?: string
     ) => {
         if (!officeInfo) {
             Alert.alert('오류', '지점 정보가 로드되지 않았습니다.');
@@ -106,7 +107,7 @@ export const useMailRegistration = (
             }
 
             // Background notification task
-            runNotifications(matchedProfile, officeInfo, detectedSender, detectedMailType);
+            runNotifications(matchedProfile, officeInfo, detectedSender, detectedMailType, customMessage);
 
             Alert.alert('완료', `${matchedProfile.name}님께 알림을 보냈습니다.`);
 

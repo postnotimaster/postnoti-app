@@ -32,11 +32,35 @@ export const AdminRegisterMailScreen = () => {
         setManualSearchQuery,
         ocrPreprocess,
         optimizeImage
-    } = useAppContent() as any; // Temporary explicit any for complex context
+    } = useAppContent() as any;
+
+    const [customMessage, setCustomMessage] = React.useState('');
+    const [selectedPreset, setSelectedPreset] = React.useState<string | null>(null);
+
+    const presets = [
+        "주문하신 택배가 도착했습니다 📦",
+        "중요 등기 우편이 도착했습니다 ✉️",
+        "일반 우편물이 도착했습니다 📮",
+        "물품은 입구 데스크에서 수령 가능합니다 💁",
+        "택배함에 보관해 두었습니다 🔒"
+    ];
 
     // Handler to wrap logic + navigation
     const onSubmit = async () => {
-        await handleRegisterMail();
+        const finalMessage = selectedPreset || customMessage || undefined;
+        const success = await handleRegisterMail(
+            matchedProfile,
+            selectedImage,
+            detectedMailType,
+            detectedSender,
+            extraImages,
+            finalMessage
+        );
+        if (success) {
+            setCustomMessage('');
+            setSelectedPreset(null);
+            navigation.navigate('AdminDashboard');
+        }
     };
 
     const handleBack = () => {
@@ -194,6 +218,46 @@ export const AdminRegisterMailScreen = () => {
                                     ))}
                                 </ScrollView>
                             </View>
+                        </SectionCard>
+
+                        <SectionCard title="💬 알림 메시지 선택">
+                            <Text style={[appStyles.label, { marginBottom: 12 }]}>빠른 메시지 선택</Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                                {presets.map(p => (
+                                    <Pressable
+                                        key={p}
+                                        style={[
+                                            appStyles.profileChip,
+                                            { marginBottom: 0, marginRight: 10 },
+                                            selectedPreset === p && { backgroundColor: '#4F46E5', borderColor: '#4F46E5' }
+                                        ]}
+                                        onPress={() => {
+                                            if (selectedPreset === p) {
+                                                setSelectedPreset(null);
+                                            } else {
+                                                setSelectedPreset(p);
+                                                setCustomMessage('');
+                                            }
+                                        }}
+                                    >
+                                        <Text style={[appStyles.profileChipText, selectedPreset === p && { color: '#fff' }]}>
+                                            {p}
+                                        </Text>
+                                    </Pressable>
+                                ))}
+                            </ScrollView>
+
+                            <Text style={appStyles.label}>직접 입력 (위 항목 미선택 시)</Text>
+                            <TextInput
+                                style={[appStyles.input, selectedPreset && { opacity: 0.5, backgroundColor: '#F1F5F9' }]}
+                                value={customMessage}
+                                onChangeText={(t) => {
+                                    setCustomMessage(t);
+                                    if (t) setSelectedPreset(null);
+                                }}
+                                placeholder="입주사에게 보낼 추가 메시지..."
+                                editable={!selectedPreset}
+                            />
                         </SectionCard>
 
                         {matchedProfile?.is_premium && (
