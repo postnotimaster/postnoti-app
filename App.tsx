@@ -1,3 +1,7 @@
+/**
+ * POSTNOTI Smart Mail Management System
+ * Version: 2.0.0 (Unified Account Migration & 1:1 Office Model)
+ */
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
