@@ -601,7 +601,7 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
             </View>
 
             {/* 알림 권한 유도 배너 (토큰이 없을 때만 표시) */}
-            {Platform.OS === 'web' && Notification.permission !== 'granted' && !myProfile.web_push_token && (
+            {Platform.OS === 'web' && typeof Notification !== 'undefined' && Notification.permission !== 'granted' && !myProfile.web_push_token && (
                 <View style={[styles.installBanner, { backgroundColor: '#F5F3FF', borderColor: '#DDD6FE' }]}>
                     <View style={{ flex: 1 }}>
                         <Text style={[styles.installBannerTitle, { color: '#6D28D9' }]}>🔔 알림이 꺼져 있습니다</Text>
