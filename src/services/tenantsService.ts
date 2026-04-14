@@ -55,28 +55,34 @@ export const tenantsService = {
     },
 
     async findTenantByNameAndPhone(companyId: string, name: string, phoneSuffix: string) {
-        // 정확한 필터링은 DB에서 name으로 1차 필터링 후 메모리에서 Suffix 비교
-        const { data, error } = await supabase
-            .from('tenants')
-            .select('*')
-            .eq('company_id', companyId)
-            .eq('name', name)
-            .eq('is_active', true);
+        // 보안 강화를 위해 RLS 우회 RPC 사용 (이름과 전화번호 뒷자리가 일치하는 건만 조회)
+        const { data, error } = await supabase.rpc('find_tenant_by_name_and_phone_secure', {
+            p_company_id: companyId,
+            p_name: name,
+            p_phone_suffix: phoneSuffix
+        });
 
-        if (error) throw error;
+        if (error) {
+            console.error('findTenantByNameAndPhone RPC error:', error);
+            throw error;
+        }
+
         if (!data || data.length === 0) return null;
-
-        const match = data.find(t => t.phone && t.phone.replace(/[^0-9]/g, '').endsWith(phoneSuffix));
-        return match as Tenant || null;
+        return data[0] as Tenant;
     },
 
     async getTenantById(id: string) {
-        const { data, error } = await supabase
-            .from('tenants')
-            .select('*')
-            .eq('id', id)
-            .single();
-        if (error) throw error;
-        return data as Tenant;
+        // 보안 강화를 위해 RLS 우회 RPC 사용 (정확한 UUID 매칭)
+        const { data, error } = await supabase.rpc('get_tenant_by_id_secure', {
+            p_tenant_id: id
+        });
+
+        if (error) {
+            console.error('getTenantById RPC error:', error);
+            throw error;
+        }
+
+        if (!data || data.length === 0) return null;
+        return data[0] as Tenant;
     }
 };
