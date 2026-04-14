@@ -83,7 +83,7 @@ function AppContent() {
   const linking = {
     prefixes: [
       'postnoti://',
-      'https://postnoti-app.vercel.app',
+      'https://postnoti-app-two.vercel.app',
       Platform.OS === 'web' ? window.location.origin : ''
     ].filter(Boolean),
     config: {

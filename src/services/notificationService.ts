@@ -59,7 +59,7 @@ export const notificationService = {
         // 2. Web Push (Firebase)
         if (profile?.web_push_token) {
             try {
-                const response = await fetch('https://postnoti-app.vercel.app/api/send-push', {
+                const response = await fetch('https://postnoti-app-two.vercel.app/api/send-push', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -68,7 +68,7 @@ export const notificationService = {
                         body,
                         data: {
                             company_id: company.id,
-                            url: `https://postnoti-app.vercel.app/branch/${company.slug}`
+                            url: `https://postnoti-app-two.vercel.app/branch/${company.slug}`
                         }
                     })
                 });
@@ -94,7 +94,7 @@ export const notificationService = {
      */
     generateShareLink(tenant: Tenant, company: Company): string {
         // 앱 미설치 고객을 위해 다시 표준 https:// 주소로 복구하여 웹 브라우저 접속을 지원
-        return `https://postnoti-app.vercel.app/branch/${company.slug}/view?p=${tenant.id}`;
+        return `https://postnoti-app-two.vercel.app/branch/${company.slug}/view?p=${tenant.id}`;
     },
 
     /**
