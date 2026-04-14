@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    View, Text, StyleSheet, FlatList, Image,
+    View, Text, StyleSheet, FlatList, SectionList, Image,
     ActivityIndicator, TextInput, Alert, Pressable, Modal,
     SafeAreaView, TouchableWithoutFeedback, BackHandler, ScrollView,
     Dimensions, Switch
@@ -10,6 +10,7 @@ import { Audio } from 'expo-av';
 import { supabase } from '../../lib/supabase';
 import { mailService } from '../../services/mailService';
 import { profilesService, Profile } from '../../services/profilesService';
+import { tenantsService, Tenant } from '../../services/tenantsService';
 import { PrimaryButton } from '../common/PrimaryButton';
 import { messaging, getToken, VAPID_KEY } from '../../lib/firebase';
 import { Platform } from 'react-native';
@@ -19,13 +20,16 @@ type Props = {
     companyName: string;
     pushToken?: string;
     webPushToken?: string;
+    magicProfileId?: string; // Legacy: profile_id
+    magicTenantId?: string;  // New: tenant_id (SaaS)
     onBack: () => void;
 };
 
-export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToken, onBack }: Props) => {
+export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToken, magicProfileId, magicTenantId, onBack }: Props) => {
     const [name, setName] = useState('');
     const [phoneSuffix, setPhoneSuffix] = useState('');
-    const [myProfile, setMyProfile] = useState<Profile | null>(null);
+    const [myProfile, setMyProfile] = useState<any | null>(null); // Profile or Tenant
+    const [myTenant, setMyTenant] = useState<Tenant | null>(null);
     const [mails, setMails] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [identifying, setIdentifying] = useState(false);
@@ -35,6 +39,7 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
     const [showInstallBanner, setShowInstallBanner] = useState(false);
 
     const [selectedMailImage, setSelectedMailImage] = useState<string | null>(null);
+    const [zoomScale, setZoomScale] = useState(1); // Zoom scale state
     const [filter, setFilter] = useState<'all' | 'unread'>('all'); // 필터 상태
     const [sound, setSound] = useState<Audio.Sound>();
     const [isSettingsVisible, setIsSettingsVisible] = useState(false);
@@ -77,17 +82,20 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
 
     // 실시간 구독 (새 우편물 알림)
     useEffect(() => {
-        if (!myProfile?.id) return;
+        if (!myProfile?.id && !myTenant?.id) return;
+
+        const targetId = myTenant?.id || myProfile?.id;
+        const filterColumn = myTenant ? 'tenant_id' : 'profile_id';
 
         const channel = supabase
-            .channel('public:mails')
+            .channel('public:mail_logs') // 'mails' -> 'mail_logs'
             .on(
                 'postgres_changes',
                 {
                     event: 'INSERT',
                     schema: 'public',
-                    table: 'mails',
-                    filter: `profile_id=eq.${myProfile.id}`,
+                    table: 'mail_logs',
+                    filter: `${filterColumn}=eq.${targetId}`,
                 },
                 (payload) => {
                     // 새 우편물이 오면 리스트 갱신 및 알림음
@@ -101,12 +109,45 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [myProfile?.id]);
+    }, [myProfile?.id, myTenant?.id]);
 
 
     // 자동 로그인 확인
     useEffect(() => {
         const checkAutoLogin = async () => {
+            // Priority 1: Magic Link (Deep Link)
+            // magicTenantId(SaaS) 우선, 없으면 magicProfileId(Legacy)
+            const targetMagicId = magicTenantId || magicProfileId;
+            if (targetMagicId) {
+                try {
+                    setIdentifying(true);
+
+                    if (magicTenantId) {
+                        // SaaS Tenant ID로 조회
+                        const tenant = await tenantsService.getTenantById(magicTenantId);
+                        if (tenant) {
+                            setMyTenant(tenant);
+                            setMyProfile(tenant); // UI 호환성을 위해 profile로도 설정
+                            loadMails(undefined, tenant.id);
+                            return;
+                        }
+                    } else if (magicProfileId) {
+                        // Legacy Profile ID로 조회
+                        const profile = await profilesService.getProfileById(magicProfileId);
+                        if (profile) {
+                            setMyProfile(profile);
+                            loadMails(profile.id!);
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.log('Magic login failed', e);
+                } finally {
+                    setIdentifying(false);
+                }
+            }
+
+            // Priority 2: Stored Credentials
             try {
                 const storedName = await AsyncStorage.getItem(`tenant_name_${companyId}`);
                 const storedPhone = await AsyncStorage.getItem(`tenant_phone_${companyId}`);
@@ -122,10 +163,12 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
             }
         };
         checkAutoLogin();
-    }, [companyId]);
+    }, [companyId, magicProfileId]);
 
     // PWA Installation Handling
     useEffect(() => {
+        if (Platform.OS !== 'web') return;
+
         const handler = (e: any) => {
             e.preventDefault();
             setDeferredPrompt(e);
@@ -229,6 +272,7 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
             await AsyncStorage.setItem(`tenant_phone_${companyId}`, targetPhone);
 
             setMyProfile(profile);
+            setMyTenant(null);
             loadMails(profile.id!);
         } catch (err) {
             Alert.alert('오류', '조회 중 문제가 발생했습니다.');
@@ -237,10 +281,15 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
         }
     };
 
-    const loadMails = async (profileId: string) => {
+    const loadMails = async (profileId?: string, tenantId?: string) => {
         setLoading(true);
         try {
-            const data = await mailService.getMailsByProfile(profileId);
+            let data: any[] = [];
+            if (tenantId) {
+                data = await mailService.getMailsByTenant(tenantId);
+            } else if (profileId) {
+                data = await mailService.getMailsByProfile(profileId);
+            }
             setMails(data || []);
         } catch (err) {
             console.error(err);
@@ -479,11 +528,40 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
     };
 
 
-    // 필터링 및 정렬 로직
-    const filteredMails = mails.filter(mail => {
-        if (filter === 'unread') return !mail.read_at;
-        return true;
-    });
+    // 우편물 그룹화 로직 (날짜별)
+    const getGroupedMails = () => {
+        const filtered = mails.filter(mail => {
+            if (filter === 'unread') return !mail.read_at;
+            return true;
+        });
+
+        const groups: { [key: string]: any[] } = {};
+        filtered.forEach(mail => {
+            const d = new Date(mail.created_at);
+            const dateStr = d.toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'short'
+            });
+
+            // 오늘/어제 텍스트 처리 최적화
+            const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+            const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+
+            let displayTitle = dateStr;
+            if (dateStr === today) displayTitle = `오늘 (${dateStr})`;
+            else if (dateStr === yesterday) displayTitle = `어제 (${dateStr})`;
+
+            if (!groups[displayTitle]) groups[displayTitle] = [];
+            groups[displayTitle].push(mail);
+        });
+
+        return Object.keys(groups).map(title => ({
+            title,
+            data: groups[title]
+        }));
+    };
 
     const unreadCount = mails.filter(m => !m.read_at).length;
 
@@ -542,7 +620,7 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
             )}
 
             {/* iOS 전용 설치 가이드 (iOS는 beforeinstallprompt가 없으므로 수동 표시) */}
-            {Platform.OS === 'web' && /iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase()) && !window.matchMedia('(display-mode: standalone)').matches && (
+            {Platform.OS === 'web' && /iphone|ipad|ipod/i.test(navigator?.userAgent?.toLowerCase() || '') && !(window as any).matchMedia('(display-mode: standalone)').matches && (
                 <View style={[styles.installBanner, { backgroundColor: '#FFF7ED', borderColor: '#FED7AA' }]}>
                     <View style={{ flex: 1 }}>
                         <Text style={[styles.installBannerTitle, { color: '#C2410C' }]}>🍏 아이폰 알림 받기</Text>
@@ -584,10 +662,16 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
                 </Pressable>
             </View>
 
-            <FlatList
-                data={filteredMails}
+            <SectionList
+                sections={getGroupedMails()}
                 keyExtractor={(item) => item.id}
                 renderItem={renderMailItem}
+                renderSectionHeader={({ section: { title } }) => (
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>{title}</Text>
+                    </View>
+                )}
+                stickySectionHeadersEnabled={false}
                 ListEmptyComponent={
                     <View style={{ alignItems: 'center', marginTop: 50 }}>
                         <Text style={styles.emptyText}>
@@ -637,21 +721,33 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
                 </Pressable>
             </Modal>
 
-            {/* 이미지 확대 모달 */}
+            {/* 이미지 확대 모달 (개선됨: 모든 플랫폼 지원) */}
             <Modal
-                // Android Back Button safety handled by main useEffect
                 visible={!!selectedMailImage}
                 transparent={true}
+                onShow={() => setZoomScale(1)}
                 animationType="fade"
                 onRequestClose={() => setSelectedMailImage(null)}
             >
                 <View style={styles.modalContainer}>
-                    <Pressable style={styles.closeButton} onPress={() => setSelectedMailImage(null)}>
-                        <Text style={styles.closeButtonText}>✕ 닫기</Text>
-                    </Pressable>
+                    <View style={styles.zoomHeader}>
+                        <Pressable style={styles.zoomControlBtn} onPress={() => setZoomScale(prev => Math.max(1, prev - 0.5))}>
+                            <Text style={styles.zoomControlText}>-</Text>
+                        </Pressable>
+                        <Text style={styles.zoomPercentText}>{Math.round(zoomScale * 100)}%</Text>
+                        <Pressable style={styles.zoomControlBtn} onPress={() => setZoomScale(prev => Math.min(5, prev + 0.5))}>
+                            <Text style={styles.zoomControlText}>+</Text>
+                        </Pressable>
+                        <View style={{ flex: 1 }} />
+                        <Pressable style={styles.closeButton} onPress={() => setSelectedMailImage(null)}>
+                            <Text style={styles.closeButtonText}>✕ 닫기</Text>
+                        </Pressable>
+                    </View>
+
                     <ScrollView
                         maximumZoomScale={5}
                         minimumZoomScale={1}
+                        centerContent={true}
                         showsHorizontalScrollIndicator={false}
                         showsVerticalScrollIndicator={false}
                         contentContainerStyle={styles.zoomWrapper}
@@ -659,13 +755,16 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
                         {selectedMailImage && (
                             <Image
                                 source={{ uri: selectedMailImage }}
-                                style={styles.modalImage}
+                                style={[
+                                    styles.modalImage,
+                                    { transform: [{ scale: zoomScale }] }
+                                ]}
                                 resizeMode="contain"
                             />
                         )}
                     </ScrollView>
                     <View style={styles.zoomFooter}>
-                        <Text style={styles.zoomFooterText}>💡 손가락으로 벌려 확대할 수 있습니다</Text>
+                        <Text style={styles.zoomFooterText}>💡 상단 버튼이나 두 손가락으로 벌려 확대할 수 있습니다</Text>
                     </View>
                 </View>
             </Modal>
@@ -743,4 +842,14 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     installButtonText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+
+    // 섹션 헤더 스타일
+    sectionHeader: { backgroundColor: '#F8FAFC', paddingHorizontal: 20, paddingVertical: 12, marginTop: 8 },
+    sectionTitle: { fontSize: 16, fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: 0.5 },
+
+    // 줌 헤더 스타일
+    zoomHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 20, gap: 12, zIndex: 100 },
+    zoomControlBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+    zoomControlText: { color: '#fff', fontSize: 20, fontWeight: '700' },
+    zoomPercentText: { color: '#fff', fontSize: 14, fontWeight: '600', width: 45, textAlign: 'center' },
 });

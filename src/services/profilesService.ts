@@ -19,6 +19,16 @@ export interface Profile {
 }
 
 export const profilesService = {
+    async getProfileById(id: string) {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', id)
+            .single();
+        if (error) throw error;
+        return data;
+    },
+
     async getProfilesByCompany(companyId: string) {
         const { data, error } = await supabase
             .from('profiles')

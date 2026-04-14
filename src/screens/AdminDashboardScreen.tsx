@@ -3,17 +3,16 @@ import { View, Text, ScrollView, Pressable, TextInput, Image, Modal, SafeAreaVie
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
-import * as Clipboard from 'expo-clipboard';
 import { useAppContent } from '../contexts/AppContext';
 import { appStyles } from '../styles/appStyles';
 import { AppHeader } from '../components/common/AppHeader';
 import { TenantManagement } from '../components/admin/TenantManagement';
 import { SenderManagement } from '../components/admin/SenderManagement';
 import { TenantMailHistory } from '../components/admin/TenantMailHistory';
-import { profilesService } from '../services/profilesService';
+import { tenantsService } from '../services/tenantsService';
 import { masterSendersService } from '../services/masterSendersService';
 
-export const AdminDashboardScreen = () => {
+export const AdminDashboardScreen = ({ route }: any) => {
     const navigation = useNavigation<any>();
     const {
         officeInfo,
@@ -27,8 +26,6 @@ export const AdminDashboardScreen = () => {
         setLogSearchQuery,
         logPageSize,
         setLogPageSize,
-        isAdminMenuVisible,
-        setIsAdminMenuVisible,
         isTenantMgmtVisible,
         setIsTenantMgmtVisible,
         isSenderMgmtVisible,
@@ -42,17 +39,23 @@ export const AdminDashboardScreen = () => {
         isRefreshing,
     } = useAppContent();
 
-    const handleBack = () => {
-        // [1:1 구조 개편] 뒤로가기 시 지점 선택이 아닌 랜딩으로 이동 (혹은 뒤로가기 제한)
-        navigation.replace('Landing');
-    };
+    // 메뉴 이동 후 특정 기능(입주사 관리 등) 호출을 위한 파라미터 처리
+    React.useEffect(() => {
+        if (route.params?.openTenantMgmt) {
+            setIsTenantMgmtVisible(true);
+            navigation.setParams({ openTenantMgmt: undefined });
+        }
+        if (route.params?.openSenderMgmt) {
+            setIsSenderMgmtVisible(true);
+            navigation.setParams({ openSenderMgmt: undefined });
+        }
+    }, [route.params]);
 
     if (!officeInfo) {
-        // 데이터가 없으면 로그인 혹은 초기 로딩 문제
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <ActivityIndicator size="large" color="#4F46E5" />
-                <Text style={{ marginTop: 10 }}>지점 정보를 불러오는 중...</Text>
+                <Text style={{ marginTop: 10 }}>오피스 정보를 불러오는 중...</Text>
             </View>
         );
     }
@@ -61,21 +64,18 @@ export const AdminDashboardScreen = () => {
         <View style={appStyles.flexContainer}>
             <AppHeader
                 title="Postnoti Admin"
-                onBack={handleBack}
-                onMenu={() => setIsAdminMenuVisible(true)}
+                onMenu={() => navigation.navigate('AdminMenu')}
             />
             <SectionList
                 style={appStyles.container}
                 contentContainerStyle={{ paddingBottom: 100, paddingTop: 10 }}
                 ListHeaderComponent={
                     <View style={{ paddingBottom: 10 }}>
-                        {/* 1. 프리미엄 그리팅 섹션 */}
                         <View style={{ marginBottom: 20 }}>
                             <Text style={{ fontSize: 13, fontWeight: '700', color: '#4F46E5', marginBottom: 4 }}>HELLO, ADMIN</Text>
                             <Text style={{ fontSize: 28, fontWeight: '800', color: '#1E293B' }}>{officeInfo?.name}</Text>
                         </View>
 
-                        {/* 2. 사용량 트래킹 (Commercialization 필드 활용) */}
                         <View style={[appStyles.premiumInfoCard, { marginBottom: 20, padding: 20 }]}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                                 <Text style={appStyles.premiumInfoLabel}>이번 달 알림 사용량</Text>
@@ -94,7 +94,6 @@ export const AdminDashboardScreen = () => {
                             </View>
                         </View>
 
-                        {/* 3. 메인 액션 버튼 - 속도 최적화 */}
                         <View style={appStyles.premiumQuickActionRow}>
                             <Pressable
                                 style={[appStyles.premiumQuickBtn, { backgroundColor: '#1E293B', flex: 2 }]}
@@ -144,8 +143,8 @@ export const AdminDashboardScreen = () => {
                 sections={(() => {
                     const filtered = mailLogs.filter(log => {
                         const query = logSearchQuery.toLowerCase();
-                        const name = log.profiles?.name?.toLowerCase() || '';
-                        const room = log.profiles?.room_number?.toLowerCase() || '';
+                        const name = log.tenants?.name?.toLowerCase() || '';
+                        const room = log.tenants?.room_number?.toLowerCase() || '';
                         const sender = log.ocr_content?.toLowerCase() || '';
                         return name.includes(query) || room.includes(query) || sender.includes(query);
                     }).slice(0, logPageSize);
@@ -154,8 +153,6 @@ export const AdminDashboardScreen = () => {
                     filtered.forEach(log => {
                         const date = new Date(log.created_at);
                         const dateStr = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
-
-                        // 오늘/어제 체크
                         const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
                         const yesterdayDate = new Date();
                         yesterdayDate.setDate(yesterdayDate.getDate() - 1);
@@ -185,8 +182,8 @@ export const AdminDashboardScreen = () => {
                         <Pressable
                             style={[appStyles.logItem, { marginBottom: 0, borderBottomWidth: 1, borderBottomColor: '#F1F5F9', borderRadius: 0, paddingVertical: 14 }]}
                             onPress={() => {
-                                if (log.profiles) {
-                                    setSelectedProfileForHistory(log.profiles);
+                                if (log.tenants) {
+                                    setSelectedProfileForHistory(log.tenants);
                                     setIsHistoryVisible(true);
                                 }
                             }}
@@ -198,8 +195,8 @@ export const AdminDashboardScreen = () => {
                             />
                             <View style={{ flex: 1 }}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-                                    <Text style={[appStyles.logName, { fontSize: 15 }]}>{log.profiles?.name}</Text>
-                                    <Text style={{ fontSize: 12, color: '#94A3B8', marginLeft: 6 }}>{log.profiles?.room_number}</Text>
+                                    <Text style={[appStyles.logName, { fontSize: 15 }]}>{log.tenants?.name}</Text>
+                                    <Text style={{ fontSize: 12, color: '#94A3B8', marginLeft: 6 }}>{log.tenants?.room_number}</Text>
                                 </View>
                                 <Text style={[appStyles.logSender, { fontSize: 13, color: '#475569' }]} numberOfLines={1}>
                                     {log.ocr_content ? `${log.ocr_content}` : '발신처 미상'}
@@ -222,9 +219,6 @@ export const AdminDashboardScreen = () => {
                     }
                 }}
                 onEndReachedThreshold={0.5}
-                ListFooterComponent={() => (
-                    <View style={{ height: 20 }} />
-                )}
                 ListEmptyComponent={
                     <Text style={[appStyles.emptyText, { textAlign: 'center', marginTop: 30 }]}>검색 결과가 없습니다.</Text>
                 }
@@ -238,13 +232,13 @@ export const AdminDashboardScreen = () => {
                 onRequestClose={() => setIsTenantMgmtVisible(false)}
             >
                 <SafeAreaView style={{ flex: 1 }}>
-                    <AppHeader title={`${officeInfo?.name} 입주사 관리`} onBack={() => setIsTenantMgmtVisible(false)} />
+                    <AppHeader title={`${officeInfo?.name} 오피스 관리`} onBack={() => setIsTenantMgmtVisible(false)} />
                     {officeInfo && (
                         <TenantManagement
                             companyId={officeInfo.id}
                             onComplete={async () => {
                                 setIsTenantMgmtVisible(false);
-                                const p = await profilesService.getProfilesByCompany(officeInfo.id);
+                                const p = await tenantsService.getTenantsByCompany(officeInfo.id);
                                 setProfiles(p);
                             }}
                             onCancel={() => setIsTenantMgmtVisible(false)}
@@ -288,101 +282,12 @@ export const AdminDashboardScreen = () => {
                         </View>
                         {selectedProfileForHistory && (
                             <TenantMailHistory
-                                profile={selectedProfileForHistory}
+                                tenant={selectedProfileForHistory}
                                 onClose={() => setIsHistoryVisible(false)}
                             />
                         )}
                     </View>
                 </View>
-            </Modal>
-
-            {/* 햄버거 메뉴 모달 */}
-            <Modal
-                visible={isAdminMenuVisible}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setIsAdminMenuVisible(false)}
-            >
-                <Pressable
-                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}
-                    onPress={() => setIsAdminMenuVisible(false)}
-                >
-                    <View style={appStyles.premiumBottomSheet}>
-                        <View style={appStyles.bottomSheetHandle} />
-                        <View style={appStyles.bottomSheetHeader}>
-                            <Text style={appStyles.bottomSheetTitle}>지점 설정 및 관리</Text>
-                            <Text style={appStyles.bottomSheetSubtitle}>필요한 관리 기능을 선택해 주세요</Text>
-                        </View>
-                        <View style={{ gap: 12 }}>
-                            <Pressable
-                                onPress={() => { setIsAdminMenuVisible(false); setIsTenantMgmtVisible(true); }}
-                                style={appStyles.premiumMenuBtn}
-                            >
-                                <Ionicons name="business-outline" size={22} color="#1E293B" style={{ marginRight: 16 }} />
-                                <View style={appStyles.menuBtnTextGroup}>
-                                    <Text style={appStyles.menuBtnLabel}>입주사 데이터 관리</Text>
-                                    <Text style={appStyles.menuBtnDesc}>입주사 등록, 수정 및 상태 관리</Text>
-                                </View>
-                                <Ionicons name="chevron-forward-outline" size={20} color="#CBD5E1" />
-                            </Pressable>
-
-                            <Pressable
-                                onPress={() => { setIsAdminMenuVisible(false); setIsSenderMgmtVisible(true); }}
-                                style={appStyles.premiumMenuBtn}
-                            >
-                                <Ionicons name="key-outline" size={22} color="#1E293B" style={{ marginRight: 16 }} />
-                                <View style={appStyles.menuBtnTextGroup}>
-                                    <Text style={appStyles.menuBtnLabel}>발신처 키워드 설정</Text>
-                                    <Text style={appStyles.menuBtnDesc}>자동 인식을 위한 필터링 키워드 관리</Text>
-                                </View>
-                                <Ionicons name="chevron-forward-outline" size={20} color="#CBD5E1" />
-                            </Pressable>
-
-                            {/* 지점 공유 링크 */}
-                            <View style={[appStyles.premiumMenuBtn, { backgroundColor: '#F1F5F9', borderStyle: 'dashed' }]}>
-                                <Ionicons name="link-outline" size={22} color="#4F46E5" style={{ marginRight: 16 }} />
-                                <View style={appStyles.menuBtnTextGroup}>
-                                    <Text style={[appStyles.menuBtnLabel, { color: '#4F46E5' }]}>입주자 전용 링크</Text>
-                                    <Text style={appStyles.menuBtnDesc} numberOfLines={1}>
-                                        https://postnoti-app.vercel.app/branch/{officeInfo?.slug}
-                                    </Text>
-                                </View>
-                                <Pressable
-                                    onPress={async () => {
-                                        const url = `https://postnoti-app.vercel.app/branch/${officeInfo?.slug}`;
-                                        await Clipboard.setStringAsync(url);
-                                        // Alert needs to be imported from react-native if not already available in scope, 
-                                        // but AdminDashboardScreen has it imported.
-                                        // Using global Alert or imported Alert
-                                        const { Alert } = require('react-native');
-                                        Alert.alert('복사 완료', `링크가 복사되었습니다.\n${url}`);
-                                    }}
-                                    style={{ backgroundColor: '#fff', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0' }}
-                                >
-                                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#64748B' }}>복사</Text>
-                                </Pressable>
-                            </View>
-
-                            <View style={appStyles.menuSeparator} />
-
-                            <Pressable
-                                onPress={() => {
-                                    setIsAdminMenuVisible(false);
-                                    const { supabase } = require('../lib/supabase');
-                                    supabase.auth.signOut();
-                                    navigation.replace('Landing');
-                                }}
-                                style={appStyles.premiumExitBtn}
-                            >
-                                <Ionicons name="log-out-outline" size={20} color="#E11D48" style={{ marginRight: 12 }} />
-                                <View style={{ flex: 1 }}>
-                                    <Text style={appStyles.exitBtnLabel}>로그아웃</Text>
-                                    <Text style={appStyles.exitBtnDesc}>현재 계정에서 안전하게 나가기</Text>
-                                </View>
-                            </Pressable>
-                        </View>
-                    </View>
-                </Pressable>
             </Modal>
         </View>
     );

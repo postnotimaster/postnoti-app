@@ -2,8 +2,9 @@ import { Alert } from 'react-native';
 import { mailService } from '../services/mailService';
 import { storageService } from '../services/storageService';
 import { Company } from '../services/companiesService';
-import { Profile } from '../services/profilesService';
+import { Tenant } from '../services/tenantsService';
 import { MailType } from '../services/ocrService';
+import { notificationService, NotificationResult } from '../services/notificationService';
 
 export const useMailRegistration = (
     officeInfo: Company | null,
@@ -11,62 +12,27 @@ export const useMailRegistration = (
     setOcrLoading: (loading: boolean) => void,
     resetOCR: () => void
 ) => {
-    const runNotifications = async (profile: Profile, company: Company, sender: string, type: string, customMessage?: string) => {
-        const title = `[${company.name}] 우편물 도착 📮`;
-        const body = customMessage || `${sender ? `${sender}에서 보낸 ` : ''}${type} 우편물이 도착했습니다.`;
-
-        // Native Push (Expo)
-        if (profile.push_token) {
-            fetch('https://exp.host/--/api/v2/push/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    to: profile.push_token,
-                    sound: 'default',
-                    title,
-                    body,
-                    data: { url: `postnoti://branch/${company.slug}` }
-                })
-            }).catch(e => console.warn('Expo push failed', e));
-        }
-
-        // Web Push (Firebase)
-        if (profile.web_push_token) {
-            fetch('https://postnoti-app.vercel.app/api/send-push', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    token: profile.web_push_token,
-                    title,
-                    body,
-                    data: {
-                        company_id: company.id,
-                        url: `https://postnoti-app.vercel.app/branch/${company.slug}`
-                    }
-                })
-            }).catch(e => console.warn('Web push failed', e));
-        }
-    };
+    // runNotifications was moved to notificationService.ts
 
     const handleRegisterMail = async (
-        matchedProfile: Profile | null,
+        matchedProfile: Tenant | null,
         selectedImage: string | null,
         detectedMailType: MailType,
         detectedSender: string,
         extraImages: string[],
         customMessage?: string
-    ) => {
+    ): Promise<NotificationResult | null> => {
         if (!officeInfo) {
             Alert.alert('오류', '지점 정보가 로드되지 않았습니다.');
-            return;
+            return null;
         }
         if (!matchedProfile) {
             Alert.alert('오류', '입주사가 선택되지 않았습니다.');
-            return;
+            return null;
         }
         if (!selectedImage) {
             Alert.alert('오류', '우편물 사진을 촬영해주세요.');
-            return;
+            return null;
         }
 
         try {
@@ -106,23 +72,29 @@ export const useMailRegistration = (
                 throw new Error(`데이터 저장 실패: ${regError.message}`);
             }
 
-            // Background notification task
-            runNotifications(matchedProfile, officeInfo, detectedSender, detectedMailType, customMessage);
+            // 3. 알림 발송 및 결과 수집
+            const notifResult = await notificationService.sendPushNotification(
+                matchedProfile,
+                officeInfo,
+                detectedSender,
+                detectedMailType,
+                customMessage
+            );
 
-            Alert.alert('완료', `${matchedProfile.name}님께 알림을 보냈습니다.`);
+            // Alert.alert('완료', `${matchedProfile.name}님께 알림을 보냈습니다.`); // 이전 단순 알림 제거
 
             // 데이터 갱신
             const refreshedMails = await mailService.getMailsByCompany(officeInfo.id);
             setMailLogs(refreshedMails);
 
-            // Reset UI States (Success)
-            resetOCR();
+            // Reset UI States (Success) 제거 - UI 컴포넌트에서 제어하도록 변경
+            // resetOCR(); 
 
-            return true;
+            return notifResult;
         } catch (error: any) {
             console.error('Register mail error:', error);
             Alert.alert('오류', error.message || '등록 중 문제가 발생했습니다.');
-            return false;
+            return null;
         } finally {
             setOcrLoading(false);
         }

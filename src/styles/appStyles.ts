@@ -141,4 +141,41 @@ export const appStyles = StyleSheet.create({
     premiumExitBtn: { padding: 20, borderRadius: 20, backgroundColor: '#FFF1F2', borderWidth: 1, borderColor: '#FFE4E6' },
     exitBtnLabel: { fontSize: 15, fontWeight: '700', color: '#E11D48', marginBottom: 2 },
     exitBtnDesc: { fontSize: 12, color: '#FB7185' },
+
+    // Settings Screen Premium Styles
+    settingsCard: {
+        backgroundColor: '#fff',
+        borderRadius: 24,
+        padding: 20,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 2
+    },
+    settingsCardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+        gap: 10
+    },
+    settingsCardTitle: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#1E293B'
+    },
+    logoutBtn: {
+        padding: 18,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#FFE4E6',
+        backgroundColor: '#FFF1F2',
+        borderRadius: 20,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 10
+    }
 });

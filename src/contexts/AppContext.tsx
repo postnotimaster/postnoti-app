@@ -12,6 +12,7 @@ import { Platform } from 'react-native';
 // Services
 import { companiesService, Company } from '../services/companiesService';
 import { profilesService, Profile } from '../services/profilesService';
+import { tenantsService, Tenant } from '../services/tenantsService';
 import { mailService } from '../services/mailService';
 import { storageService } from '../services/storageService';
 import { masterSendersService } from '../services/masterSendersService';
@@ -37,8 +38,8 @@ interface AppContextType {
     // Admin Data
     officeInfo: Company | null;
     setOfficeInfo: (comp: Company | null) => void;
-    profiles: Profile[]; // Tenants inside current office
-    setProfiles: (profiles: Profile[]) => void;
+    profiles: Tenant[]; // Tenants inside current office (RENAMED from Profile to Tenant internally)
+    setProfiles: (tenants: Tenant[]) => void;
     mailLogs: any[];
     setMailLogs: (logs: any[]) => void;
     masterSenders: string[];
@@ -53,14 +54,12 @@ interface AppContextType {
     setIsSenderMgmtVisible: (v: boolean) => void;
     isHistoryVisible: boolean;
     setIsHistoryVisible: (v: boolean) => void;
-    isAdminMenuVisible: boolean;
-    setIsAdminMenuVisible: (v: boolean) => void;
     isManualSearchVisible: boolean;
     setIsManualSearchVisible: (v: boolean) => void;
 
     // Other UI States
-    selectedProfileForHistory: Profile | null;
-    setSelectedProfileForHistory: (p: Profile | null) => void;
+    selectedProfileForHistory: Tenant | null;
+    setSelectedProfileForHistory: (p: Tenant | null) => void;
     logSearchQuery: string;
     setLogSearchQuery: (q: string) => void;
     logPageSize: number;
@@ -77,8 +76,8 @@ interface AppContextType {
     setDetectedMailType: (t: MailType) => void;
     detectedSender: string;
     setDetectedSender: (s: string) => void;
-    matchedProfile: Profile | null;
-    setMatchedProfile: (p: Profile | null) => void;
+    matchedProfile: Tenant | null;
+    setMatchedProfile: (p: Tenant | null) => void;
     extraImages: string[];
     setExtraImages: (imgs: string[]) => void;
 
@@ -87,8 +86,16 @@ interface AppContextType {
     // Actions
     loadData: () => Promise<void>;
     runOCR: (uri: string) => Promise<void>;
-    handleRegisterMail: () => Promise<void>;
+    handleRegisterMail: (
+        tenant: Tenant | null,
+        image: string | null,
+        type: MailType,
+        sender: string,
+        extras: string[],
+        customMsg?: string
+    ) => Promise<any>;
     optimizeImage: (uri: string) => Promise<string>;
+    handleLoginSuccess: (profile: any) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -103,7 +110,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     // Admin Data
     const [officeInfo, setOfficeInfo] = useState<Company | null>(null);
-    const [profiles, setProfiles] = useState<Profile[]>([]);
+    const [profiles, setProfiles] = useState<Tenant[]>([]);
     const [masterSenders, setMasterSenders] = useState<string[]>([]);
     const [mailLogs, setMailLogs] = useState<any[]>([]);
 
@@ -112,11 +119,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const [isTenantMgmtVisible, setIsTenantMgmtVisible] = useState(false);
     const [isSenderMgmtVisible, setIsSenderMgmtVisible] = useState(false);
     const [isHistoryVisible, setIsHistoryVisible] = useState(false);
-    const [isAdminMenuVisible, setIsAdminMenuVisible] = useState(false);
     const [isManualSearchVisible, setIsManualSearchVisible] = useState(false);
 
     // Search & Filters
-    const [selectedProfileForHistory, setSelectedProfileForHistory] = useState<Profile | null>(null);
+    const [selectedProfileForHistory, setSelectedProfileForHistory] = useState<Tenant | null>(null);
     const [logSearchQuery, setLogSearchQuery] = useState('');
     const [logPageSize, setLogPageSize] = useState(10);
     const [manualSearchQuery, setManualSearchQuery] = useState('');
@@ -144,27 +150,52 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // --- UI/Loading States ---
     const [isRefreshing, setIsRefreshing] = useState(false);
 
+    const handleLoginSuccess = async (profile: any) => {
+        if (profile && profile.companies) {
+            const myOffice = profile.companies as Company;
+            setOfficeInfo(myOffice);
+
+            // 해당 오피스의 입주사 및 우편 로그 로드
+            const [p, m] = await Promise.all([
+                tenantsService.getTenantsByCompany(myOffice.id),
+                mailService.getMailsByCompany(myOffice.id)
+            ]);
+            setProfiles(p);
+            setMailLogs(m);
+            setMode('admin_dashboard');
+        }
+    };
+
     const loadInitialData = async () => {
         try {
-            // [1:1 구조 개편] 첫 번째로 발견되는 회사 정보를 기본 오피스로 로드
-            const [compList, senders] = await Promise.all([
-                companiesService.getCompanies(),
-                masterSendersService.getAllSenders()
-            ]);
+            // 1. 현재 세션 확인
+            const { data: { session } } = await supabase.auth.getSession();
 
-            if (compList.length > 0) {
-                const mainOffice = compList[0];
-                setOfficeInfo(mainOffice);
-
-                // 해당 오피스의 입주사 및 우편 로그 자동 로드
-                const [p, m] = await Promise.all([
-                    profilesService.getProfilesByCompany(mainOffice.id),
-                    mailService.getMailsByCompany(mainOffice.id)
-                ]);
-                setProfiles(p);
-                setMailLogs(m);
-            }
+            // 2. 공통 데이터(마스터 발신처) 로드
+            const senders = await masterSendersService.getAllSenders();
             setMasterSenders(senders.map(s => s.name));
+
+            if (session?.user) {
+                // 3. 로그인된 사용자의 프로필 및 오피스 정보 조회
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*, companies(*)')
+                    .eq('id', session.user.id)
+                    .single();
+
+                if (!profileError && profile && profile.companies) {
+                    const myOffice = profile.companies as Company;
+                    setOfficeInfo(myOffice);
+
+                    // 4. 해당 오피스의 입주사 및 우편 로그 로드
+                    const [p, m] = await Promise.all([
+                        tenantsService.getTenantsByCompany(myOffice.id),
+                        mailService.getMailsByCompany(myOffice.id)
+                    ]);
+                    setProfiles(p);
+                    setMailLogs(m);
+                }
+            }
         } catch (e) {
             console.error("Failed to load initial data", e);
         }
@@ -195,23 +226,73 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const setupDeepLinking = async () => {
         const handleDeepLink = async (url: string | null) => {
             if (!url) return;
+
             let slug = '';
-            if (url.includes('postnoti://')) {
-                const parts = url.replace('postnoti://', '').split('/');
-                if (parts[0] === 'branch') slug = parts[1];
-            } else {
-                try {
-                    const urlObj = new URL(url);
-                    const pathParts = urlObj.pathname.split('/').filter(p => p);
-                    if (pathParts[0] === 'branch') slug = pathParts[1];
-                } catch (e) { }
+            // 1. 웹 브라우저 직접 접속인 경우 (Landing bypass를 위해 window.location 우선 확인)
+            if (Platform.OS === 'web' && typeof window !== 'undefined') {
+                const path = window.location.pathname;
+                if (path.includes('/branch/')) {
+                    slug = path.split('/branch/')[1].split('/')[0];
+                }
+            }
+
+            // 2. Linking API를 통한 유입 (기존 및 보강 로직)
+            if (!slug) {
+                if (url.includes('postnoti://')) {
+                    const parts = url.replace('postnoti://', '').split('/');
+                    if (parts[0] === 'branch') slug = parts[1];
+                } else {
+                    try {
+                        const urlObj = new URL(url);
+                        const pathParts = urlObj.pathname.split('/').filter(p => p);
+                        if (pathParts[0] === 'branch') slug = pathParts[1];
+                    } catch (e) {
+                        if (url.includes('/branch/')) {
+                            slug = url.split('/branch/')[1].split('/')[0].split('?')[0];
+                        }
+                    }
+                }
             }
 
             if (slug) {
-                const { data } = await supabase.from('companies').select('*').eq('slug', slug).single();
-                if (data) {
-                    setBrandingCompany(data);
+                // 3. magicId 추출 보강
+                let magicId = '';
+                try {
+                    const urlObj = new URL(url);
+                    magicId = urlObj.searchParams.get('p') || '';
+                } catch (e) {
+                    if (url.includes('p=')) {
+                        magicId = url.split('p=')[1].split('&')[0];
+                    }
+                }
+
+                if (!magicId && Platform.OS === 'web' && typeof window !== 'undefined') {
+                    try {
+                        const params = new URLSearchParams(window.location.search);
+                        magicId = params.get('p') || '';
+                    } catch (e) { }
+                }
+
+                // [FAST TRACK] 데이터베이스 조회 전에 일단 입주사 모드로 전환하여 LandingScreen 노출을 차단
+                if (magicId) {
                     setMode('tenant_login');
+                    // brandingCompany 정보가 완벽하지 않더라도 magicId는 미리 주입 (Wrapper가 사용)
+                    setBrandingCompany({ slug, magicId } as any);
+                }
+
+                // 이후 비동기로 지점 상세 정보 로드
+                try {
+                    const { data, error: companyError } = await supabase
+                        .from('companies')
+                        .select('*')
+                        .ilike('slug', slug)
+                        .single();
+
+                    if (data) {
+                        setBrandingCompany({ ...data, magicId } as any);
+                    }
+                } catch (e) {
+                    console.error('Fast-track company load failed:', e);
                 }
             }
         };
@@ -230,9 +311,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                     const { redirectToExternalBrowser } = require('../utils/browserDetection');
                     redirectToExternalBrowser();
                 }
-                await loadInitialData();
-                setupNotifications();
-                setupDeepLinking();
+
+                // 1. 딥링크 분석 (가장 먼저 수행, 비로그인 입주사 대응)
+                await setupDeepLinking();
+
+                // 2. 초기 데이터 및 알림 설정 (백그라운드 병행)
+                loadInitialData();
+                setupNotifications(); // await 제거 (블로킹 방지)
             } catch (error) {
                 console.error('Initialization error:', error);
             } finally {
@@ -244,17 +329,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     // handleBranchSelect removed in 1:1 refactor
 
-    const handleRegisterMail = async () => {
-        const success = await registerMailLogic(
-            matchedProfile,
-            selectedImage,
-            detectedMailType,
-            detectedSender,
-            extraImages
+    const handleRegisterMail = async (
+        tenant: Tenant | null,
+        image: string | null,
+        type: MailType,
+        sender: string,
+        extras: string[],
+        customMsg?: string
+    ) => {
+        const result = await registerMailLogic(
+            tenant,
+            image,
+            type,
+            sender,
+            extras,
+            customMsg
         );
-        if (success) {
-            setMode('admin_dashboard');
-        }
+        return result;
     };
 
     return (
@@ -274,7 +365,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 isTenantMgmtVisible, setIsTenantMgmtVisible,
                 isSenderMgmtVisible, setIsSenderMgmtVisible,
                 isHistoryVisible, setIsHistoryVisible,
-                isAdminMenuVisible, setIsAdminMenuVisible,
                 isManualSearchVisible, setIsManualSearchVisible,
                 selectedProfileForHistory, setSelectedProfileForHistory,
                 logSearchQuery, setLogSearchQuery,
@@ -293,7 +383,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 optimizeImage: async (uri: string) => {
                     const res = await ocrPreprocess(uri);
                     return res.uri;
-                }
+                },
+                handleLoginSuccess
             }}
         >
             {children}

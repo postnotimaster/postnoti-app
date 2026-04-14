@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 export const mailService = {
     async registerMail(
         companyId: string,
-        profileId: string,
+        tenantId: string,
         mailType: string,
         ocrText: string,
         imageUri: string,
@@ -14,7 +14,7 @@ export const mailService = {
             .insert([
                 {
                     company_id: companyId,
-                    profile_id: profileId,
+                    tenant_id: tenantId,
                     mail_type: mailType,
                     ocr_content: ocrText,
                     image_url: imageUri,
@@ -23,6 +23,17 @@ export const mailService = {
                 }
             ]);
         return { data, error };
+    },
+
+    async getMailsByTenant(tenantId: string) {
+        const { data, error } = await supabase
+            .from('mail_logs')
+            .select('*')
+            .eq('tenant_id', tenantId)
+            .order('created_at', { ascending: false })
+            .limit(100);
+        if (error) throw error;
+        return data || [];
     },
 
     async getMailsByProfile(profileId: string) {
@@ -39,10 +50,10 @@ export const mailService = {
     async getMailsByCompany(companyId: string) {
         const { data, error } = await supabase
             .from('mail_logs')
-            .select('*, profiles(id, name, room_number, company_name, phone, role, is_active)')
+            .select('*, tenants(id, name, room_number, phone, company_name, is_active)')
             .eq('company_id', companyId)
             .order('created_at', { ascending: false })
-            .limit(50); // 최근 50개만 로드하여 성능 최적화
+            .limit(50);
         if (error) throw error;
         return data || [];
     },

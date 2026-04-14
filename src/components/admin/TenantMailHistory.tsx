@@ -12,16 +12,16 @@ import {
     Dimensions
 } from 'react-native';
 import { mailService } from '../../services/mailService';
-import { Profile } from '../../services/profilesService';
+import { Tenant } from '../../services/tenantsService';
 import { supabase } from '../../lib/supabase';
 
 interface TenantMailHistoryProps {
-    profile: Profile;
+    tenant: Tenant;
     onClose: () => void;
     isTenantMode?: boolean;
 }
 
-export const TenantMailHistory = ({ profile, onClose, isTenantMode = false }: TenantMailHistoryProps) => {
+export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: TenantMailHistoryProps) => {
     const [mails, setMails] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedFullImage, setSelectedFullImage] = useState<string | null>(null);
@@ -32,8 +32,8 @@ export const TenantMailHistory = ({ profile, onClose, isTenantMode = false }: Te
 
     const loadHistory = async () => {
         try {
-            if (profile.id) {
-                const data = await mailService.getMailsByProfile(profile.id);
+            if (tenant.id) {
+                const data = await mailService.getMailsByTenant(tenant.id);
                 setMails(data || []);
             }
         } catch (error) {
@@ -112,21 +112,24 @@ export const TenantMailHistory = ({ profile, onClose, isTenantMode = false }: Te
                                         <Pressable
                                             style={styles.resendBtn}
                                             onPress={async () => {
-                                                // Fetch latest profile data to ensure tokens are fresh
-                                                const { data: freshProfile } = await supabase
+                                                if (!tenant.profile_id) {
+                                                    Alert.alert('알림 불가', '이 입주사는 앱 계정이 연결되어 있지 않습니다. 문자로 링크를 공유해 주세요.');
+                                                    return;
+                                                }
+
+                                                // Fetch latest profile data
+                                                const { data: profile } = await supabase
                                                     .from('profiles')
                                                     .select('*')
-                                                    .eq('id', profile.id)
+                                                    .eq('id', tenant.profile_id)
                                                     .single();
 
-                                                const targetProfile = freshProfile || profile;
-
-                                                if (!targetProfile.push_token && !targetProfile.web_push_token) {
+                                                if (!profile?.push_token && !profile?.web_push_token) {
                                                     Alert.alert('알림 불가', '이 입주민은 알림 수신 설정이 되어있지 않습니다.');
                                                     return;
                                                 }
 
-                                                Alert.alert('알림 재발송', `${targetProfile.name}님께 알림을 다시 보내시겠습니까?`, [
+                                                Alert.alert('알림 재발송', `${tenant.name}님께 알림을 다시 보내시겠습니까?`, [
                                                     { text: '취소', style: 'cancel' },
                                                     {
                                                         text: '보내기',
@@ -150,24 +153,24 @@ export const TenantMailHistory = ({ profile, onClose, isTenantMode = false }: Te
                                                             const webLinkUrl = companySlug ? `https://postnoti-app.vercel.app/branch/${companySlug}` : 'https://postnoti-app.vercel.app/branch';
 
                                                             try {
-                                                                if (targetProfile.push_token) {
+                                                                if (profile.push_token) {
                                                                     await fetch('https://exp.host/--/api/v2/push/send', {
                                                                         method: 'POST',
                                                                         headers: { 'Content-Type': 'application/json' },
                                                                         body: JSON.stringify({
-                                                                            to: targetProfile.push_token,
+                                                                            to: profile.push_token,
                                                                             sound: 'default',
                                                                             title,
                                                                             body,
                                                                             data: { url: deepLinkUrl }
                                                                         })
                                                                     });
-                                                                } else if (targetProfile.web_push_token) {
+                                                                } else if (profile.web_push_token) {
                                                                     await fetch('https://postnoti-app.vercel.app/api/send-push', {
                                                                         method: 'POST',
                                                                         headers: { 'Content-Type': 'application/json' },
                                                                         body: JSON.stringify({
-                                                                            token: targetProfile.web_push_token,
+                                                                            token: profile.web_push_token,
                                                                             title,
                                                                             body,
                                                                             data: {

@@ -17,16 +17,15 @@ const IGNORE_PATTERNS = [
 
 export const preprocessImage = async (uri: string, includeBase64: boolean = true) => {
     try {
-        // [용량 최적화] 800px, compress 0.5 (대역폭 절대 사수)
-        // base64는 업로드에 필요한 경우에만 true 처리하여 메모리 아낌
+        // [용량 vs 품질 밸런스] 1200px로 상향하여 인식률 확보, 품질 0.7로 조정
         const result = await ImageManipulator.manipulateAsync(
             uri,
-            [{ resize: { width: 800 } }],
-            { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG, base64: includeBase64 }
+            [{ resize: { width: 1200 } }],
+            { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: includeBase64 }
         );
 
         const base64Data = includeBase64 ? `data:image/jpeg;base64,${result.base64}` : null;
-        console.log(`📸 이미지 최적화 완료: ${result.uri}`);
+        console.log(`📸 OCR용 이미지 최적화 완료 (1200px): ${result.uri}`);
 
         return {
             uri: result.uri,
@@ -72,11 +71,14 @@ export const classifyMail = (text: string, sender: string = ''): MailType => {
 };
 
 export const recognizeText = async (uri: string, masterSenders: string[] = []) => {
-    if (Platform.OS !== 'android') return { text: '', sender: '' };
+    // Web 환경을 제외한 Native 환경(iOS/Android)에서 활성화
+    if (Platform.OS === 'web') return { text: '', sender: '' };
     try {
         const result = await TextRecognition.recognize(uri, TextRecognitionScript.KOREAN);
+        console.log('🔍 OCR Raw Text:', result.text);
         const lines = result.text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
         const sender = extractSender(lines, masterSenders);
+        console.log('🎯 Detected Sender:', sender);
         return { text: result.text, sender: sender };
     } catch (error) {
         console.warn('OCR processing failed:', error);

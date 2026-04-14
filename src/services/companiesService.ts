@@ -19,10 +19,31 @@ export const companiesService = {
         return data as Company[];
     },
 
+    async checkSlugUnique(slug: string) {
+        const { data, error } = await supabase
+            .from('companies')
+            .select('id')
+            .eq('slug', slug)
+            .maybeSingle();
+        if (error) throw error;
+        return !data; // data가 없으면 unique
+    },
+
     async createCompany(name: string, address: string, slug: string) {
         const { data, error } = await supabase
             .from('companies')
             .insert([{ name, address, slug }])
+            .select()
+            .single();
+        if (error) throw error;
+        return data as Company;
+    },
+
+    async updateCompany(id: string, updates: Partial<Company>) {
+        const { data, error } = await supabase
+            .from('companies')
+            .update(updates)
+            .eq('id', id)
             .select()
             .single();
         if (error) throw error;

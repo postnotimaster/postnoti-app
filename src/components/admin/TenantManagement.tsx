@@ -9,9 +9,11 @@ import {
     Pressable,
     ActivityIndicator,
     Switch,
-    BackHandler
+    BackHandler,
+    KeyboardAvoidingView,
+    Platform
 } from 'react-native';
-import { profilesService, Profile } from '../../services/profilesService';
+import { tenantsService, Tenant } from '../../services/tenantsService';
 import { PrimaryButton } from '../common/PrimaryButton';
 
 interface TenantManagementProps {
@@ -21,19 +23,19 @@ interface TenantManagementProps {
 }
 
 export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantManagementProps) => {
-    const [tenants, setTenants] = useState<Profile[]>([]);
+    const [tenants, setTenants] = useState<Tenant[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [sortOrder, setSortOrder] = useState<'name' | 'room'>('name');
     const [isEditing, setIsEditing] = useState(false);
-    const [editingTenant, setEditingTenant] = useState<Partial<Profile>>({
+    const [editingTenant, setEditingTenant] = useState<Partial<Tenant>>({
         company_id: companyId,
         company_name: '',
         name: '',
         room_number: '',
         phone: '',
         is_active: true,
-        role: 'tenant'
+        is_premium: false
     });
 
     useEffect(() => {
@@ -46,19 +48,17 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                 setIsEditing(false);
                 return true;
             }
-            // 수정 모드가 아니면 false를 반환하여 
-            // Modal의 onRequestClose나 상위 핸들러가 처리하게 함
             return false;
         };
 
         const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
         return () => backHandler.remove();
-    }, [isEditing]); // isEditing이 바뀔 때마다 핸들러 갱신
+    }, [isEditing]);
 
     const loadTenants = async () => {
         try {
             setLoading(true);
-            const data = await profilesService.getProfilesByCompany(companyId);
+            const data = await tenantsService.getTenantsByCompany(companyId);
             setTenants(data);
         } catch (error) {
             console.error(error);
@@ -77,16 +77,17 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
         try {
             setLoading(true);
             if (editingTenant.id) {
-                await profilesService.updateProfile(editingTenant.id, editingTenant);
+                await tenantsService.updateTenant(editingTenant.id, editingTenant);
             } else {
-                await profilesService.createProfile(editingTenant as Profile);
+                await tenantsService.createTenant(editingTenant as Tenant);
             }
             Alert.alert('성공', '입주사 정보가 저장되었습니다.');
             loadTenants();
             setIsEditing(false);
+            if (onComplete) onComplete();
         } catch (error) {
             console.error(error);
-            Alert.alert('오류', '저장에 실패했습니다. (DB 컬럼 확인 필요)');
+            Alert.alert('오류', '저장에 실패했습니다. DB 구조 업데이트를 확인해 주세요.');
         } finally {
             setLoading(false);
         }
@@ -99,8 +100,9 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                 text: '삭제',
                 style: 'destructive',
                 onPress: async () => {
-                    await profilesService.deleteProfile(id);
+                    await tenantsService.deleteTenant(id);
                     loadTenants();
+                    if (onComplete) onComplete();
                 }
             }
         ]);
@@ -130,77 +132,83 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
 
     if (isEditing) {
         return (
-            <View style={styles.editForm}>
-                <Text style={styles.formTitle}>{editingTenant.id ? '입주사 정보 수정' : '신규 입주사 등록'}</Text>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1, backgroundColor: '#fff' }}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+            >
+                <ScrollView contentContainerStyle={styles.editForm}>
+                    <Text style={styles.formTitle}>{editingTenant.id ? '입주사 정보 수정' : '신규 입주사 등록'}</Text>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>회사명</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={editingTenant.company_name}
-                        onChangeText={t => setEditingTenant({ ...editingTenant, company_name: t })}
-                        placeholder="회사명을 입력하세요"
-                    />
-                </View>
-
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>이름 (담당자)</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={editingTenant.name}
-                        onChangeText={t => setEditingTenant({ ...editingTenant, name: t })}
-                        placeholder="이름을 입력하세요"
-                    />
-                </View>
-
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>호실</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={editingTenant.room_number}
-                        onChangeText={t => setEditingTenant({ ...editingTenant, room_number: t })}
-                        placeholder="예: 301호"
-                    />
-                </View>
-
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>전화번호</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={editingTenant.phone}
-                        onChangeText={t => setEditingTenant({ ...editingTenant, phone: t })}
-                        placeholder="01012345678"
-                        keyboardType="phone-pad"
-                    />
-                </View>
-
-                <View style={[styles.inputGroup, styles.switchGroup]}>
-                    <Text style={styles.label}>입주 상태 (입주중)</Text>
-                    <Switch
-                        value={editingTenant.is_active}
-                        onValueChange={v => setEditingTenant({ ...editingTenant, is_active: v })}
-                    />
-                </View>
-
-                <View style={[styles.inputGroup, styles.switchGroup]}>
-                    <View>
-                        <Text style={styles.label}>프리미엄 서비스</Text>
-                        <Text style={{ fontSize: 11, color: '#64748B' }}>우편 배송물 개봉 및 상세 촬영 대상</Text>
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>회사명</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={editingTenant.company_name}
+                            onChangeText={t => setEditingTenant({ ...editingTenant, company_name: t })}
+                            placeholder="회사명을 입력하세요"
+                        />
                     </View>
-                    <Switch
-                        value={editingTenant.is_premium}
-                        onValueChange={v => setEditingTenant({ ...editingTenant, is_premium: v })}
-                        trackColor={{ true: '#4F46E5', false: '#CBD5E1' }}
-                    />
-                </View>
 
-                <View style={styles.formButtons}>
-                    <Pressable style={styles.cancelBtn} onPress={() => setIsEditing(false)}>
-                        <Text style={styles.cancelBtnText}>취소</Text>
-                    </Pressable>
-                    <PrimaryButton label="저장하기" onPress={handleSave} loading={loading} />
-                </View>
-            </View>
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>이름 (담당자)</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={editingTenant.name}
+                            onChangeText={t => setEditingTenant({ ...editingTenant, name: t })}
+                            placeholder="이름을 입력하세요"
+                        />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>호실</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={editingTenant.room_number}
+                            onChangeText={t => setEditingTenant({ ...editingTenant, room_number: t })}
+                            placeholder="예: 301호"
+                        />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>전화번호</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={editingTenant.phone}
+                            onChangeText={t => setEditingTenant({ ...editingTenant, phone: t })}
+                            placeholder="01012345678"
+                            keyboardType="phone-pad"
+                        />
+                    </View>
+
+                    <View style={[styles.inputGroup, styles.switchGroup]}>
+                        <Text style={styles.label}>입주 상태 (입주중)</Text>
+                        <Switch
+                            value={editingTenant.is_active}
+                            onValueChange={v => setEditingTenant({ ...editingTenant, is_active: v })}
+                        />
+                    </View>
+
+                    <View style={[styles.inputGroup, styles.switchGroup]}>
+                        <View>
+                            <Text style={styles.label}>프리미엄 서비스</Text>
+                            <Text style={{ fontSize: 11, color: '#64748B' }}>우편 배송물 개봉 및 상세 촬영 대상</Text>
+                        </View>
+                        <Switch
+                            value={editingTenant.is_premium}
+                            onValueChange={v => setEditingTenant({ ...editingTenant, is_premium: v })}
+                            trackColor={{ true: '#4F46E5', false: '#CBD5E1' }}
+                        />
+                    </View>
+
+                    <View style={styles.formButtons}>
+                        <Pressable style={styles.cancelBtn} onPress={() => setIsEditing(false)}>
+                            <Text style={styles.cancelBtnText}>취소</Text>
+                        </Pressable>
+                        <PrimaryButton label="저장하기" onPress={handleSave} loading={loading} />
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
         );
     }
 
@@ -213,7 +221,7 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                 </View>
                 <Pressable
                     onPress={() => {
-                        setEditingTenant({ company_id: companyId, is_active: true, role: 'tenant' });
+                        setEditingTenant({ company_id: companyId, is_active: true, is_premium: false });
                         setIsEditing(true);
                     }}
                     style={styles.addBtn}
@@ -265,14 +273,9 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                                             <Text style={[styles.statusBadgeText, { color: '#4338CA' }]}>Premium</Text>
                                         </View>
                                     )}
-                                    {t.pwa_installed && (
+                                    {t.profile_id && (
                                         <View style={[styles.statusBadge, { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD', borderWidth: 1 }]}>
-                                            <Text style={[styles.statusBadgeText, { color: '#0369A1' }]}>📱 앱설치</Text>
-                                        </View>
-                                    )}
-                                    {t.web_push_token && (
-                                        <View style={[styles.statusBadge, { backgroundColor: '#F5F3FF', borderColor: '#DDD6FE', borderWidth: 1 }]}>
-                                            <Text style={[styles.statusBadgeText, { color: '#6D28D9' }]}>🔔 알림ON</Text>
+                                            <Text style={[styles.statusBadgeText, { color: '#0369A1' }]}>📱 계정연결됨</Text>
                                         </View>
                                     )}
                                 </View>

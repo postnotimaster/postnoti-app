@@ -3,7 +3,7 @@
  * Version: 2.0.0 (Unified Account Migration & 1:1 Office Model)
  */
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AppProvider, useAppContent } from './src/contexts/AppContext';
@@ -12,6 +12,9 @@ import { AppProvider, useAppContent } from './src/contexts/AppContext';
 import { LandingScreen } from './src/screens/LandingScreen';
 import { AdminDashboardScreen } from './src/screens/AdminDashboardScreen';
 import { AdminRegisterMailScreen } from './src/screens/AdminRegisterMailScreen';
+import { AdminSignupScreen } from './src/screens/AdminSignupScreen';
+import { AdminSettingsScreen } from './src/screens/AdminSettingsScreen';
+import { AdminMenuScreen } from './src/screens/AdminMenuScreen';
 import { TenantDashboard } from './src/components/tenant/TenantDashboard';
 import { KakaoGuideOverlay } from './src/components/common/KakaoGuideOverlay';
 // Note: TenantDashboard is still in components, can be moved later. 
@@ -66,6 +69,8 @@ function AppContent() {
         companyName={brandingCompany.name}
         pushToken={expoPushToken}
         webPushToken={webPushToken}
+        magicTenantId={(brandingCompany as any).magicId}
+        magicProfileId={(brandingCompany as any).magicId}
         onBack={() => {
           setMode('landing');
           navigation.popToTop();
@@ -74,24 +79,34 @@ function AppContent() {
     );
   };
 
+  // --- React Navigation 공식 딥링크 설정 (웹/모바일 호환) ---
+  const linking = {
+    prefixes: [
+      'postnoti://',
+      'https://postnoti-app.vercel.app',
+      Platform.OS === 'web' ? window.location.origin : ''
+    ].filter(Boolean),
+    config: {
+      screens: {
+        Landing: 'Landing',
+        TenantDashboard: 'branch/:slug/view',
+        AdminDashboard: 'admin',
+        AdminRegisterMail: 'register',
+      },
+    },
+  };
+
+  const initialRouteName = (mode === 'tenant_login' && brandingCompany) ? 'TenantDashboard' : 'Landing';
+
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {/* If context says tenant_login, we effectively want to show TenantDashboard. 
-            However, defining initialRouteName based on state is tricky in RN. 
-            Instead, we rely on the fact that if 'mode' was set to 'tenant_login' during init, 
-            we should navigate there. 
-            
-            Let's keep it simple: Start at Landing. 
-            Context's deep link listener will triggered, setMode, and ideally we navigate.
-            
-            Wait, AppContext deep link logic sets 'mode'. 
-            It doesn't have access to 'navigation' object.
-            We need a navigator reference.
-        */}
+    <NavigationContainer linking={linking}>
+      <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Landing" component={LandingScreen} />
         <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
         <Stack.Screen name="AdminRegisterMail" component={AdminRegisterMailScreen} />
+        <Stack.Screen name="AdminSignup" component={AdminSignupScreen} />
+        <Stack.Screen name="AdminSettings" component={AdminSettingsScreen} />
+        <Stack.Screen name="AdminMenu" component={AdminMenuScreen} />
 
         {/* Special Case: Tenant Dashboard */}
         <Stack.Screen name="TenantDashboard" component={TenantDashboardWrapper} />
