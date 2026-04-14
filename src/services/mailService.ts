@@ -26,13 +26,14 @@ export const mailService = {
     },
 
     async getMailsByTenant(tenantId: string) {
-        const { data, error } = await supabase
-            .from('mail_logs')
-            .select('*')
-            .eq('tenant_id', tenantId)
-            .order('created_at', { ascending: false })
-            .limit(100);
-        if (error) throw error;
+        // 기존의 RLS 제약을 우회하면서도 보안을 보장하는 RPC 함수 사용
+        const { data, error } = await supabase.rpc('get_mails_by_tenant_secure', {
+            p_tenant_id: tenantId
+        });
+        if (error) {
+            console.error('getMailsByTenant RPC error:', error);
+            throw error;
+        }
         return data || [];
     },
 
