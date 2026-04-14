@@ -5,6 +5,7 @@ import { Company } from '../services/companiesService';
 import { Tenant } from '../services/tenantsService';
 import { MailType } from '../services/ocrService';
 import { notificationService, NotificationResult } from '../services/notificationService';
+import { useToast } from '../contexts/ToastContext';
 
 export const useMailRegistration = (
     officeInfo: Company | null,
@@ -13,6 +14,7 @@ export const useMailRegistration = (
     resetOCR: () => void
 ) => {
     // runNotifications was moved to notificationService.ts
+    const { showToast } = useToast();
 
     const handleRegisterMail = async (
         matchedProfile: Tenant | null,
@@ -23,15 +25,15 @@ export const useMailRegistration = (
         customMessage?: string
     ): Promise<NotificationResult | null> => {
         if (!officeInfo) {
-            Alert.alert('오류', '지점 정보가 로드되지 않았습니다.');
+            showToast({ message: '지점 정보가 로드되지 않았습니다.', type: 'error' });
             return null;
         }
         if (!matchedProfile) {
-            Alert.alert('오류', '입주사가 선택되지 않았습니다.');
+            showToast({ message: '입주사가 선택되지 않았습니다.', type: 'error' });
             return null;
         }
         if (!selectedImage) {
-            Alert.alert('오류', '우편물 사진을 촬영해주세요.');
+            showToast({ message: '우편물 사진을 촬영해주세요.', type: 'error' });
             return null;
         }
 
@@ -93,7 +95,7 @@ export const useMailRegistration = (
             return notifResult;
         } catch (error: any) {
             console.error('Register mail error:', error);
-            Alert.alert('오류', error.message || '등록 중 문제가 발생했습니다.');
+            showToast({ message: error.message || '등록 중 문제가 발생했습니다.', type: 'error' });
             return null;
         } finally {
             setOcrLoading(false);

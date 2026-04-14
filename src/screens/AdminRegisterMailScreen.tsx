@@ -4,6 +4,7 @@ import { notificationService, NotificationResult } from '../services/notificatio
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAppContent } from '../contexts/AppContext';
+import { useToast } from '../contexts/ToastContext';
 import { appStyles } from '../styles/appStyles';
 import { AppHeader } from '../components/common/AppHeader';
 import { SectionCard } from '../components/common/SectionCard';
@@ -11,6 +12,7 @@ import { PrimaryButton } from '../components/common/PrimaryButton';
 
 export const AdminRegisterMailScreen = () => {
     const navigation = useNavigation<any>();
+    const { showToast } = useToast();
     const {
         selectedImage,
         ocrLoading,
@@ -83,21 +85,21 @@ export const AdminRegisterMailScreen = () => {
 
     const handleSmsFallback = async () => {
         if (!officeInfo) {
-            Alert.alert('오류', '오피스 지점 정보가 없습니다.');
+            showToast({ message: '오피스 지점 정보가 없습니다.', type: 'error' });
             return;
         }
         if (!matchedProfile) {
-            Alert.alert('오류', '입주사 정보가 없습니다.');
+            showToast({ message: '입주사 정보가 없습니다.', type: 'error' });
             return;
         }
         if (!lastNotifResult) {
-            Alert.alert('오류', '알림 전송 결과 데이터가 없습니다.');
+            showToast({ message: '알림 전송 결과 데이터가 없습니다.', type: 'error' });
             return;
         }
 
         const phone = lastNotifResult.targetPhone || matchedProfile.phone;
         if (!phone) {
-            Alert.alert('오류', '입주사의 전화번호가 없습니다.');
+            showToast({ message: '입주사의 전화번호가 없습니다.', type: 'error' });
             return;
         }
 
@@ -124,7 +126,7 @@ export const AdminRegisterMailScreen = () => {
             handleSuccessFinish();
         } catch (e) {
             console.error('SMS open failed', e);
-            Alert.alert('오류', '메시지 앱을 열 수 없습니다.');
+            showToast({ message: '메시지 앱을 열 수 없습니다.', type: 'error' });
         }
     };
 

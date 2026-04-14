@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Alert } from 'react-native';
 import { MailType, recognizeText, classifyMail, preprocessImage as ocrPreprocess } from '../services/ocrService';
 import { Tenant } from '../services/tenantsService';
+import { useToast } from '../contexts/ToastContext';
 
 export const useOCR = (profiles: Tenant[], masterSenders: string[]) => {
+    const { showToast } = useToast();
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [recognizedText, setRecognizedText] = useState('');
     const [detectedMailType, setDetectedMailType] = useState<MailType>('일반');
@@ -99,7 +101,7 @@ export const useOCR = (profiles: Tenant[], masterSenders: string[]) => {
             }
         } catch (error) {
             console.error('OCR Error:', error);
-            Alert.alert('오류', 'OCR 인식 중 문제가 발생했습니다.');
+            showToast({ message: 'OCR 인식 중 문제가 발생했습니다.', type: 'error' });
         } finally {
             setOcrLoading(false);
         }

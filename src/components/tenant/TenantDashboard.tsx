@@ -14,6 +14,7 @@ import { tenantsService, Tenant } from '../../services/tenantsService';
 import { PrimaryButton } from '../common/PrimaryButton';
 import { messaging, getToken, VAPID_KEY } from '../../lib/firebase';
 import { Platform } from 'react-native';
+import { useToast } from '../../contexts/ToastContext';
 
 type Props = {
     companyId: string;
@@ -41,7 +42,7 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
     const [selectedMailImage, setSelectedMailImage] = useState<string | null>(null);
     const [zoomScale, setZoomScale] = useState(1); // Zoom scale state
     const [filter, setFilter] = useState<'all' | 'unread'>('all'); // 필터 상태
-    const [sound, setSound] = useState<Audio.Sound>();
+    const { showToast, playSound } = useToast();
     const [isSettingsVisible, setIsSettingsVisible] = useState(false);
     const [soundEnabled, setSoundEnabled] = useState(true);
 
@@ -57,28 +58,6 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
         setSoundEnabled(val);
         await AsyncStorage.setItem('soundEnabled', String(val));
     };
-
-    // 효과음 로드
-    const playNotificationSound = async () => {
-        if (!soundEnabled) return; // 소리 끄면 재생 안 함
-        try {
-            const { sound } = await Audio.Sound.createAsync(
-                require('../../../assets/notification_sound.mp3') // 에셋이 없으면 기본 시스템 소리로 대체하거나 에러 처리 필요
-            );
-            setSound(sound);
-            await sound.playAsync();
-        } catch (error) {
-            // 파일이 없을 경우 대비해 콘솔만 찍고 넘어감 (실제로는 에셋 추가 필요)
-            console.log('Error playing sound', error);
-        }
-    };
-
-    // 언마운트 시 사운드 해제
-    useEffect(() => {
-        return sound
-            ? () => { sound.unloadAsync(); }
-            : undefined;
-    }, [sound]);
 
     // 실시간 구독 (새 우편물 알림)
     useEffect(() => {
@@ -99,9 +78,9 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
                 },
                 (payload) => {
                     // 새 우편물이 오면 리스트 갱신 및 알림음
-                    playNotificationSound();
+                    if (soundEnabled) playSound();
                     setMails(prev => [payload.new, ...prev]);
-                    Alert.alert('📬 새 우편물 도착!', '방금 새로운 우편물이 도착했습니다.');
+                    showToast({ message: '📬 방금 새로운 우편물이 도착했습니다!', type: 'success' });
                 }
             )
             .subscribe();
@@ -245,11 +224,11 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
         const targetPhone = inputPhone || phoneSuffix;
 
         if (!targetName.trim()) {
-            Alert.alert('알림', '입주사 명칭을 입력해주세요.');
+            showToast({ message: '입주사 명칭을 입력해주세요.', type: 'error' });
             return;
         }
         if (targetPhone.length !== 4) {
-            Alert.alert('알림', '전화번호 뒷자리 4자리를 정확히 입력해주세요.');
+            showToast({ message: '전화번호 뒷자리 4자리를 정확히 입력해주세요.', type: 'error' });
             return;
         }
 
@@ -257,7 +236,7 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
         try {
             const profile = await profilesService.getTenantProfile(companyId, targetName.trim(), targetPhone);
             if (!profile) {
-                if (!inputName) Alert.alert('조회 실패', '입주사 정보가 일치하지 않습니다.');
+                if (!inputName) showToast({ message: '입주사 정보가 일치하지 않습니다.', type: 'error' });
                 return;
             }
             if (profile.id && pushToken) {
@@ -275,7 +254,7 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
             setMyTenant(null);
             loadMails(profile.id!);
         } catch (err) {
-            Alert.alert('오류', '조회 중 문제가 발생했습니다.');
+            showToast({ message: '조회 중 문제가 발생했습니다.', type: 'error' });
         } finally {
             setIdentifying(false);
         }
@@ -493,12 +472,12 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
 
         // 브라우저 권한 객체 체크
         if (typeof Notification === 'undefined') {
-            window.alert('이 브라우저/기기는 알림 기능을 지원하지 않습니다.\n아이폰이라면 반드시 "홈 화면에 추가"를 먼저 해주세요!');
+            showToast({ message: '사파리 앱에서 "홈 화면에 추가"를 먼저 해주세요!', type: 'error' });
             return;
         }
 
         if (!messaging) {
-            window.alert('알림 엔진 준비 중... 인터넷 연결을 확인하고 다시 시도해주세요.');
+            showToast({ message: '알림 엔진 준비 중... 인터넷 연결을 확인해주세요.', type: 'error' });
             return;
         }
 
@@ -508,22 +487,21 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
             const permission = await Notification.requestPermission();
 
             if (permission === 'granted') {
-                // window.alert('권한 허용됨! 기기 정보를 등록합니다...'); // 너무 많은 알림창은 방해됨
                 const token = await getToken(messaging, { vapidKey: VAPID_KEY });
 
                 if (token && myProfile?.id) {
                     await profilesService.updateProfile(myProfile.id, { web_push_token: token });
                     // 상태 업데이트를 통해 UI 즉시 반영 (리로드 제거)
-                    Alert.alert('✅ 알림 설정 완료!', '이제 우편물이 오면 스마트폰으로 알려드립니다.');
+                    showToast({ message: '알림 설정 완료! 새 우편물이 도착하면 알려드립니다.', type: 'success' });
                 } else {
-                    window.alert('신분증(토큰)을 가져오지 못했습니다. 잠시 후 다시 시도해주세요.');
+                    showToast({ message: '신분증(토큰)을 가져오지 못했습니다. 잠시 후 다시 시도해주세요.', type: 'error' });
                 }
             } else if (permission === 'denied') {
-                window.alert('알림 권한이 차단되어 있습니다.\n설정에서 알림을 허용으로 바꿔주세요.');
+                showToast({ message: '알림 권한이 차단되어 있습니다. 설정에서 알림을 켜주세요.', type: 'error' });
             }
         } catch (error: any) {
             console.error('Error:', error);
-            window.alert('설정 중 오류: ' + (error?.message || '알 수 없는 에러'));
+            showToast({ message: '설정 중 오류가 발생했습니다.', type: 'error' });
         } finally {
             setLoading(false);
         }

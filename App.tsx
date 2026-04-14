@@ -7,6 +7,7 @@ import { View, Text, ActivityIndicator, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AppProvider, useAppContent } from './src/contexts/AppContext';
+import { ToastProvider } from './src/contexts/ToastContext';
 
 // Screens
 import { LandingScreen } from './src/screens/LandingScreen';
@@ -144,8 +145,10 @@ function NavigationBridge() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <ToastProvider>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </ToastProvider>
   );
 }
