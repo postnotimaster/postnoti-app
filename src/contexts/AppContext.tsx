@@ -96,6 +96,7 @@ interface AppContextType {
     ) => Promise<any>;
     optimizeImage: (uri: string) => Promise<string>;
     handleLoginSuccess: (profile: any) => Promise<void>;
+    resetOCR: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -384,7 +385,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                     const res = await ocrPreprocess(uri);
                     return res.uri;
                 },
-                handleLoginSuccess
+                handleLoginSuccess,
+                resetOCR
             }}
         >
             {children}

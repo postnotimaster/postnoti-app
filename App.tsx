@@ -60,9 +60,10 @@ function AppContent() {
   const TenantDashboardWrapper = ({ navigation }: any) => {
     // If brandingCompany not set, go back to Landing
     if (!brandingCompany) {
-      // navigation.replace('Landing'); // Effect?
-      return null;
+      console.log('--- [App.tsx] Branding Company is missing in Wrapper! ---');
+      return <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />;
     }
+    console.log('--- [App.tsx] Rendering TenantDashboard with company:', brandingCompany.name);
     return (
       <TenantDashboard
         companyId={brandingCompany.id}

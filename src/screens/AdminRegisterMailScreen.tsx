@@ -33,7 +33,8 @@ export const AdminRegisterMailScreen = () => {
         setManualSearchQuery,
         ocrPreprocess,
         optimizeImage,
-        officeInfo
+        officeInfo,
+        resetOCR
     } = useAppContent() as any;
 
     const [customMessage, setCustomMessage] = React.useState('');
@@ -76,8 +77,7 @@ export const AdminRegisterMailScreen = () => {
         setCustomMessage('');
         setSelectedPreset(null);
         setResultModalVisible(false);
-        const { resetOCR } = useAppContent() as any;
-        resetOCR(); // 화면을 나갈 때 초기화
+        if (resetOCR) resetOCR(); // 화면을 나갈 때 초기화
         navigation.navigate('AdminDashboard');
     };
 
@@ -496,11 +496,11 @@ export const AdminRegisterMailScreen = () => {
                                         let link = lastNotifResult.shareLink;
                                         if (Platform.OS === 'web') {
                                             const currentOrigin = window.location.origin;
-                                            link = link.replace('https://postnoti-app.vercel.app', currentOrigin);
+                                            link = link.replace('https://postnoti-app-two.vercel.app', currentOrigin);
                                             window.location.href = link;
                                         } else {
                                             // 모바일에서는 앱 스키마를 우선 시도하여 더 강력하게 앱을 호출
-                                            const nativeLink = link.replace('https://postnoti-app.vercel.app/', 'postnoti://');
+                                            const nativeLink = link.replace('https://postnoti-app-two.vercel.app/', 'postnoti://');
                                             try {
                                                 await Linking.openURL(nativeLink);
                                             } catch (e) {

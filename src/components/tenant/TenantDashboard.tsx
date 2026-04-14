@@ -282,6 +282,7 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
     };
 
     const loadMails = async (profileId?: string, tenantId?: string) => {
+        console.log('--- [TenantDashboard] Loading Mails for:', { profileId, tenantId });
         setLoading(true);
         try {
             let data: any[] = [];
@@ -290,9 +291,10 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
             } else if (profileId) {
                 data = await mailService.getMailsByProfile(profileId);
             }
+            console.log('--- [TenantDashboard] Mails fetched:', data?.length || 0);
             setMails(data || []);
         } catch (err) {
-            console.error(err);
+            console.error('--- [TenantDashboard] Load Mails Error:', err);
         } finally {
             setLoading(false);
         }
@@ -530,6 +532,10 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
 
     // 우편물 그룹화 로직 (날짜별)
     const getGroupedMails = () => {
+        if (!mails || mails.length === 0) {
+            return [];
+        }
+
         const filtered = mails.filter(mail => {
             if (filter === 'unread') return !mail.read_at;
             return true;
@@ -537,21 +543,28 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
 
         const groups: { [key: string]: any[] } = {};
         filtered.forEach(mail => {
+            if (!mail.created_at) return;
             const d = new Date(mail.created_at);
-            const dateStr = d.toLocaleDateString('ko-KR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                weekday: 'short'
-            });
 
-            // 오늘/어제 텍스트 처리 최적화
-            const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
-            const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+            // iOS 호환성을 위해 toLocaleDateString 대신 수동 포맷팅 사용
+            const year = d.getFullYear();
+            const month = d.getMonth() + 1;
+            const date = d.getDate();
+            const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+            const day = dayNames[d.getDay()];
+
+            const dateStr = `${year}년 ${month}월 ${date}일 (${day})`;
+
+            // 오늘/어제 비교용
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 (${dayNames[now.getDay()]})`;
+
+            const yest = new Date(Date.now() - 86400000);
+            const yestStr = `${yest.getFullYear()}년 ${yest.getMonth() + 1}월 ${yest.getDate()}일 (${dayNames[yest.getDay()]})`;
 
             let displayTitle = dateStr;
-            if (dateStr === today) displayTitle = `오늘 (${dateStr})`;
-            else if (dateStr === yesterday) displayTitle = `어제 (${dateStr})`;
+            if (dateStr === todayStr) displayTitle = `오늘 (${dateStr})`;
+            else if (dateStr === yestStr) displayTitle = `어제 (${dateStr})`;
 
             if (!groups[displayTitle]) groups[displayTitle] = [];
             groups[displayTitle].push(mail);
