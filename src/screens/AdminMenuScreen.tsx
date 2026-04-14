@@ -7,10 +7,20 @@ import { useAppContent } from '../contexts/AppContext';
 import { appStyles } from '../styles/appStyles';
 import { AppHeader } from '../components/common/AppHeader';
 import { supabase } from '../lib/supabase';
+import { Modal } from 'react-native';
+import { TenantManagement } from '../components/admin/TenantManagement';
+import { SenderManagement } from '../components/admin/SenderManagement';
+import { tenantsService } from '../services/tenantsService';
+import { masterSendersService } from '../services/masterSendersService';
 
 export const AdminMenuScreen = () => {
     const navigation = useNavigation<any>();
-    const { officeInfo } = useAppContent();
+    const {
+        officeInfo,
+        isTenantMgmtVisible, setIsTenantMgmtVisible,
+        isSenderMgmtVisible, setIsSenderMgmtVisible,
+        setProfiles, setMasterSenders
+    } = useAppContent();
 
     const handleLogout = async () => {
         Alert.alert('로그아웃', '정말 로그아웃 하시겠습니까?', [
@@ -59,12 +69,7 @@ export const AdminMenuScreen = () => {
 
                     <Pressable
                         onPress={() => {
-                            // Tenant Management 는 현재 Dashboard에서 Modal로 띄우고 있으나, 
-                            // 흐름상 Dashboard로 돌아가서 해당 Modal을 띄우는 것보다
-                            // 독립적인 화면으로 분리하는 것이 좋습니다.
-                            // 일단 현재는 Dashboard의 상태를 바꾸는 식으로 연동할 수도 있으나
-                            // 사용자 피드백(계속 메뉴에 머무르기)을 위해 전용 파라미터를 넘겨 Dashboard로 복귀시킵니다.
-                            navigation.navigate('AdminDashboard', { openTenantMgmt: true });
+                            setIsTenantMgmtVisible(true);
                         }}
                         style={appStyles.premiumMenuBtn}
                     >
@@ -78,7 +83,7 @@ export const AdminMenuScreen = () => {
 
                     <Pressable
                         onPress={() => {
-                            navigation.navigate('AdminDashboard', { openSenderMgmt: true });
+                            setIsSenderMgmtVisible(true);
                         }}
                         style={appStyles.premiumMenuBtn}
                     >
@@ -122,6 +127,48 @@ export const AdminMenuScreen = () => {
 
                 <View style={{ height: 40 }} />
             </ScrollView>
+
+            {/* 입주사 관리 모달 */}
+            <Modal
+                visible={isTenantMgmtVisible}
+                animationType="slide"
+                onRequestClose={() => setIsTenantMgmtVisible(false)}
+            >
+                <SafeAreaView style={{ flex: 1 }}>
+                    <AppHeader title="입주사 관리" onBack={async () => {
+                        setIsTenantMgmtVisible(false);
+                        const p = await tenantsService.getTenantsByCompany(officeInfo.id);
+                        setProfiles(p);
+                    }} />
+                    {officeInfo && (
+                        <TenantManagement
+                            companyId={officeInfo.id}
+                            onComplete={async () => {
+                                setIsTenantMgmtVisible(false);
+                                const p = await tenantsService.getTenantsByCompany(officeInfo.id);
+                                setProfiles(p);
+                            }}
+                            onCancel={() => setIsTenantMgmtVisible(false)}
+                        />
+                    )}
+                </SafeAreaView>
+            </Modal>
+
+            {/* 발신처 관리 모달 */}
+            <Modal
+                visible={isSenderMgmtVisible}
+                animationType="slide"
+                onRequestClose={() => setIsSenderMgmtVisible(false)}
+            >
+                <SafeAreaView style={{ flex: 1 }}>
+                    <AppHeader title="발신처 키워드 관리" onBack={async () => {
+                        setIsSenderMgmtVisible(false);
+                        const senders = await masterSendersService.getAllSenders();
+                        setMasterSenders(senders.map(s => s.name));
+                    }} />
+                    <SenderManagement onClose={() => setIsSenderMgmtVisible(false)} />
+                </SafeAreaView>
+            </Modal>
         </SafeAreaView>
     );
 };

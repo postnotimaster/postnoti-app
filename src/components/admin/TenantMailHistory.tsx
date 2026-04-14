@@ -25,6 +25,7 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
     const [mails, setMails] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedFullImage, setSelectedFullImage] = useState<string | null>(null);
+    const [zoomScale, setZoomScale] = useState(1);
 
     useEffect(() => {
         loadHistory();
@@ -240,12 +241,23 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                 visible={!!selectedFullImage}
                 transparent={true}
                 animationType="fade"
+                onShow={() => setZoomScale(1)}
                 onRequestClose={() => setSelectedFullImage(null)}
             >
                 <View style={styles.fullImageContainer}>
-                    <Pressable style={styles.closeArea} onPress={() => setSelectedFullImage(null)}>
-                        <Text style={styles.closeText}>✕ 닫기</Text>
-                    </Pressable>
+                    <View style={styles.zoomHeader}>
+                        <Pressable style={styles.zoomControlBtn} onPress={() => setZoomScale(prev => Math.max(1, prev - 0.5))}>
+                            <Text style={styles.zoomControlText}>-</Text>
+                        </Pressable>
+                        <Text style={styles.zoomPercentText}>{Math.round(zoomScale * 100)}%</Text>
+                        <Pressable style={styles.zoomControlBtn} onPress={() => setZoomScale(prev => Math.min(5, prev + 0.5))}>
+                            <Text style={styles.zoomControlText}>+</Text>
+                        </Pressable>
+                        <View style={{ flex: 1 }} />
+                        <Pressable style={styles.closeArea} onPress={() => setSelectedFullImage(null)}>
+                            <Text style={styles.closeText}>✕ 닫기</Text>
+                        </Pressable>
+                    </View>
                     <ScrollView
                         maximumZoomScale={5}
                         minimumZoomScale={1}
@@ -256,13 +268,13 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                         {selectedFullImage && (
                             <Image
                                 source={{ uri: selectedFullImage }}
-                                style={styles.fullImage}
+                                style={[styles.fullImage, { transform: [{ scale: zoomScale }] }]}
                                 resizeMode="contain"
                             />
                         )}
                     </ScrollView>
                     <View style={styles.zoomFooter}>
-                        <Text style={styles.zoomFooterText}>💡 손가락으로 벌려 확대할 수 있습니다</Text>
+                        <Text style={styles.zoomFooterText}>💡 버튼으로 화면을 확대할 수 있습니다</Text>
                     </View>
                 </View>
             </Modal>
@@ -295,6 +307,12 @@ const styles = StyleSheet.create({
     closeText: { color: '#fff', fontSize: 16, fontWeight: '700' },
     zoomFooter: { position: 'absolute', bottom: 40, width: '100%', alignItems: 'center' },
     zoomFooterText: { color: '#fff', fontSize: 12, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
+
+    // 줌 헤더 스타일
+    zoomHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 20, gap: 12, zIndex: 100 },
+    zoomControlBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+    zoomControlText: { color: '#fff', fontSize: 20, fontWeight: '700' },
+    zoomPercentText: { color: '#fff', fontSize: 14, fontWeight: '600', width: 45, textAlign: 'center' },
 
     // 재발송 버튼 스타일
     resendBtn: { backgroundColor: '#EEF2FF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#C7D2FE' },

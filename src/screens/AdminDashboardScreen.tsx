@@ -6,11 +6,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAppContent } from '../contexts/AppContext';
 import { appStyles } from '../styles/appStyles';
 import { AppHeader } from '../components/common/AppHeader';
-import { TenantManagement } from '../components/admin/TenantManagement';
-import { SenderManagement } from '../components/admin/SenderManagement';
 import { TenantMailHistory } from '../components/admin/TenantMailHistory';
 import { tenantsService } from '../services/tenantsService';
 import { masterSendersService } from '../services/masterSendersService';
+import { BackHandler } from 'react-native';
 
 export const AdminDashboardScreen = ({ route }: any) => {
     const navigation = useNavigation<any>();
@@ -26,30 +25,29 @@ export const AdminDashboardScreen = ({ route }: any) => {
         setLogSearchQuery,
         logPageSize,
         setLogPageSize,
-        isTenantMgmtVisible,
-        setIsTenantMgmtVisible,
-        isSenderMgmtVisible,
-        setIsSenderMgmtVisible,
         isHistoryVisible,
         setIsHistoryVisible,
         selectedProfileForHistory,
         setSelectedProfileForHistory,
         runOCR,
+        isManualSearchVisible,
         setIsManualSearchVisible,
         isRefreshing,
     } = useAppContent();
 
-    // 메뉴 이동 후 특정 기능(입주사 관리 등) 호출을 위한 파라미터 처리
+    // 뒤로가기 종료 처리
     React.useEffect(() => {
-        if (route.params?.openTenantMgmt) {
-            setIsTenantMgmtVisible(true);
-            navigation.setParams({ openTenantMgmt: undefined });
-        }
-        if (route.params?.openSenderMgmt) {
-            setIsSenderMgmtVisible(true);
-            navigation.setParams({ openSenderMgmt: undefined });
-        }
-    }, [route.params]);
+        const backAction = () => {
+            if (isHistoryVisible || isManualSearchVisible) {
+                return false; // 모달이 떠있을 때는 모달을 닫도록 시스템에 맡김
+            }
+            BackHandler.exitApp();
+            return true;
+        };
+
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+        return () => backHandler.remove();
+    }, [isHistoryVisible, isManualSearchVisible]);
 
     if (!officeInfo) {
         return (
@@ -224,44 +222,6 @@ export const AdminDashboardScreen = ({ route }: any) => {
                 }
                 stickySectionHeadersEnabled={true}
             />
-
-            {/* 입주사 관리 모달 */}
-            <Modal
-                visible={isTenantMgmtVisible}
-                animationType="slide"
-                onRequestClose={() => setIsTenantMgmtVisible(false)}
-            >
-                <SafeAreaView style={{ flex: 1 }}>
-                    <AppHeader title={`${officeInfo?.name} 오피스 관리`} onBack={() => setIsTenantMgmtVisible(false)} />
-                    {officeInfo && (
-                        <TenantManagement
-                            companyId={officeInfo.id}
-                            onComplete={async () => {
-                                setIsTenantMgmtVisible(false);
-                                const p = await tenantsService.getTenantsByCompany(officeInfo.id);
-                                setProfiles(p);
-                            }}
-                            onCancel={() => setIsTenantMgmtVisible(false)}
-                        />
-                    )}
-                </SafeAreaView>
-            </Modal>
-
-            {/* 발신처 관리 모달 */}
-            <Modal
-                visible={isSenderMgmtVisible}
-                animationType="slide"
-                onRequestClose={() => setIsSenderMgmtVisible(false)}
-            >
-                <SafeAreaView style={{ flex: 1 }}>
-                    <AppHeader title="발신처 키워드 관리" onBack={async () => {
-                        setIsSenderMgmtVisible(false);
-                        const senders = await masterSendersService.getAllSenders();
-                        setMasterSenders(senders.map(s => s.name));
-                    }} />
-                    <SenderManagement onClose={() => setIsSenderMgmtVisible(false)} />
-                </SafeAreaView>
-            </Modal>
 
             {/* 상세 이력 모달 */}
             <Modal
