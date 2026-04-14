@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Image, Modal, SafeAreaView, ActivityIndicator, SectionList } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { View, Text, ScrollView, Pressable, TextInput, Image, Modal, SafeAreaView, ActivityIndicator, SectionList, Alert } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAppContent } from '../contexts/AppContext';
@@ -35,19 +35,24 @@ export const AdminDashboardScreen = ({ route }: any) => {
         isRefreshing,
     } = useAppContent();
 
-    // 뒤로가기 종료 처리
-    React.useEffect(() => {
-        const backAction = () => {
-            if (isHistoryVisible || isManualSearchVisible) {
-                return false; // 모달이 떠있을 때는 모달을 닫도록 시스템에 맡김
-            }
-            BackHandler.exitApp();
-            return true;
-        };
+    // 뒤로가기 종료 처리 (포커스되었을 때만 작동)
+    useFocusEffect(
+        React.useCallback(() => {
+            const backAction = () => {
+                if (isHistoryVisible || isManualSearchVisible) {
+                    return false; // 모달이 떠있을 때는 내부에서 처리하거나 시스템 기본 동작(닫기) 유도
+                }
+                Alert.alert("앱 종료", "정말 앱을 종료하시겠습니까?", [
+                    { text: "취소", style: "cancel" },
+                    { text: "종료", onPress: () => BackHandler.exitApp() }
+                ]);
+                return true;
+            };
 
-        const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-        return () => backHandler.remove();
-    }, [isHistoryVisible, isManualSearchVisible]);
+            const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+            return () => backHandler.remove();
+        }, [isHistoryVisible, isManualSearchVisible])
+    );
 
     if (!officeInfo) {
         return (

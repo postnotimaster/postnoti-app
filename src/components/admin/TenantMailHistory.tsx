@@ -236,15 +236,9 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                 </ScrollView>
             )}
 
-            {/* 전체 화면 이미지 확대 모달 */}
-            <Modal
-                visible={!!selectedFullImage}
-                transparent={true}
-                animationType="fade"
-                onShow={() => setZoomScale(1)}
-                onRequestClose={() => setSelectedFullImage(null)}
-            >
-                <View style={styles.fullImageContainer}>
+            {/* 전체 화면 이미지 확대 (View 기반으로 변경하여 중첩 모달 문제 해결) */}
+            {!!selectedFullImage && (
+                <View style={[styles.fullImageContainer, StyleSheet.absoluteFill, { zIndex: 9999 }]}>
                     <View style={styles.zoomHeader}>
                         <Pressable style={styles.zoomControlBtn} onPress={() => setZoomScale(prev => Math.max(1, prev - 0.5))}>
                             <Text style={styles.zoomControlText}>-</Text>
@@ -254,7 +248,10 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                             <Text style={styles.zoomControlText}>+</Text>
                         </Pressable>
                         <View style={{ flex: 1 }} />
-                        <Pressable style={styles.closeArea} onPress={() => setSelectedFullImage(null)}>
+                        <Pressable style={styles.closeArea} onPress={() => {
+                            setSelectedFullImage(null);
+                            setZoomScale(1);
+                        }}>
                             <Text style={styles.closeText}>✕ 닫기</Text>
                         </Pressable>
                     </View>
@@ -266,19 +263,17 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                         showsVerticalScrollIndicator={false}
                         contentContainerStyle={styles.zoomWrapper}
                     >
-                        {selectedFullImage && (
-                            <Image
-                                source={{ uri: selectedFullImage }}
-                                style={[styles.fullImage, { transform: [{ scale: zoomScale }] }]}
-                                resizeMode="contain"
-                            />
-                        )}
+                        <Image
+                            source={{ uri: selectedFullImage }}
+                            style={[styles.fullImage, { transform: [{ scale: zoomScale }] }]}
+                            resizeMode="contain"
+                        />
                     </ScrollView>
                     <View style={styles.zoomFooter}>
                         <Text style={styles.zoomFooterText}>💡 상단 버튼이나 두 손가락으로 벌려 확대할 수 있습니다</Text>
                     </View>
                 </View>
-            </Modal>
+            )}
         </View>
     );
 };
