@@ -261,6 +261,7 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                     <ScrollView
                         maximumZoomScale={5}
                         minimumZoomScale={1}
+                        centerContent={true}
                         showsHorizontalScrollIndicator={false}
                         showsVerticalScrollIndicator={false}
                         contentContainerStyle={styles.zoomWrapper}
@@ -274,7 +275,7 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                         )}
                     </ScrollView>
                     <View style={styles.zoomFooter}>
-                        <Text style={styles.zoomFooterText}>💡 버튼으로 화면을 확대할 수 있습니다</Text>
+                        <Text style={styles.zoomFooterText}>💡 상단 버튼이나 두 손가락으로 벌려 확대할 수 있습니다</Text>
                     </View>
                 </View>
             </Modal>
