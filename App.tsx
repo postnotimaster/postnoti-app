@@ -8,6 +8,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AppProvider, useAppContent } from './src/contexts/AppContext';
 import { ToastProvider } from './src/contexts/ToastContext';
+import { StatusBar } from 'expo-status-bar';
 
 // Screens
 import { LandingScreen } from './src/screens/LandingScreen';
@@ -102,6 +103,7 @@ function AppContent() {
 
   return (
     <NavigationContainer linking={linking}>
+      <StatusBar style="dark" />
       <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Landing" component={LandingScreen} />
         <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
