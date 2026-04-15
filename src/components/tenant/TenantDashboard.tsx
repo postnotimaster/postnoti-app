@@ -15,6 +15,8 @@ import { PrimaryButton } from '../common/PrimaryButton';
 import { messaging, getToken, VAPID_KEY } from '../../lib/firebase';
 import { Platform } from 'react-native';
 import { useToast } from '../../contexts/ToastContext';
+import { SettingsModal } from './SettingsModal';
+import { MailItem, MailLog } from './MailItem';
 
 type Props = {
     companyId: string;
@@ -31,7 +33,7 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
     const [phoneSuffix, setPhoneSuffix] = useState('');
     const [myProfile, setMyProfile] = useState<any | null>(null); // Profile or Tenant
     const [myTenant, setMyTenant] = useState<Tenant | null>(null);
-    const [mails, setMails] = useState<any[]>([]);
+    const [mails, setMails] = useState<MailLog[]>([]);
     const [loading, setLoading] = useState(false);
     const [identifying, setIdentifying] = useState(false);
 
@@ -79,7 +81,7 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
                 (payload) => {
                     // 새 우편물이 오면 리스트 갱신 및 알림음
                     if (soundEnabled) playSound();
-                    setMails(prev => [payload.new, ...prev]);
+                    setMails(prev => [payload.new as MailLog, ...prev]);
                     showToast({ message: '📬 방금 새로운 우편물이 도착했습니다!', type: 'success' });
                 }
             )
@@ -279,97 +281,12 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
         }
     };
 
-    const renderMailItem = ({ item }: { item: any }) => (
-        <Pressable
-            style={styles.mailItem}
-            onPress={() => {
-                if (item.image_url) {
-                    setSelectedMailImage(item.image_url);
-                    if (!item.read_at) {
-                        mailService.markAsRead(item.id);
-                        setMails(prev => prev.map(m => m.id === item.id ? { ...m, read_at: new Date().toISOString() } : m));
-                    }
-                }
-            }}
-        >
-            <View style={styles.mailInfo}>
-                <View style={styles.mailHeader}>
-                    <View style={{ flexDirection: 'row', gap: 6 }}>
-                        <Text style={styles.mailType}>{item.mail_type}</Text>
-                        {item.read_at ? (
-                            <View style={[styles.statusBadge, { backgroundColor: '#DCFCE7' }]}>
-                                <Text style={[styles.statusText, { color: '#15803D' }]}>읽음</Text>
-                            </View>
-                        ) : (
-                            <View style={[styles.statusBadge, { backgroundColor: '#FEF2F2' }]}>
-                                <Text style={[styles.statusText, { color: '#DC2626' }]}>안읽음</Text>
-                            </View>
-                        )}
-                    </View>
-                    <Text style={styles.mailDate}>
-                        {new Date(item.created_at).toLocaleDateString()}
-                    </Text>
-                </View>
-                <Text style={styles.mailContent} numberOfLines={2}>
-                    {item.ocr_content || '내용 없음'}
-                </Text>
-                {item.image_url && (
-                    <View style={{ flexDirection: 'row', gap: 6 }}>
-                        <View style={[styles.statusBadge, { backgroundColor: '#EFF6FF' }]}>
-                            <Text style={[styles.statusText, { color: '#1E40AF' }]}>📷 사진 보기</Text>
-                        </View>
-                        {item.extra_images && item.extra_images.length > 0 && (
-                            <View style={[styles.statusBadge, { backgroundColor: '#EEF2FF' }]}>
-                                <Text style={[styles.statusText, { color: '#4338CA' }]}>📄 +{item.extra_images.length}페이지</Text>
-                            </View>
-                        )}
-                    </View>
-                )}
-                {/* 프리미엄 상세 이미지 미리보기 - data parsing fix */}
-                {(() => {
-                    let images: string[] = [];
-                    if (Array.isArray(item.extra_images)) {
-                        images = item.extra_images;
-                    } else if (typeof item.extra_images === 'string') {
-                        try {
-                            const parsed = JSON.parse(item.extra_images);
-                            if (Array.isArray(parsed)) images = parsed;
-                        } catch (e) {
-                            // If it's a string but not JSON (maybe a single URL?), wrap in array if it looks like a URL
-                            if (item.extra_images.startsWith('http')) {
-                                images = [item.extra_images];
-                            }
-                        }
-                    }
-
-                    if (images.length === 0) return null;
-
-                    return (
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
-                            <View style={{ flexDirection: 'row', gap: 8 }}>
-                                {images.map((img: string, idx: number) => (
-                                    <Pressable
-                                        key={idx}
-                                        onPress={() => {
-                                            setSelectedMailImage(img);
-                                        }}
-                                    >
-                                        <Image source={{ uri: img }} style={{ width: 60, height: 60, borderRadius: 8, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' }} resizeMode="cover" />
-                                    </Pressable>
-                                ))}
-                            </View>
-                        </ScrollView>
-                    );
-                })()}
-            </View>
-            {item.image_url ? (
-                <Image
-                    source={{ uri: item.image_url }}
-                    style={styles.mailImage}
-                    resizeMode="cover"
-                />
-            ) : null}
-        </Pressable>
+    const renderMailItem = ({ item }: { item: MailLog }) => (
+        <MailItem
+            item={item}
+            onImagePress={(uri) => setSelectedMailImage(uri)}
+            onMarkRead={(id) => setMails(prev => prev.map(m => m.id === id ? { ...m, read_at: new Date().toISOString() } : m))}
+        />
     );
 
     if (!myProfile) {
@@ -674,43 +591,12 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
             />
 
             {/* 설정 모달 */}
-            <Modal
+            <SettingsModal
                 visible={isSettingsVisible}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setIsSettingsVisible(false)}
-            >
-                <Pressable
-                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}
-                    onPress={() => setIsSettingsVisible(false)}
-                >
-                    <TouchableWithoutFeedback>
-                        <View style={{ backgroundColor: '#fff', width: '80%', padding: 24, borderRadius: 20 }}>
-                            <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 20, color: '#1E293B' }}>알림 설정</Text>
-
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                <View>
-                                    <Text style={{ fontSize: 16, fontWeight: '600', color: '#334155' }}>앱 실행 중 알림음</Text>
-                                    <Text style={{ fontSize: 12, color: '#64748B' }}>새 우편물 도착 시 효과음 재생</Text>
-                                </View>
-                                <Switch
-                                    value={soundEnabled}
-                                    onValueChange={toggleSound}
-                                    trackColor={{ false: '#E2E8F0', true: '#818CF8' }}
-                                    thumbColor={soundEnabled ? '#4F46E5' : '#f4f3f4'}
-                                />
-                            </View>
-
-                            <Pressable
-                                onPress={() => setIsSettingsVisible(false)}
-                                style={{ marginTop: 20, padding: 12, backgroundColor: '#F1F5F9', borderRadius: 12, alignItems: 'center' }}
-                            >
-                                <Text style={{ color: '#475569', fontWeight: '700' }}>닫기</Text>
-                            </Pressable>
-                        </View>
-                    </TouchableWithoutFeedback>
-                </Pressable>
-            </Modal>
+                soundEnabled={soundEnabled}
+                onToggleSound={toggleSound}
+                onClose={() => setIsSettingsVisible(false)}
+            />
 
             {/* 이미지 확대 모달 (개선됨: 모든 플랫폼 지원) */}
             <Modal
