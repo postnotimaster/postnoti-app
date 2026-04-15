@@ -84,5 +84,28 @@ export const tenantsService = {
 
         if (!data || data.length === 0) return null;
         return data[0] as Tenant;
+    },
+
+    // 입주사별 우편물 통계 조회 (전체수, 읽음수, 최근발송일)
+    async getMailStatsByCompany(companyId: string): Promise<Record<string, { total: number; read: number; lastSentAt: string | null }>> {
+        const { data, error } = await supabase
+            .from('mail_logs')
+            .select('tenant_id, read_at, created_at')
+            .eq('company_id', companyId);
+
+        if (error) throw error;
+
+        const stats: Record<string, { total: number; read: number; lastSentAt: string | null }> = {};
+        for (const row of (data || [])) {
+            const tid = row.tenant_id;
+            if (!tid) continue;
+            if (!stats[tid]) stats[tid] = { total: 0, read: 0, lastSentAt: null };
+            stats[tid].total++;
+            if (row.read_at) stats[tid].read++;
+            if (!stats[tid].lastSentAt || row.created_at > stats[tid].lastSentAt!) {
+                stats[tid].lastSentAt = row.created_at;
+            }
+        }
+        return stats;
     }
 };

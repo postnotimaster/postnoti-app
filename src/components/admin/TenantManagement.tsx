@@ -16,6 +16,8 @@ import {
 import { tenantsService, Tenant } from '../../services/tenantsService';
 import { PrimaryButton } from '../common/PrimaryButton';
 
+type MailStats = Record<string, { total: number; read: number; lastSentAt: string | null }>;
+
 interface TenantManagementProps {
     companyId: string;
     onComplete: () => void;
@@ -24,9 +26,10 @@ interface TenantManagementProps {
 
 export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantManagementProps) => {
     const [tenants, setTenants] = useState<Tenant[]>([]);
+    const [mailStats, setMailStats] = useState<MailStats>({});
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [sortOrder, setSortOrder] = useState<'name' | 'room'>('name');
+    const [sortOrder, setSortOrder] = useState<'recent' | 'name' | 'room'>('recent');
     const [isEditing, setIsEditing] = useState(false);
     const [editingTenant, setEditingTenant] = useState<Partial<Tenant>>({
         company_id: companyId,
@@ -50,7 +53,6 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
             }
             return false;
         };
-
         const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
         return () => backHandler.remove();
     }, [isEditing]);
@@ -58,11 +60,15 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
     const loadTenants = async () => {
         try {
             setLoading(true);
-            const data = await tenantsService.getTenantsByCompany(companyId);
+            const [data, stats] = await Promise.all([
+                tenantsService.getTenantsByCompany(companyId),
+                tenantsService.getMailStatsByCompany(companyId),
+            ]);
             setTenants(data);
+            setMailStats(stats);
         } catch (error) {
             console.error(error);
-            Alert.alert('오류', '입주자 목록을 불러오지 못했습니다.');
+            Alert.alert('\uc624\ub958', '\uc785\uc8fc\uc790 \ubaa9\ub85d\uc744 \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4.');
         } finally {
             setLoading(false);
         }
@@ -70,10 +76,9 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
 
     const handleSave = async () => {
         if (!editingTenant.name || !editingTenant.phone) {
-            Alert.alert('알림', '이름과 전화번호는 필수입니다.');
+            Alert.alert('\uc54c\ub9bc', '\uc774\ub984\uacfc \uc804\ud654\ubc88\ud638\ub294 \ud544\uc218\uc785\ub2c8\ub2e4.');
             return;
         }
-
         try {
             setLoading(true);
             if (editingTenant.id) {
@@ -81,23 +86,23 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
             } else {
                 await tenantsService.createTenant(editingTenant as Tenant);
             }
-            Alert.alert('성공', '입주사 정보가 저장되었습니다.');
+            Alert.alert('\uc131\uacf5', '\uc785\uc8fc\uc0ac \uc815\ubcf4\uac00 \uc800\uc7a5\ub418\uc5c8\uc2b5\ub2c8\ub2e4.');
             loadTenants();
             setIsEditing(false);
             if (onComplete) onComplete();
         } catch (error) {
             console.error(error);
-            Alert.alert('오류', '저장에 실패했습니다. DB 구조 업데이트를 확인해 주세요.');
+            Alert.alert('\uc624\ub958', '\uc800\uc7a5\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. DB \uad6c\uc870 \uc5c5\ub370\uc774\ud2b8\ub97c \ud655\uc778\ud574 \uc8fc\uc138\uc694.');
         } finally {
             setLoading(false);
         }
     };
 
     const handleDelete = (id: string) => {
-        Alert.alert('삭제 확인', '정말 이 입주사를 삭제하시겠습니까?', [
-            { text: '취소', style: 'cancel' },
+        Alert.alert('\uc0ad\uc81c \ud655\uc778', '\uc815\ub9d0 \uc774 \uc785\uc8fc\uc0ac\ub97c \uc0ad\uc81c\ud558\uc2dc\uaca0\uc2b5\ub2c8\uae4c?', [
+            { text: '\ucde8\uc18c', style: 'cancel' },
             {
-                text: '삭제',
+                text: '\uc0ad\uc81c',
                 style: 'destructive',
                 onPress: async () => {
                     await tenantsService.deleteTenant(id);
@@ -106,6 +111,12 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                 }
             }
         ]);
+    };
+
+    const formatShortDate = (dateString: string | null) => {
+        if (!dateString) return '-';
+        const d = new Date(dateString);
+        return `${d.getMonth() + 1}/${d.getDate()}`;
     };
 
     const filteredTenants = tenants
@@ -119,7 +130,11 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
             );
         })
         .sort((a, b) => {
-            if (sortOrder === 'name') {
+            if (sortOrder === 'recent') {
+                const aLast = mailStats[a.id!]?.lastSentAt || '';
+                const bLast = mailStats[b.id!]?.lastSentAt || '';
+                return bLast.localeCompare(aLast);
+            } else if (sortOrder === 'name') {
                 return a.name.localeCompare(b.name);
             } else {
                 const roomA = a.room_number || '';
@@ -138,74 +153,39 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
             >
                 <ScrollView contentContainerStyle={styles.editForm}>
-                    <Text style={styles.formTitle}>{editingTenant.id ? '입주사 정보 수정' : '신규 입주사 등록'}</Text>
-
+                    <Text style={styles.formTitle}>{editingTenant.id ? '\uc785\uc8fc\uc0ac \uc815\ubcf4 \uc218\uc815' : '\uc2e0\uaddc \uc785\uc8fc\uc0ac \ub4f1\ub85d'}</Text>
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>회사명</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={editingTenant.company_name}
-                            onChangeText={t => setEditingTenant({ ...editingTenant, company_name: t })}
-                            placeholder="회사명을 입력하세요"
-                        />
+                        <Text style={styles.label}>{'\ud68c\uc0ac\uba85'}</Text>
+                        <TextInput style={styles.input} value={editingTenant.company_name} onChangeText={t => setEditingTenant({ ...editingTenant, company_name: t })} placeholder={'\ud68c\uc0ac\uba85\uc744 \uc785\ub825\ud558\uc138\uc694'} />
                     </View>
-
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>이름 (담당자)</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={editingTenant.name}
-                            onChangeText={t => setEditingTenant({ ...editingTenant, name: t })}
-                            placeholder="이름을 입력하세요"
-                        />
+                        <Text style={styles.label}>{'\uc774\ub984 (\ub2f4\ub2f9\uc790)'}</Text>
+                        <TextInput style={styles.input} value={editingTenant.name} onChangeText={t => setEditingTenant({ ...editingTenant, name: t })} placeholder={'\uc774\ub984\uc744 \uc785\ub825\ud558\uc138\uc694'} />
                     </View>
-
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>호실</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={editingTenant.room_number}
-                            onChangeText={t => setEditingTenant({ ...editingTenant, room_number: t })}
-                            placeholder="예: 301호"
-                        />
+                        <Text style={styles.label}>{'\ud638\uc2e4'}</Text>
+                        <TextInput style={styles.input} value={editingTenant.room_number} onChangeText={t => setEditingTenant({ ...editingTenant, room_number: t })} placeholder={'\uc608: 301\ud638'} />
                     </View>
-
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>전화번호</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={editingTenant.phone}
-                            onChangeText={t => setEditingTenant({ ...editingTenant, phone: t })}
-                            placeholder="01012345678"
-                            keyboardType="phone-pad"
-                        />
+                        <Text style={styles.label}>{'\uc804\ud654\ubc88\ud638'}</Text>
+                        <TextInput style={styles.input} value={editingTenant.phone} onChangeText={t => setEditingTenant({ ...editingTenant, phone: t })} placeholder="01012345678" keyboardType="phone-pad" />
                     </View>
-
                     <View style={[styles.inputGroup, styles.switchGroup]}>
-                        <Text style={styles.label}>입주 상태 (입주중)</Text>
-                        <Switch
-                            value={editingTenant.is_active}
-                            onValueChange={v => setEditingTenant({ ...editingTenant, is_active: v })}
-                        />
+                        <Text style={styles.label}>{'\uc785\uc8fc \uc0c1\ud0dc (\uc785\uc8fc\uc911)'}</Text>
+                        <Switch value={editingTenant.is_active} onValueChange={v => setEditingTenant({ ...editingTenant, is_active: v })} />
                     </View>
-
                     <View style={[styles.inputGroup, styles.switchGroup]}>
                         <View>
-                            <Text style={styles.label}>프리미엄 서비스</Text>
-                            <Text style={{ fontSize: 11, color: '#64748B' }}>우편 배송물 개봉 및 상세 촬영 대상</Text>
+                            <Text style={styles.label}>{'\ud504\ub9ac\ubbf8\uc5c4 \uc11c\ube44\uc2a4'}</Text>
+                            <Text style={{ fontSize: 11, color: '#64748B' }}>{'\uc6b0\ud3b8 \ubc30\uc1a1\ubb3c \uac1c\ubd09 \ubc0f \uc0c1\uc138 \ucd2c\uc601 \ub300\uc0c1'}</Text>
                         </View>
-                        <Switch
-                            value={editingTenant.is_premium}
-                            onValueChange={v => setEditingTenant({ ...editingTenant, is_premium: v })}
-                            trackColor={{ true: '#4F46E5', false: '#CBD5E1' }}
-                        />
+                        <Switch value={editingTenant.is_premium} onValueChange={v => setEditingTenant({ ...editingTenant, is_premium: v })} trackColor={{ true: '#4F46E5', false: '#CBD5E1' }} />
                     </View>
-
                     <View style={styles.formButtons}>
                         <Pressable style={styles.cancelBtn} onPress={() => setIsEditing(false)}>
-                            <Text style={styles.cancelBtnText}>취소</Text>
+                            <Text style={styles.cancelBtnText}>{'\ucde8\uc18c'}</Text>
                         </Pressable>
-                        <PrimaryButton label="저장하기" onPress={handleSave} loading={loading} />
+                        <PrimaryButton label={'\uc800\uc7a5\ud558\uae30'} onPress={handleSave} loading={loading} />
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
@@ -216,84 +196,93 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
         <View style={styles.container}>
             <View style={styles.header}>
                 <View>
-                    <Text style={styles.title}>입주사 관리</Text>
-                    <Text style={styles.countText}>입주 {activeCount} / 전체 {tenants.length}</Text>
+                    <Text style={styles.title}>{'\uc785\uc8fc\uc0ac \uad00\ub9ac'}</Text>
+                    <Text style={styles.countText}>{'\uc785\uc8fc'} {activeCount} / {'\uc804\uccb4'} {tenants.length}</Text>
                 </View>
-                <Pressable
-                    onPress={() => {
-                        setEditingTenant({ company_id: companyId, is_active: true, is_premium: false });
-                        setIsEditing(true);
-                    }}
-                    style={styles.addBtn}
-                >
-                    <Text style={styles.addBtnText}>+ 입주사 등록</Text>
+                <Pressable onPress={() => { setEditingTenant({ company_id: companyId, is_active: true, is_premium: false }); setIsEditing(true); }} style={styles.addBtn}>
+                    <Text style={styles.addBtnText}>+ {'\uc785\uc8fc\uc0ac \ub4f1\ub85d'}</Text>
                 </Pressable>
             </View>
 
             <View style={styles.searchBarContainer}>
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder="이름, 회사명, 호정, 전화번호 검색"
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                />
+                <TextInput style={styles.searchInput} placeholder={'\uc774\ub984, \ud68c\uc0ac\uba85, \ud638\uc2e4, \uc804\ud654\ubc88\ud638 \uac80\uc0c9'} value={searchQuery} onChangeText={setSearchQuery} />
             </View>
 
             <View style={styles.sortContainer}>
-                <Pressable
-                    onPress={() => setSortOrder('name')}
-                    style={[styles.sortBtn, sortOrder === 'name' && styles.sortBtnActive]}
-                >
-                    <Text style={[styles.sortBtnText, sortOrder === 'name' && styles.sortBtnTextActive]}>이름순</Text>
-                </Pressable>
-                <Pressable
-                    onPress={() => setSortOrder('room')}
-                    style={[styles.sortBtn, sortOrder === 'room' && styles.sortBtnActive]}
-                >
-                    <Text style={[styles.sortBtnText, sortOrder === 'room' && styles.sortBtnTextActive]}>호정순</Text>
-                </Pressable>
+                {(['recent', 'name', 'room'] as const).map(key => (
+                    <Pressable key={key} onPress={() => setSortOrder(key)} style={[styles.sortBtn, sortOrder === key && styles.sortBtnActive]}>
+                        <Text style={[styles.sortBtnText, sortOrder === key && styles.sortBtnTextActive]}>
+                            {key === 'recent' ? '\ucd5c\uc2e0\uc21c' : key === 'name' ? '\uc774\ub984\uc21c' : '\ud638\uc2e4\uc21c'}
+                        </Text>
+                    </Pressable>
+                ))}
             </View>
 
             {loading && tenants.length === 0 ? (
                 <ActivityIndicator style={{ marginTop: 50 }} color="#4F46E5" />
             ) : (
                 <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-                    {filteredTenants.map(t => (
-                        <View key={t.id} style={styles.tenantCard}>
-                            <View style={styles.tenantInfo}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    <Text style={styles.tenantCompanyName}>{t.company_name || '(회사명 없음)'}</Text>
-                                    <View style={[styles.statusBadge, { backgroundColor: t.is_active ? '#F0FDF4' : '#FEF2F2' }]}>
-                                        <Text style={[styles.statusBadgeText, { color: t.is_active ? '#166534' : '#991B1B' }]}>
-                                            {t.is_active ? '입주중' : '퇴거'}
-                                        </Text>
+                    {filteredTenants.map(t => {
+                        const stat = mailStats[t.id!];
+                        const total = stat?.total || 0;
+                        const read = stat?.read || 0;
+                        const readRate = total > 0 ? Math.round((read / total) * 100) : 0;
+                        return (
+                            <Pressable key={t.id} style={styles.tenantCard} onPress={() => { setEditingTenant(t); setIsEditing(true); }}>
+                                <View style={styles.tenantInfo}>
+                                    <View style={styles.nameRow}>
+                                        <Text style={styles.roomNumber}>{t.room_number || '-'}</Text>
+                                        <Text style={styles.companyName}>{t.company_name || '(\ubbf8\ub4f1\ub85d)'}</Text>
+                                        <Text style={styles.tenantName}>{t.name}</Text>
                                     </View>
-                                    {t.is_premium && (
-                                        <View style={[styles.statusBadge, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE', borderWidth: 1 }]}>
-                                            <Text style={[styles.statusBadgeText, { color: '#4338CA' }]}>Premium</Text>
+                                    <View style={styles.badgeRow}>
+                                        <View style={[styles.badge, { backgroundColor: t.is_active ? '#F0FDF4' : '#FEF2F2' }]}>
+                                            <Text style={[styles.badgeText, { color: t.is_active ? '#166534' : '#991B1B' }]}>
+                                                {t.is_active ? '\uc785\uc8fc\uc911' : '\ud1f4\uac70'}
+                                            </Text>
                                         </View>
-                                    )}
-                                    {t.profile_id && (
-                                        <View style={[styles.statusBadge, { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD', borderWidth: 1 }]}>
-                                            <Text style={[styles.statusBadgeText, { color: '#0369A1' }]}>📱 계정연결됨</Text>
+                                        {t.is_premium && (
+                                            <View style={[styles.badge, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE', borderWidth: 1 }]}>
+                                                <Text style={[styles.badgeText, { color: '#4338CA' }]}>Premium</Text>
+                                            </View>
+                                        )}
+                                        {t.profile_id && (
+                                            <View style={[styles.badge, { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD', borderWidth: 1 }]}>
+                                                <Text style={[styles.badgeText, { color: '#0369A1' }]}>{'\ud83d\udcf1 \uc5f0\uacb0'}</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                    <View style={styles.statsRow}>
+                                        <View style={styles.mailStatBox}>
+                                            <Text style={styles.mailStatLabel}>{'\uc6b0\ud3b8 \uac1c\ubd09\ub960'}</Text>
+                                            <Text style={[
+                                                styles.mailStatValue,
+                                                total > 0 && readRate < 50 && { color: '#DC2626' },
+                                                total > 0 && readRate >= 50 && readRate < 80 && { color: '#D97706' },
+                                                total > 0 && readRate >= 80 && { color: '#059669' },
+                                            ]}>
+                                                {total > 0 ? `${read}/${total}` : '-'}
+                                            </Text>
                                         </View>
-                                    )}
+                                        <View style={styles.mailStatBox}>
+                                            <Text style={styles.mailStatLabel}>{'\ucd5c\uadfc \ubc1c\uc1a1'}</Text>
+                                            <Text style={styles.mailStatValue}>{formatShortDate(stat?.lastSentAt || null)}</Text>
+                                        </View>
+                                    </View>
                                 </View>
-                                <Text style={styles.tenantName}>{t.name} | {t.room_number || '호수미기재'}</Text>
-                                <Text style={styles.tenantPhone}>{t.phone}</Text>
-                            </View>
-                            <View style={styles.cardActions}>
-                                <Pressable onPress={() => { setEditingTenant(t); setIsEditing(true); }} style={styles.editBtn}>
-                                    <Text style={styles.editBtnText}>수정</Text>
-                                </Pressable>
-                                <Pressable onPress={() => handleDelete(t.id!)} style={styles.deleteBtn}>
-                                    <Text style={styles.deleteBtnText}>삭제</Text>
-                                </Pressable>
-                            </View>
-                        </View>
-                    ))}
+                                <View style={styles.cardActions}>
+                                    <Pressable onPress={() => { setEditingTenant(t); setIsEditing(true); }} style={styles.editBtn}>
+                                        <Text style={styles.editBtnText}>{'\uc218\uc815'}</Text>
+                                    </Pressable>
+                                    <Pressable onPress={() => handleDelete(t.id!)} style={styles.deleteBtn}>
+                                        <Text style={styles.deleteBtnText}>{'\uc0ad\uc81c'}</Text>
+                                    </Pressable>
+                                </View>
+                            </Pressable>
+                        );
+                    })}
                     {filteredTenants.length === 0 && (
-                        <Text style={styles.emptyText}>검색 결과가 없습니다.</Text>
+                        <Text style={styles.emptyText}>{'\uac80\uc0c9 \uacb0\uacfc\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.'}</Text>
                     )}
                 </ScrollView>
             )}
@@ -317,11 +306,17 @@ const styles = StyleSheet.create({
     sortBtnTextActive: { color: '#fff' },
     tenantCard: { backgroundColor: '#fff', padding: 15, borderRadius: 12, marginBottom: 10, borderWidth: 1, borderColor: '#F1F5F9', flexDirection: 'row', justifyContent: 'space-between', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 },
     tenantInfo: { flex: 1 },
-    tenantCompanyName: { fontSize: 16, fontWeight: '700', color: '#1E293B', marginRight: 8 },
-    tenantName: { fontSize: 14, color: '#475569', marginTop: 4 },
-    tenantPhone: { fontSize: 13, color: '#94A3B8', marginTop: 2 },
-    statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
-    statusBadgeText: { fontSize: 10, fontWeight: '700' },
+    nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+    roomNumber: { fontSize: 13, fontWeight: '800', color: '#6366F1', backgroundColor: '#EEF2FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, overflow: 'hidden' },
+    companyName: { fontSize: 16, fontWeight: '800', color: '#1E293B' },
+    tenantName: { fontSize: 14, color: '#64748B', fontWeight: '500' },
+    badgeRow: { flexDirection: 'row', gap: 6, marginBottom: 8, flexWrap: 'wrap' },
+    badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
+    badgeText: { fontSize: 11, fontWeight: '700' },
+    statsRow: { flexDirection: 'row', gap: 16 },
+    mailStatBox: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    mailStatLabel: { fontSize: 11, color: '#94A3B8', fontWeight: '600' },
+    mailStatValue: { fontSize: 13, fontWeight: '800', color: '#334155' },
     cardActions: { justifyContent: 'space-around', alignItems: 'flex-end', marginLeft: 10 },
     editBtn: { padding: 4 },
     editBtnText: { color: '#4F46E5', fontSize: 13, fontWeight: '600' },
