@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Image, Modal, SafeAreaView, ActivityIndicator, SectionList, Alert, BackHandler, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Image, Modal, SafeAreaView, ActivityIndicator, SectionList, Alert, BackHandler, KeyboardAvoidingView, Platform, Linking } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
@@ -281,7 +281,7 @@ export const AdminDashboardScreen = ({ route }: any) => {
                                     </Text>
                                     <View style={{ backgroundColor: log.read_at ? '#DCFCE7' : '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
                                         <Text style={{ fontSize: 10, color: log.read_at ? '#15803D' : '#64748B', fontWeight: '600' }}>
-                                            {log.read_at ? '읽음' : log.mail_type}
+                                            {log.read_at ? '읽음' : '미개봉'}
                                         </Text>
                                     </View>
                                 </View>
@@ -330,6 +330,15 @@ export const AdminDashboardScreen = ({ route }: any) => {
                                                 {selectedProfileForHistory?.company_name || '(미등록)'}
                                             </Text>
                                             <Text style={{ fontSize: 14, color: '#64748B' }}>{selectedProfileForHistory?.name}</Text>
+                                            {selectedProfileForHistory?.phone && (
+                                                <Pressable
+                                                    onPress={() => Linking.openURL(`tel:${selectedProfileForHistory.phone}`)}
+                                                    style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginLeft: 8 }}
+                                                >
+                                                    <Ionicons name="call" size={14} color="#6366F1" style={{ marginRight: 4 }} />
+                                                    <Text style={{ fontSize: 13, color: '#6366F1', fontWeight: '700' }}>{selectedProfileForHistory.phone}</Text>
+                                                </Pressable>
+                                            )}
                                         </View>
                                         <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
                                             <View style={{ backgroundColor: selectedProfileForHistory?.is_active ? '#F0FDF4' : '#FEF2F2', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>

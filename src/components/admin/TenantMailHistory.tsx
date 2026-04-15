@@ -9,12 +9,14 @@ import {
     Pressable,
     ActivityIndicator,
     Modal,
-    Dimensions
+    Dimensions,
+    Linking
 } from 'react-native';
 import { mailService } from '../../services/mailService';
 import { Tenant } from '../../services/tenantsService';
 import { supabase } from '../../lib/supabase';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface TenantMailHistoryProps {
     tenant: Tenant;
@@ -60,10 +62,7 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                     {mails.map(mail => (
                         <View key={mail.id} style={styles.card}>
                             <View style={styles.headerRow}>
-                                <View style={{ flexDirection: 'row', gap: 6 }}>
-                                    <View style={styles.badge}>
-                                        <Text style={styles.badgeText}>{mail.mail_type}</Text>
-                                    </View>
+                                <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
                                     {mail.read_at ? (
                                         <View style={[styles.badge, { backgroundColor: '#DCFCE7', borderColor: '#BBF7D0' }]}>
                                             <Text style={[styles.badgeText, { color: '#15803D' }]}>읽음</Text>
@@ -73,6 +72,65 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                                             <Text style={[styles.badgeText, { color: '#94A3B8' }]}>안읽음</Text>
                                         </View>
                                     )}
+                                    {!isTenantMode && (
+                                        <Pressable
+                                            style={[styles.resendBtn, { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }]}
+                                            onPress={async () => {
+                                                if (!tenant.profile_id) {
+                                                    Alert.alert('알림 불가', '이 입주사는 앱 계정이 연결되어 있지 않습니다. 문자로 링크를 공유해 주세요.');
+                                                    return;
+                                                }
+
+                                                const { data: profile } = await supabase
+                                                    .from('profiles')
+                                                    .select('*')
+                                                    .eq('id', tenant.profile_id)
+                                                    .single();
+
+                                                if (!profile?.push_token && !profile?.web_push_token) {
+                                                    Alert.alert('알림 불가', '이 입주민은 알림 수신 설정이 되어있지 않습니다.');
+                                                    return;
+                                                }
+
+                                                Alert.alert('알림 재발송', `${tenant.name}님께 알림을 다시 보내시겠습니까?`, [
+                                                    { text: '취소', style: 'cancel' },
+                                                    {
+                                                        text: '보내기',
+                                                        onPress: async () => {
+                                                            const title = `[우편물 도착] 알림 재발송 🔔`;
+                                                            const companyLabel = tenant.company_name || tenant.name;
+                                                            const body = `${companyLabel}님, 새로운 우편물이 도착했습니다.\n\n포스트노티 공유오피스 스마트 우편알림`;
+
+                                                            let companySlug = '';
+                                                            try {
+                                                                const { data: compData } = await supabase
+                                                                    .from('companies')
+                                                                    .select('slug')
+                                                                    .eq('id', tenant.company_id)
+                                                                    .single();
+                                                                companySlug = compData?.slug || '';
+                                                            } catch (e) { }
+
+                                                            const link = `https://postnoti-app-two.vercel.app/branch/${companySlug}/view`;
+
+                                                            const success = await mailService.sendPushNotification(
+                                                                [profile.push_token, profile.web_push_token].filter(Boolean),
+                                                                title,
+                                                                body,
+                                                                { url: link }
+                                                            );
+
+                                                            if (success) Alert.alert('성공', '알림이 재발송되었습니다.');
+                                                            else Alert.alert('실패', '알림 발송 중 오류가 발생했습니다.');
+                                                        }
+                                                    }
+                                                ]);
+                                            }}
+                                        >
+                                            <Ionicons name="notifications-outline" size={14} color="#4F46E5" style={{ marginRight: 4 }} />
+                                            <Text style={[styles.resendBtnText, { fontSize: 12 }]}>재발송</Text>
+                                        </Pressable>
+                                    )}
                                 </View>
                                 <Text style={styles.date}>{formatDate(mail.created_at)}</Text>
                             </View>
@@ -80,7 +138,7 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                             {mail.image_url ? (
                                 <Pressable onPress={() => {
                                     setSelectedFullImage(mail.image_url);
-                                    setImageRotation(0); // 뷰어 열 때 초기화
+                                    setImageRotation(0);
                                     if (isTenantMode && !mail.read_at) {
                                         mailService.markAsRead(mail.id);
                                         setMails(prev => prev.map(m => m.id === mail.id ? { ...m, read_at: new Date().toISOString() } : m));
@@ -104,101 +162,9 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                             )}
 
                             <View style={styles.info}>
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={styles.senderLabel}>보낸 분</Text>
-                                        <Text style={styles.sender}>
-                                            {mail.ocr_content || ''}
-                                        </Text>
-                                    </View>
-                                    {!isTenantMode && (
-                                        <Pressable
-                                            style={styles.resendBtn}
-                                            onPress={async () => {
-                                                if (!tenant.profile_id) {
-                                                    Alert.alert('알림 불가', '이 입주사는 앱 계정이 연결되어 있지 않습니다. 문자로 링크를 공유해 주세요.');
-                                                    return;
-                                                }
-
-                                                // Fetch latest profile data
-                                                const { data: profile } = await supabase
-                                                    .from('profiles')
-                                                    .select('*')
-                                                    .eq('id', tenant.profile_id)
-                                                    .single();
-
-                                                if (!profile?.push_token && !profile?.web_push_token) {
-                                                    Alert.alert('알림 불가', '이 입주민은 알림 수신 설정이 되어있지 않습니다.');
-                                                    return;
-                                                }
-
-                                                Alert.alert('알림 재발송', `${tenant.name}님께 알림을 다시 보내시겠습니까?`, [
-                                                    { text: '취소', style: 'cancel' },
-                                                    {
-                                                        text: '보내기',
-                                                        onPress: async () => {
-                                                            // 지점명 정보가 현재 tenant에 없으므로 mail.company 로직 필요할 수 있으나 
-                                                            // 일단 Postnoti 기본에서 지점명을 유추할 수 있도록 수정
-                                                            const title = `[우편물 도착] 알림 재발송 🔔`;
-                                                            const companyLabel = tenant.company_name || tenant.name;
-                                                            const sender = mail.ocr_content || '발신처';
-                                                            const body = `${companyLabel}님, ${sender}에서 보낸 ${mail.mail_type} 우편물이 도착했습니다.\n\n포스트노티 공유오피스 스마트 우편알림`;
-
-                                                            // Fetch company slug
-                                                            let companySlug = '';
-                                                            try {
-                                                                const { data: compData } = await supabase
-                                                                    .from('companies')
-                                                                    .select('slug')
-                                                                    .eq('id', mail.company_id)
-                                                                    .single();
-                                                                if (compData) companySlug = compData.slug;
-                                                            } catch (e) { }
-
-                                                            const deepLinkUrl = companySlug ? `postnoti://branch/${companySlug}` : 'postnoti://branch';
-                                                            const webLinkUrl = companySlug ? `https://postnoti-app.vercel.app/branch/${companySlug}` : 'https://postnoti-app.vercel.app/branch';
-
-                                                            try {
-                                                                if (profile.push_token) {
-                                                                    await fetch('https://exp.host/--/api/v2/push/send', {
-                                                                        method: 'POST',
-                                                                        headers: { 'Content-Type': 'application/json' },
-                                                                        body: JSON.stringify({
-                                                                            to: profile.push_token,
-                                                                            sound: 'default',
-                                                                            title,
-                                                                            body,
-                                                                            data: { url: deepLinkUrl }
-                                                                        })
-                                                                    });
-                                                                } else if (profile.web_push_token) {
-                                                                    await fetch('https://postnoti-app.vercel.app/api/send-push', {
-                                                                        method: 'POST',
-                                                                        headers: { 'Content-Type': 'application/json' },
-                                                                        body: JSON.stringify({
-                                                                            token: profile.web_push_token,
-                                                                            title,
-                                                                            body,
-                                                                            data: {
-                                                                                company_id: mail.company_id,
-                                                                                url: webLinkUrl
-                                                                            }
-                                                                        })
-                                                                    });
-                                                                }
-                                                                Alert.alert('성공', '알림을 재발송했습니다.');
-                                                            } catch (e) {
-                                                                Alert.alert('실패', '알림 발송 중 오류가 발생했습니다.');
-                                                            }
-                                                        }
-                                                    }
-                                                ]);
-                                            }}
-                                        >
-                                            <Text style={styles.resendBtnText}>🔔 재발송</Text>
-                                        </Pressable>
-                                    )}
-                                </View>
+                                <Text style={styles.sender}>
+                                    {mail.ocr_content || ''}
+                                </Text>
                             </View>
 
                             {/* 프리미엄 추가 촬영 이미지들 */}
@@ -241,7 +207,7 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                 </ScrollView>
             )}
 
-            {/* 전체 화면 이미지 확대 (View 기반으로 변경하여 중첩 모달 문제 해결) */}
+            {/* 전체 화면 이미지 확대 */}
             {!!selectedFullImage && (
                 <View style={[styles.fullImageContainer, StyleSheet.absoluteFill, { zIndex: 9999 }]}>
                     <Pressable
@@ -257,6 +223,7 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                     >
                         <Text style={styles.rotateText}>↻ 회전</Text>
                     </Pressable>
+
                     <ReactNativeZoomableView
                         maxZoom={5}
                         minZoom={1}
@@ -292,11 +259,8 @@ const styles = StyleSheet.create({
     zoomHintText: { color: '#fff', fontSize: 11, fontWeight: '600' },
     noImage: { alignItems: 'center', justifyContent: 'center', height: 150, backgroundColor: '#F1F5F9' },
     info: { padding: 15, backgroundColor: '#fff' },
-    senderLabel: { fontSize: 12, color: '#94A3B8', marginBottom: 4 },
     sender: { fontSize: 18, fontWeight: '800', color: '#1E293B' },
     emptyText: { textAlign: 'center', color: '#94A3B8', marginTop: 50, fontSize: 15 },
-
-    // 확대 모달 관련 스타일
     fullImageContainer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)' },
     zoomWrapper: { flexGrow: 1, justifyContent: 'center', alignItems: 'center' },
     fullImage: { width: Dimensions.get('window').width, height: Dimensions.get('window').height * 0.8 },
@@ -306,14 +270,6 @@ const styles = StyleSheet.create({
     rotateText: { color: '#fff', fontSize: 16, fontWeight: '700' },
     zoomFooter: { position: 'absolute', bottom: 40, width: '100%', alignItems: 'center' },
     zoomFooterText: { color: '#fff', fontSize: 12, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
-
-    // 줌 헤더 스타일
-    zoomHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 20, gap: 12, zIndex: 100 },
-    zoomControlBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
-    zoomControlText: { color: '#fff', fontSize: 20, fontWeight: '700' },
-    zoomPercentText: { color: '#fff', fontSize: 14, fontWeight: '600', width: 45, textAlign: 'center' },
-
-    // 재발송 버튼 스타일
     resendBtn: { backgroundColor: '#EEF2FF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#C7D2FE' },
     resendBtnText: { color: '#4F46E5', fontSize: 13, fontWeight: '700' }
 });
