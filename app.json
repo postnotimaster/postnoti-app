@@ -30,7 +30,7 @@
       "favicon": "./assets/favicon.png",
       "display": "standalone",
       "themeColor": "#FEF3C7",
-      "description": "세입자를 위한 우편물 알림 서비스"
+      "description": "포스트노티 공유오피스 스마트 우편알림"
     },
     "extra": {
       "eas": {

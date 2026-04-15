@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Image, Pressable, Keyboard } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LoginScreen } from '../components/auth/LoginScreen';
 import { PrimaryButton } from '../components/common/PrimaryButton';
@@ -10,20 +10,33 @@ import { isKakaoTalk, redirectToExternalBrowser } from '../utils/browserDetectio
 export const LandingScreen = () => {
     const navigation = useNavigation<any>();
     const { setMode, handleLoginSuccess } = useAppContent();
+    const [keyboardVisible, setKeyboardVisible] = React.useState(false);
 
     React.useEffect(() => {
         if (isKakaoTalk()) {
             redirectToExternalBrowser();
         }
+
+        const showSubscription = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+        const hideSubscription = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+
+        return () => {
+            showSubscription.remove();
+            hideSubscription.remove();
+        };
     }, []);
 
     return (
         <SafeAreaView style={appStyles.flexContainer}>
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 style={appStyles.flexContainer}
             >
-                <ScrollView style={appStyles.flexContainer} contentContainerStyle={{ paddingBottom: 50 }}>
+                <ScrollView
+                    style={appStyles.flexContainer}
+                    contentContainerStyle={{ paddingBottom: 50 }}
+                    keyboardShouldPersistTaps="handled"
+                >
                     {isKakaoTalk() && (
                         <View style={{
                             backgroundColor: '#FEE2E2',
@@ -38,15 +51,33 @@ export const LandingScreen = () => {
                             </Text>
                         </View>
                     )}
-                    <View style={{ flex: 1, padding: 24, justifyContent: 'center' }}>
-                        <View style={{ marginBottom: 50, marginTop: 40, alignItems: 'center' }}>
-                            <Text style={{ fontSize: 42, fontWeight: '900', color: '#1E293B', letterSpacing: -1.5 }}>POSTNOTI</Text>
-                            <View style={{ height: 3, width: 24, backgroundColor: '#4F46E5', marginTop: 12, borderRadius: 1.5 }} />
+                    <View style={{ flex: 1, padding: 24, justifyContent: 'center', backgroundColor: '#FFFFFF' }}>
+                        <View style={{ marginBottom: keyboardVisible ? 10 : 30, marginTop: keyboardVisible ? 20 : 40, alignItems: 'center' }}>
+                            <Image
+                                source={require('../../assets/icon.png')}
+                                style={{
+                                    width: keyboardVisible ? 100 : 180,
+                                    height: keyboardVisible ? 100 : 180,
+                                    borderRadius: keyboardVisible ? 24 : 40
+                                }}
+                                resizeMode="contain"
+                            />
+                            <Text style={{ fontSize: 15, color: '#475569', fontWeight: '800', marginTop: -16 }}>공유오피스우편알림 - 포스트노티</Text>
                         </View>
 
                         <View style={appStyles.actionSection}>
-                            <View style={[appStyles.loginCardDirect, { elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12 }]}>
-                                <Text style={[appStyles.loginDirectTitle, { textAlign: 'center', marginBottom: 25 }]}>ADMIN LOGIN</Text>
+                            <View style={[appStyles.loginCardDirect, {
+                                elevation: 15,
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 10 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 20,
+                                paddingHorizontal: 30,
+                                paddingVertical: keyboardVisible ? 15 : 20,
+                                backgroundColor: '#FFFFFF',
+                                borderRadius: 30,
+                                marginHorizontal: 4
+                            }]}>
                                 <LoginScreen
                                     onLoginSuccess={async (profile) => {
                                         await handleLoginSuccess(profile);
@@ -55,14 +86,17 @@ export const LandingScreen = () => {
                                     onBack={() => { }}
                                     isEmbedded={true}
                                 />
-                                <View style={{ height: 1, backgroundColor: '#F1F5F9', marginVertical: 24 }} />
-                                <PrimaryButton
-                                    label="Join Office"
-                                    onPress={() => navigation.navigate('AdminSignup')}
-                                    style={{ width: '100%', backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#4F46E5', height: 56 }}
-                                    textStyle={{ color: '#4F46E5', fontWeight: '800' }}
-                                />
                             </View>
+
+                            <Pressable
+                                onPress={() => navigation.navigate('AdminSignup')}
+                                style={{ marginTop: 40, alignItems: 'center' }}
+                            >
+                                <Text style={{ fontSize: 16, color: '#64748B' }}>
+                                    아직 계정이 없으신가요?{' '}
+                                    <Text style={{ color: '#6366F1', fontWeight: '700', textDecorationLine: 'underline' }}>오피스 등록하기</Text>
+                                </Text>
+                            </Pressable>
                         </View>
                     </View>
                 </ScrollView>

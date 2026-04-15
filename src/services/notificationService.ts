@@ -24,7 +24,8 @@ export const notificationService = {
         customMessage?: string
     ): Promise<NotificationResult> {
         const title = `[${company.name}] 우편물 도착 📮`;
-        const body = customMessage || `${sender ? `${sender}에서 보낸 ` : ''}${type} 우편물이 도착했습니다.`;
+        const companyLabel = tenant.company_name || tenant.name;
+        const body = customMessage || `${companyLabel}님, ${sender ? `${sender}에서 보낸 ` : ''}${type} 우편물이 도착했습니다.`;
         const shareLink = this.generateShareLink(tenant, company);
 
         // 프로필 정보(푸시 토큰) 확인
@@ -103,6 +104,7 @@ export const notificationService = {
     getShareMessage(tenant: Tenant, company: Company): string {
         const link = this.generateShareLink(tenant, company);
         // 메시지 구조를 단순화하고 링크를 별도 라인으로 분리하여 끊김 방지
-        return `[Postnoti] ${tenant.name}님, 우편물이 도착했습니다. 사진 확인: \n\n${link}`;
+        const companyLabel = tenant.company_name || tenant.name;
+        return `[${company.name}] ${companyLabel}님, 우편물이 도착했습니다.\n\n사진 확인:\n${link}\n\n--\n포스트노티 공유오피스 스마트 우편알림`;
     }
 };

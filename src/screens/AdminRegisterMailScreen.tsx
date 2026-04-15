@@ -158,7 +158,7 @@ export const AdminRegisterMailScreen = () => {
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={appStyles.flexContainer}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 40}
             >
                 <AppHeader title="우편물 등록" onBack={handleBack} />
                 {ocrLoading && (

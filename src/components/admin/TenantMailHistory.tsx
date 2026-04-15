@@ -26,6 +26,7 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
     const [mails, setMails] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedFullImage, setSelectedFullImage] = useState<string | null>(null);
+    const [imageRotation, setImageRotation] = useState(0);
 
     useEffect(() => {
         loadHistory();
@@ -79,6 +80,7 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                             {mail.image_url ? (
                                 <Pressable onPress={() => {
                                     setSelectedFullImage(mail.image_url);
+                                    setImageRotation(0); // 뷰어 열 때 초기화
                                     if (isTenantMode && !mail.read_at) {
                                         mailService.markAsRead(mail.id);
                                         setMails(prev => prev.map(m => m.id === mail.id ? { ...m, read_at: new Date().toISOString() } : m));
@@ -106,7 +108,7 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.senderLabel}>보낸 분</Text>
                                         <Text style={styles.sender}>
-                                            {mail.ocr_content || '(발신처 미상)'}
+                                            {mail.ocr_content || ''}
                                         </Text>
                                     </View>
                                     {!isTenantMode && (
@@ -135,9 +137,12 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                                                     {
                                                         text: '보내기',
                                                         onPress: async () => {
-                                                            const title = `[우편물 도착] ${mail.mail_type} 알림 재발송 🔔`;
+                                                            // 지점명 정보가 현재 tenant에 없으므로 mail.company 로직 필요할 수 있으나 
+                                                            // 일단 Postnoti 기본에서 지점명을 유추할 수 있도록 수정
+                                                            const title = `[우편물 도착] 알림 재발송 🔔`;
+                                                            const companyLabel = tenant.company_name || tenant.name;
                                                             const sender = mail.ocr_content || '발신처';
-                                                            const body = `${sender}에서 보낸 ${mail.mail_type} 우편물이 도착했습니다. (관리자 재발송)`;
+                                                            const body = `${companyLabel}님, ${sender}에서 보낸 ${mail.mail_type} 우편물이 도착했습니다.\n\n포스트노티 공유오피스 스마트 우편알림`;
 
                                                             // Fetch company slug
                                                             let companySlug = '';
@@ -215,7 +220,7 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                                                     } catch (e) { }
                                                 }
                                                 return images.map((img: string, idx: number) => (
-                                                    <Pressable key={idx} onPress={() => setSelectedFullImage(img)}>
+                                                    <Pressable key={idx} onPress={() => { setSelectedFullImage(img); setImageRotation(0); }}>
                                                         <Image
                                                             source={{ uri: img }}
                                                             style={{ width: 100, height: 130, borderRadius: 8, backgroundColor: '#F1F5F9' }}
@@ -245,6 +250,13 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                     >
                         <Text style={styles.closeText}>✕ 닫기</Text>
                     </Pressable>
+
+                    <Pressable
+                        style={styles.rotateArea}
+                        onPress={() => setImageRotation(r => r + 90)}
+                    >
+                        <Text style={styles.rotateText}>↻ 회전</Text>
+                    </Pressable>
                     <ReactNativeZoomableView
                         maxZoom={5}
                         minZoom={1}
@@ -254,7 +266,7 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                     >
                         <Image
                             source={{ uri: selectedFullImage }}
-                            style={styles.fullImage}
+                            style={[styles.fullImage, { transform: [{ rotate: `${imageRotation}deg` }] }]}
                             resizeMode="contain"
                         />
                     </ReactNativeZoomableView>
@@ -275,7 +287,7 @@ const styles = StyleSheet.create({
     badge: { backgroundColor: '#F0F9FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#E0F2FE' },
     badgeText: { color: '#0369A1', fontWeight: '700', fontSize: 13 },
     date: { color: '#64748B', fontSize: 14, fontWeight: '600' },
-    image: { width: '100%', height: 300, backgroundColor: '#000' },
+    image: { width: '100%', height: 180, backgroundColor: '#F1F5F9' },
     zoomHint: { position: 'absolute', bottom: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
     zoomHintText: { color: '#fff', fontSize: 11, fontWeight: '600' },
     noImage: { alignItems: 'center', justifyContent: 'center', height: 150, backgroundColor: '#F1F5F9' },
@@ -290,6 +302,8 @@ const styles = StyleSheet.create({
     fullImage: { width: Dimensions.get('window').width, height: Dimensions.get('window').height * 0.8 },
     closeArea: { position: 'absolute', top: 50, right: 20, zIndex: 10, backgroundColor: 'rgba(0,0,0,0.5)', padding: 10, borderRadius: 20 },
     closeText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+    rotateArea: { position: 'absolute', top: 50, right: 100, zIndex: 10, backgroundColor: 'rgba(79,70,229,0.8)', padding: 10, paddingHorizontal: 15, borderRadius: 20 },
+    rotateText: { color: '#fff', fontSize: 16, fontWeight: '700' },
     zoomFooter: { position: 'absolute', bottom: 40, width: '100%', alignItems: 'center' },
     zoomFooterText: { color: '#fff', fontSize: 12, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
 

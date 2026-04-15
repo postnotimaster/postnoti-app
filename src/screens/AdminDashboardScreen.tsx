@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Image, Modal, SafeAreaView, ActivityIndicator, SectionList, Alert, BackHandler } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Image, Modal, SafeAreaView, ActivityIndicator, SectionList, Alert, BackHandler, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
@@ -109,248 +109,256 @@ export const AdminDashboardScreen = ({ route }: any) => {
     }
 
     return (
-        <View style={appStyles.flexContainer}>
-            <AppHeader
-                title="Postnoti Admin"
-                onMenu={() => navigation.navigate('AdminMenu')}
-            />
-            <SectionList
-                style={appStyles.container}
-                contentContainerStyle={{ paddingBottom: 100, paddingTop: 10 }}
-                ListHeaderComponent={
-                    <View style={{ paddingBottom: 10 }}>
-                        <View style={{ marginBottom: 20 }}>
-                            <Text style={{ fontSize: 13, fontWeight: '700', color: '#4F46E5', marginBottom: 4 }}>HELLO, ADMIN</Text>
-                            <Text style={{ fontSize: 28, fontWeight: '800', color: '#1E293B' }}>{officeInfo?.name}</Text>
-                        </View>
-
-                        <View style={[appStyles.premiumInfoCard, { marginBottom: 20, padding: 20 }]}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                <Text style={appStyles.premiumInfoLabel}>이번 달 알림 사용량</Text>
-                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#4F46E5' }}>
-                                    {officeInfo?.current_usage || 0} / {officeInfo?.mail_quota || 100} 건
-                                </Text>
+        <SafeAreaView style={appStyles.safeArea}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={appStyles.flexContainer}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+            >
+                <AppHeader
+                    title="Postnoti Admin"
+                    onMenu={() => navigation.navigate('AdminMenu')}
+                />
+                <SectionList
+                    style={appStyles.container}
+                    contentContainerStyle={{ paddingBottom: 100, paddingTop: 10 }}
+                    keyboardShouldPersistTaps="handled"
+                    ListHeaderComponent={
+                        <View style={{ paddingBottom: 10 }}>
+                            <View style={{ marginBottom: 20 }}>
+                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#4F46E5', marginBottom: 4 }}>HELLO, ADMIN</Text>
+                                <Text style={{ fontSize: 28, fontWeight: '800', color: '#1E293B' }}>{officeInfo?.name}</Text>
                             </View>
-                            <View style={{ height: 6, backgroundColor: '#F1F5F9', borderRadius: 3, overflow: 'hidden' }}>
-                                <View
-                                    style={{
-                                        width: `${Math.min(100, ((officeInfo?.current_usage || 0) / (officeInfo?.mail_quota || 100)) * 100)}%`,
-                                        height: '100%',
-                                        backgroundColor: '#4F46E5'
+
+                            <View style={[appStyles.premiumInfoCard, { marginBottom: 20, padding: 20 }]}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                    <Text style={appStyles.premiumInfoLabel}>이번 달 알림 사용량</Text>
+                                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#4F46E5' }}>
+                                        {officeInfo?.current_usage || 0} / {officeInfo?.mail_quota || 100} 건
+                                    </Text>
+                                </View>
+                                <View style={{ height: 6, backgroundColor: '#F1F5F9', borderRadius: 3, overflow: 'hidden' }}>
+                                    <View
+                                        style={{
+                                            width: `${Math.min(100, ((officeInfo?.current_usage || 0) / (officeInfo?.mail_quota || 100)) * 100)}%`,
+                                            height: '100%',
+                                            backgroundColor: '#4F46E5'
+                                        }}
+                                    />
+                                </View>
+                            </View>
+
+                            <View style={appStyles.premiumQuickActionRow}>
+                                <Pressable
+                                    style={[appStyles.premiumQuickBtn, { backgroundColor: '#1E293B', flex: 2 }]}
+                                    onPress={async () => {
+                                        const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
+                                        if (!result.canceled) {
+                                            runOCR(result.assets[0].uri);
+                                            navigation.navigate('AdminRegisterMail');
+                                        }
                                     }}
-                                />
+                                >
+                                    <Ionicons name="camera" size={32} color="#fff" style={{ marginBottom: 8 }} />
+                                    <Text style={[appStyles.premiumQuickBtnTitle, { fontSize: 18 }]}>자동인식 알림 발송</Text>
+                                    <Text style={appStyles.premiumQuickBtnSubtitle}>가장 빠른 AI 매칭</Text>
+                                </Pressable>
+
+                                <Pressable
+                                    style={[appStyles.premiumQuickBtn, { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', flex: 1.2 }]}
+                                    onPress={() => {
+                                        setIsManualSearchVisible(true);
+                                        navigation.navigate('AdminRegisterMail');
+                                    }}
+                                >
+                                    <Ionicons name="people" size={24} color="#64748B" style={{ marginBottom: 8 }} />
+                                    <Text style={[appStyles.premiumQuickBtnTitle, { color: '#1E293B', fontSize: 14 }]}>수동 등록</Text>
+                                    <Text style={[appStyles.premiumQuickBtnSubtitle, { color: '#94A3B8' }]}>직접 선택</Text>
+                                </Pressable>
+                            </View>
+
+                            <View style={[appStyles.premiumInfoCard, { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: 0 }]}>
+                                <Text style={[appStyles.premiumInfoLabel, { marginBottom: 16 }]}>최근 발송 내역</Text>
+                                <View style={[appStyles.premiumSearchBox, { marginBottom: 5 }]}>
+                                    <Ionicons name="search-outline" size={18} color="#94A3B8" style={{ position: 'absolute', left: 14, top: 14, zIndex: 1 }} />
+                                    <TextInput
+                                        style={[appStyles.premiumSearchInput, { paddingLeft: 42 }]}
+                                        placeholder="받는분, 호실 등으로 검색..."
+                                        value={logSearchQuery}
+                                        onChangeText={setLogSearchQuery}
+                                    />
+                                    {initialLoading && (
+                                        <ActivityIndicator size="small" color="#4F46E5" style={{ position: 'absolute', right: 14, top: 14 }} />
+                                    )}
+                                </View>
                             </View>
                         </View>
+                    }
+                    sections={(() => {
+                        const filtered = mailLogs.filter(log => {
+                            const query = logSearchQuery.toLowerCase();
+                            const name = log.tenants?.name?.toLowerCase() || '';
+                            const room = log.tenants?.room_number?.toLowerCase() || '';
+                            const company = log.tenants?.company_name?.toLowerCase() || '';
+                            const sender = log.ocr_content?.toLowerCase() || '';
+                            return name.includes(query) || room.includes(query) || company.includes(query) || sender.includes(query);
+                        });
 
-                        <View style={appStyles.premiumQuickActionRow}>
+                        const groups: { [key: string]: any[] } = {};
+                        filtered.forEach(log => {
+                            const date = new Date(log.created_at);
+                            const dateStr = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+                            const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+                            const yesterdayDate = new Date();
+                            yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+                            const yesterday = yesterdayDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+
+                            let header = dateStr;
+                            if (dateStr === today) header = '오늘';
+                            if (dateStr === yesterday) header = '어제';
+
+                            if (!groups[header]) groups[header] = [];
+                            groups[header].push(log);
+                        });
+
+                        return Object.keys(groups).map(key => ({
+                            title: key,
+                            data: groups[key]
+                        }));
+                    })()}
+                    keyExtractor={(item) => item.id}
+                    renderSectionHeader={({ section: { title } }) => (
+                        <View style={{ backgroundColor: '#F8FAFC', paddingHorizontal: 20, paddingVertical: 8, marginTop: 10 }}>
+                            <Text style={{ fontSize: 13, fontWeight: '700', color: '#64748B' }}>{title}</Text>
+                        </View>
+                    )}
+                    renderItem={({ item: log }) => (
+                        <View style={{ paddingHorizontal: 20, backgroundColor: '#fff' }}>
                             <Pressable
-                                style={[appStyles.premiumQuickBtn, { backgroundColor: '#1E293B', flex: 2 }]}
-                                onPress={async () => {
-                                    const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
-                                    if (!result.canceled) {
-                                        runOCR(result.assets[0].uri);
-                                        navigation.navigate('AdminRegisterMail');
+                                style={[appStyles.logItem, { marginBottom: 0, borderBottomWidth: 1, borderBottomColor: '#F1F5F9', borderRadius: 0, paddingVertical: 14 }]}
+                                onPress={() => {
+                                    if (log.tenants) {
+                                        setSelectedProfileForHistory(log.tenants);
+                                        setIsHistoryVisible(true);
                                     }
                                 }}
                             >
-                                <Ionicons name="camera" size={32} color="#fff" style={{ marginBottom: 8 }} />
-                                <Text style={[appStyles.premiumQuickBtnTitle, { fontSize: 18 }]}>자동인식 알림 발송</Text>
-                                <Text style={appStyles.premiumQuickBtnSubtitle}>가장 빠른 AI 매칭</Text>
-                            </Pressable>
-
-                            <Pressable
-                                style={[appStyles.premiumQuickBtn, { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', flex: 1.2 }]}
-                                onPress={() => {
-                                    setIsManualSearchVisible(true);
-                                    navigation.navigate('AdminRegisterMail');
-                                }}
-                            >
-                                <Ionicons name="people" size={24} color="#64748B" style={{ marginBottom: 8 }} />
-                                <Text style={[appStyles.premiumQuickBtnTitle, { color: '#1E293B', fontSize: 14 }]}>수동 등록</Text>
-                                <Text style={[appStyles.premiumQuickBtnSubtitle, { color: '#94A3B8' }]}>직접 선택</Text>
-                            </Pressable>
-                        </View>
-
-                        <View style={[appStyles.premiumInfoCard, { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: 0 }]}>
-                            <Text style={[appStyles.premiumInfoLabel, { marginBottom: 16 }]}>최근 발송 내역</Text>
-                            <View style={[appStyles.premiumSearchBox, { marginBottom: 5 }]}>
-                                <Ionicons name="search-outline" size={18} color="#94A3B8" style={{ position: 'absolute', left: 14, top: 14, zIndex: 1 }} />
-                                <TextInput
-                                    style={[appStyles.premiumSearchInput, { paddingLeft: 42 }]}
-                                    placeholder="받는분, 호실 등으로 검색..."
-                                    value={logSearchQuery}
-                                    onChangeText={setLogSearchQuery}
+                                <Image
+                                    source={log.image_url ? { uri: log.image_url } : { uri: 'https://via.placeholder.com/50' }}
+                                    style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: '#E2E8F0', marginRight: 12 }}
+                                    resizeMode="cover"
                                 />
-                                {initialLoading && (
-                                    <ActivityIndicator size="small" color="#4F46E5" style={{ position: 'absolute', right: 14, top: 14 }} />
-                                )}
-                            </View>
-                        </View>
-                    </View>
-                }
-                sections={(() => {
-                    const filtered = mailLogs.filter(log => {
-                        const query = logSearchQuery.toLowerCase();
-                        const name = log.tenants?.name?.toLowerCase() || '';
-                        const room = log.tenants?.room_number?.toLowerCase() || '';
-                        const sender = log.ocr_content?.toLowerCase() || '';
-                        return name.includes(query) || room.includes(query) || sender.includes(query);
-                    });
-
-                    const groups: { [key: string]: any[] } = {};
-                    filtered.forEach(log => {
-                        const date = new Date(log.created_at);
-                        const dateStr = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
-                        const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
-                        const yesterdayDate = new Date();
-                        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-                        const yesterday = yesterdayDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
-
-                        let header = dateStr;
-                        if (dateStr === today) header = '오늘';
-                        if (dateStr === yesterday) header = '어제';
-
-                        if (!groups[header]) groups[header] = [];
-                        groups[header].push(log);
-                    });
-
-                    return Object.keys(groups).map(key => ({
-                        title: key,
-                        data: groups[key]
-                    }));
-                })()}
-                keyExtractor={(item) => item.id}
-                renderSectionHeader={({ section: { title } }) => (
-                    <View style={{ backgroundColor: '#F8FAFC', paddingHorizontal: 20, paddingVertical: 8, marginTop: 10 }}>
-                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#64748B' }}>{title}</Text>
-                    </View>
-                )}
-                renderItem={({ item: log }) => (
-                    <View style={{ paddingHorizontal: 20, backgroundColor: '#fff' }}>
-                        <Pressable
-                            style={[appStyles.logItem, { marginBottom: 0, borderBottomWidth: 1, borderBottomColor: '#F1F5F9', borderRadius: 0, paddingVertical: 14 }]}
-                            onPress={() => {
-                                if (log.tenants) {
-                                    setSelectedProfileForHistory(log.tenants);
-                                    setIsHistoryVisible(true);
-                                }
-                            }}
-                        >
-                            <Image
-                                source={log.image_url ? { uri: log.image_url } : { uri: 'https://via.placeholder.com/50' }}
-                                style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: '#E2E8F0', marginRight: 12 }}
-                                resizeMode="cover"
-                            />
-                            <View style={{ flex: 1 }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2, gap: 6, flexWrap: 'wrap' }}>
-                                    <Text style={{ fontSize: 12, fontWeight: '800', color: '#6366F1', backgroundColor: '#EEF2FF', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, overflow: 'hidden' }}>
-                                        {log.tenants?.room_number || '-'}
-                                    </Text>
-                                    <Text style={{ fontSize: 15, fontWeight: '800', color: '#1E293B' }}>
-                                        {log.tenants?.company_name || '(미등록)'}
-                                    </Text>
-                                    <Text style={{ fontSize: 13, color: '#64748B' }}>{log.tenants?.name}</Text>
-                                </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                                    <Text style={{ fontSize: 13, color: '#475569', flex: 1 }} numberOfLines={1}>
-                                        {log.ocr_content ? `${log.ocr_content}` : '발신처 미상'}
-                                    </Text>
-                                    {log.tenants?.is_active === false && (
-                                        <View style={{ backgroundColor: '#FEF2F2', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6 }}>
-                                            <Text style={{ fontSize: 9, color: '#991B1B', fontWeight: '700' }}>퇴거</Text>
-                                        </View>
-                                    )}
-                                    {log.tenants?.is_premium && (
-                                        <View style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6, borderWidth: 1, borderColor: '#C7D2FE' }}>
-                                            <Text style={{ fontSize: 9, color: '#4338CA', fontWeight: '700' }}>P</Text>
-                                        </View>
-                                    )}
-                                </View>
-                            </View>
-                            <View style={{ alignItems: 'flex-end' }}>
-                                <Text style={{ fontSize: 11, color: '#94A3B8', marginBottom: 4 }}>
-                                    {new Date(log.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}
-                                </Text>
-                                <View style={{ backgroundColor: log.read_at ? '#DCFCE7' : '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                                    <Text style={{ fontSize: 10, color: log.read_at ? '#15803D' : '#64748B', fontWeight: '600' }}>
-                                        {log.read_at ? '읽음' : log.mail_type}
-                                    </Text>
-                                </View>
-                            </View>
-                        </Pressable>
-                    </View>
-                )}
-                onEndReached={loadNextPage}
-                onEndReachedThreshold={0.5}
-                ListFooterComponent={
-                    loadingMore ? (
-                        <ActivityIndicator size="small" color="#4F46E5" style={{ marginVertical: 20 }} />
-                    ) : !hasMore && mailLogs.length > 0 ? (
-                        <Text style={{ textAlign: 'center', color: '#94A3B8', fontSize: 12, marginVertical: 20 }}>데이터를 모두 불러왔습니다</Text>
-                    ) : null
-                }
-                ListEmptyComponent={
-                    <Text style={[appStyles.emptyText, { textAlign: 'center', marginTop: 30 }]}>검색 결과가 없습니다.</Text>
-                }
-                stickySectionHeadersEnabled={true}
-            />
-
-            <Modal
-                visible={isHistoryVisible}
-                animationType="fade"
-                transparent
-                onRequestClose={() => setIsHistoryVisible(false)}
-            >
-                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center' }}>
-                    <View style={{ backgroundColor: '#fff', margin: 20, borderRadius: 20, flex: 1, maxHeight: '80%', overflow: 'hidden' }}>
-                        <View style={{ padding: 15, borderBottomWidth: 1, borderColor: '#F1F5F9' }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <View style={{ flex: 1 }}>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                                        <Text style={{ fontSize: 13, fontWeight: '800', color: '#6366F1', backgroundColor: '#EEF2FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, overflow: 'hidden' }}>
-                                            {selectedProfileForHistory?.room_number || '-'}
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2, gap: 6, flexWrap: 'wrap' }}>
+                                        <Text style={{ fontSize: 12, fontWeight: '800', color: '#6366F1', backgroundColor: '#EEF2FF', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, overflow: 'hidden' }}>
+                                            {log.tenants?.room_number || '-'}
                                         </Text>
-                                        <Text style={{ fontSize: 18, fontWeight: '800', color: '#1E293B' }}>
-                                            {selectedProfileForHistory?.company_name || '(미등록)'}
+                                        <Text style={{ fontSize: 15, fontWeight: '800', color: '#1E293B' }}>
+                                            {log.tenants?.company_name || '(미등록)'}
                                         </Text>
-                                        <Text style={{ fontSize: 14, color: '#64748B' }}>{selectedProfileForHistory?.name}</Text>
+                                        <Text style={{ fontSize: 13, color: '#64748B' }}>{log.tenants?.name}</Text>
                                     </View>
-                                    <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
-                                        <View style={{ backgroundColor: selectedProfileForHistory?.is_active ? '#F0FDF4' : '#FEF2F2', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
-                                            <Text style={{ fontSize: 10, fontWeight: '700', color: selectedProfileForHistory?.is_active ? '#166534' : '#991B1B' }}>
-                                                {selectedProfileForHistory?.is_active ? '입주중' : '퇴거'}
-                                            </Text>
-                                        </View>
-                                        {selectedProfileForHistory?.is_premium && (
-                                            <View style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, borderWidth: 1, borderColor: '#C7D2FE' }}>
-                                                <Text style={{ fontSize: 10, fontWeight: '700', color: '#4338CA' }}>Premium</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                                        <Text style={{ fontSize: 13, color: '#475569', flex: 1 }} numberOfLines={1}>
+                                            {log.ocr_content || ''}
+                                        </Text>
+                                        {log.tenants?.is_active === false && (
+                                            <View style={{ backgroundColor: '#FEF2F2', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6 }}>
+                                                <Text style={{ fontSize: 9, color: '#991B1B', fontWeight: '700' }}>퇴거</Text>
                                             </View>
                                         )}
-                                        {selectedProfileForHistory?.id && mailStats[selectedProfileForHistory.id] && (() => {
-                                            const s = mailStats[selectedProfileForHistory.id!];
-                                            const rate = s.total > 0 ? Math.round((s.read / s.total) * 100) : 0;
-                                            return (
-                                                <Text style={{ fontSize: 11, fontWeight: '800', color: s.total > 0 && rate < 50 ? '#DC2626' : s.total > 0 && rate >= 80 ? '#059669' : '#D97706' }}>
-                                                    개봉 {s.read}/{s.total}
-                                                </Text>
-                                            );
-                                        })()}
+                                        {log.tenants?.is_premium && (
+                                            <View style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6, borderWidth: 1, borderColor: '#C7D2FE' }}>
+                                                <Text style={{ fontSize: 9, color: '#4338CA', fontWeight: '700' }}>P</Text>
+                                            </View>
+                                        )}
                                     </View>
                                 </View>
-                                <Pressable onPress={() => setIsHistoryVisible(false)} style={{ padding: 5 }}>
-                                    <Text style={{ fontSize: 16 }}>✕</Text>
-                                </Pressable>
-                            </View>
+                                <View style={{ alignItems: 'flex-end' }}>
+                                    <Text style={{ fontSize: 11, color: '#94A3B8', marginBottom: 4 }}>
+                                        {new Date(log.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                    </Text>
+                                    <View style={{ backgroundColor: log.read_at ? '#DCFCE7' : '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                        <Text style={{ fontSize: 10, color: log.read_at ? '#15803D' : '#64748B', fontWeight: '600' }}>
+                                            {log.read_at ? '읽음' : log.mail_type}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </Pressable>
                         </View>
-                        {selectedProfileForHistory && (
-                            <TenantMailHistory
-                                tenant={selectedProfileForHistory}
-                                onClose={() => setIsHistoryVisible(false)}
-                            />
-                        )}
+                    )}
+                    onEndReached={loadNextPage}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={
+                        loadingMore ? (
+                            <ActivityIndicator size="small" color="#4F46E5" style={{ marginVertical: 20 }} />
+                        ) : !hasMore && mailLogs.length > 0 ? (
+                            <Text style={{ textAlign: 'center', color: '#94A3B8', fontSize: 12, marginVertical: 20 }}>데이터를 모두 불러왔습니다</Text>
+                        ) : null
+                    }
+                    ListEmptyComponent={
+                        <Text style={[appStyles.emptyText, { textAlign: 'center', marginTop: 30 }]}>검색 결과가 없습니다.</Text>
+                    }
+                    stickySectionHeadersEnabled={true}
+                />
+
+                <Modal
+                    visible={isHistoryVisible}
+                    animationType="fade"
+                    transparent
+                    onRequestClose={() => setIsHistoryVisible(false)}
+                >
+                    <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center' }}>
+                        <View style={{ backgroundColor: '#fff', margin: 20, borderRadius: 20, flex: 1, maxHeight: '80%', overflow: 'hidden' }}>
+                            <View style={{ padding: 15, borderBottomWidth: 1, borderColor: '#F1F5F9' }}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <View style={{ flex: 1 }}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                            <Text style={{ fontSize: 13, fontWeight: '800', color: '#6366F1', backgroundColor: '#EEF2FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, overflow: 'hidden' }}>
+                                                {selectedProfileForHistory?.room_number || '-'}
+                                            </Text>
+                                            <Text style={{ fontSize: 18, fontWeight: '800', color: '#1E293B' }}>
+                                                {selectedProfileForHistory?.company_name || '(미등록)'}
+                                            </Text>
+                                            <Text style={{ fontSize: 14, color: '#64748B' }}>{selectedProfileForHistory?.name}</Text>
+                                        </View>
+                                        <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                                            <View style={{ backgroundColor: selectedProfileForHistory?.is_active ? '#F0FDF4' : '#FEF2F2', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
+                                                <Text style={{ fontSize: 10, fontWeight: '700', color: selectedProfileForHistory?.is_active ? '#166534' : '#991B1B' }}>
+                                                    {selectedProfileForHistory?.is_active ? '입주중' : '퇴거'}
+                                                </Text>
+                                            </View>
+                                            {selectedProfileForHistory?.is_premium && (
+                                                <View style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, borderWidth: 1, borderColor: '#C7D2FE' }}>
+                                                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#4338CA' }}>Premium</Text>
+                                                </View>
+                                            )}
+                                            {selectedProfileForHistory?.id && mailStats[selectedProfileForHistory.id] && (() => {
+                                                const s = mailStats[selectedProfileForHistory.id!];
+                                                const rate = s.total > 0 ? Math.round((s.read / s.total) * 100) : 0;
+                                                return (
+                                                    <Text style={{ fontSize: 11, fontWeight: '800', color: s.total > 0 && rate < 50 ? '#DC2626' : s.total > 0 && rate >= 80 ? '#059669' : '#D97706' }}>
+                                                        개봉 {s.read}/{s.total}
+                                                    </Text>
+                                                );
+                                            })()}
+                                        </View>
+                                    </View>
+                                    <Pressable onPress={() => setIsHistoryVisible(false)} style={{ padding: 15, marginRight: -10 }}>
+                                        <Text style={{ fontSize: 18, fontWeight: '700', color: '#64748B' }}>✕</Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+                            {selectedProfileForHistory && (
+                                <TenantMailHistory
+                                    tenant={selectedProfileForHistory}
+                                    onClose={() => setIsHistoryVisible(false)}
+                                />
+                            )}
+                        </View>
                     </View>
-                </View>
-            </Modal>
-        </View>
+                </Modal>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };

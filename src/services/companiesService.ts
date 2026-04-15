@@ -5,6 +5,7 @@ export type Company = {
     name: string;
     address?: string;
     slug: string;
+    business_number?: string;
     tenant_limit?: number;
     mail_quota?: number;
     current_usage?: number;
@@ -29,10 +30,10 @@ export const companiesService = {
         return !data; // data가 없으면 unique
     },
 
-    async createCompany(name: string, address: string, slug: string) {
+    async createCompany(name: string, address: string, slug: string, business_number?: string) {
         const { data, error } = await supabase
             .from('companies')
-            .insert([{ name, address, slug }])
+            .insert([{ name, address, slug, business_number }])
             .select()
             .single();
         if (error) throw error;

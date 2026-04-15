@@ -17,10 +17,22 @@ const IGNORE_PATTERNS = [
 
 export const preprocessImage = async (uri: string, includeBase64: boolean = true) => {
     try {
-        // [용량 vs 품질 밸런스] 1200px로 상향하여 인식률 확보, 품질 0.7로 조정
+        // 원본 이미지의 가로/세로 비율 확인
+        const initial = await ImageManipulator.manipulateAsync(uri, []);
+        const actions: ImageManipulator.Action[] = [];
+
+        // 1. 세로로 긴 이미지(스마트폰 세로 파지)의 경우 가로형 우편물 뷰를 위해 -90도(반대 방향) 자동 회전
+        if (initial.height > initial.width) {
+            actions.push({ rotate: -90 });
+            console.log(`🔄 우편물 가로뷰를 위해 세로 이미지를 -90도 회전합니다. (${initial.width}x${initial.height})`);
+        }
+
+        // 2. [용량 vs 품질 밸런스] 가로폭 1200px로 상향 (회전이 수행된 경우 눕혀진 상태에서 폭 1200이 됨)
+        actions.push({ resize: { width: 1200 } });
+
         const result = await ImageManipulator.manipulateAsync(
             uri,
-            [{ resize: { width: 1200 } }],
+            actions,
             { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: includeBase64 }
         );
 
