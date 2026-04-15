@@ -42,7 +42,6 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
     const [showInstallBanner, setShowInstallBanner] = useState(false);
 
     const [selectedMailImage, setSelectedMailImage] = useState<string | null>(null);
-    const [zoomScale, setZoomScale] = useState(1); // Zoom scale state
     const [filter, setFilter] = useState<'all' | 'unread'>('all'); // 필터 상태
     const { showToast, playSound } = useToast();
     const [isSettingsVisible, setIsSettingsVisible] = useState(false);
@@ -602,25 +601,13 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
             <Modal
                 visible={!!selectedMailImage}
                 transparent={true}
-                onShow={() => setZoomScale(1)}
                 animationType="fade"
                 onRequestClose={() => setSelectedMailImage(null)}
             >
                 <View style={styles.modalContainer}>
-                    <View style={styles.zoomHeader}>
-                        <Pressable style={styles.zoomControlBtn} onPress={() => setZoomScale(prev => Math.max(1, prev - 0.5))}>
-                            <Text style={styles.zoomControlText}>-</Text>
-                        </Pressable>
-                        <Text style={styles.zoomPercentText}>{Math.round(zoomScale * 100)}%</Text>
-                        <Pressable style={styles.zoomControlBtn} onPress={() => setZoomScale(prev => Math.min(5, prev + 0.5))}>
-                            <Text style={styles.zoomControlText}>+</Text>
-                        </Pressable>
-                        <View style={{ flex: 1 }} />
-                        <Pressable style={styles.closeButton} onPress={() => setSelectedMailImage(null)}>
-                            <Text style={styles.closeButtonText}>✕ 닫기</Text>
-                        </Pressable>
-                    </View>
-
+                    <Pressable style={styles.closeButton} onPress={() => setSelectedMailImage(null)}>
+                        <Text style={styles.closeButtonText}>✕ 닫기</Text>
+                    </Pressable>
                     <ScrollView
                         maximumZoomScale={5}
                         minimumZoomScale={1}
@@ -632,16 +619,13 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
                         {selectedMailImage && (
                             <Image
                                 source={{ uri: selectedMailImage }}
-                                style={[
-                                    styles.modalImage,
-                                    { transform: [{ scale: zoomScale }] }
-                                ]}
+                                style={styles.modalImage}
                                 resizeMode="contain"
                             />
                         )}
                     </ScrollView>
                     <View style={styles.zoomFooter}>
-                        <Text style={styles.zoomFooterText}>💡 상단 버튼이나 두 손가락으로 벌려 확대할 수 있습니다</Text>
+                        <Text style={styles.zoomFooterText}>💡 두 손가락으로 벌려 확대할 수 있습니다</Text>
                     </View>
                 </View>
             </Modal>

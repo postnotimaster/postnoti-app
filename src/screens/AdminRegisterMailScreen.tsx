@@ -141,8 +141,8 @@ export const AdminRegisterMailScreen = () => {
     const handleAddExtraImage = async (camera: boolean) => {
         try {
             const result = camera
-                ? await ImagePicker.launchCameraAsync({ quality: 0.8 })
-                : await ImagePicker.launchImageLibraryAsync({ quality: 0.8 });
+                ? await ImagePicker.launchCameraAsync({ quality: 0.5 })
+                : await ImagePicker.launchImageLibraryAsync({ quality: 0.5 });
 
             if (!result.canceled) {
                 const optimized = await optimizeImage(result.assets[0].uri);
@@ -174,13 +174,13 @@ export const AdminRegisterMailScreen = () => {
                                 <Image source={{ uri: selectedImage }} style={appStyles.previewImage} />
                                 <View style={{ flexDirection: 'row', gap: 10 }}>
                                     <Pressable style={[appStyles.retakeBtn, { flex: 1 }]} onPress={async () => {
-                                        const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
+                                        const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
                                         if (!result.canceled) runOCR(result.assets[0].uri);
                                     }}>
                                         <Text style={appStyles.retakeBtnText}>📷 다시 촬영</Text>
                                     </Pressable>
                                     <Pressable style={[appStyles.retakeBtn, { flex: 1, backgroundColor: '#F1F5F9' }]} onPress={async () => {
-                                        const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.8 });
+                                        const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.5 });
                                         if (!result.canceled) runOCR(result.assets[0].uri);
                                     }}>
                                         <Text style={[appStyles.retakeBtnText, { color: '#64748B' }]}>🖼️ 앨범 선택</Text>
@@ -192,13 +192,13 @@ export const AdminRegisterMailScreen = () => {
                                 <PrimaryButton
                                     label="📷 우편물 사진 촬영"
                                     onPress={async () => {
-                                        const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
+                                        const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
                                         if (!result.canceled) runOCR(result.assets[0].uri);
                                     }}
                                 />
                                 <Pressable
                                     onPress={async () => {
-                                        const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.8 });
+                                        const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.5 });
                                         if (!result.canceled) runOCR(result.assets[0].uri);
                                     }}
                                     style={{

@@ -25,7 +25,6 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
     const [mails, setMails] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedFullImage, setSelectedFullImage] = useState<string | null>(null);
-    const [zoomScale, setZoomScale] = useState(1);
 
     useEffect(() => {
         loadHistory();
@@ -239,22 +238,12 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
             {/* 전체 화면 이미지 확대 (View 기반으로 변경하여 중첩 모달 문제 해결) */}
             {!!selectedFullImage && (
                 <View style={[styles.fullImageContainer, StyleSheet.absoluteFill, { zIndex: 9999 }]}>
-                    <View style={styles.zoomHeader}>
-                        <Pressable style={styles.zoomControlBtn} onPress={() => setZoomScale(prev => Math.max(1, prev - 0.5))}>
-                            <Text style={styles.zoomControlText}>-</Text>
-                        </Pressable>
-                        <Text style={styles.zoomPercentText}>{Math.round(zoomScale * 100)}%</Text>
-                        <Pressable style={styles.zoomControlBtn} onPress={() => setZoomScale(prev => Math.min(5, prev + 0.5))}>
-                            <Text style={styles.zoomControlText}>+</Text>
-                        </Pressable>
-                        <View style={{ flex: 1 }} />
-                        <Pressable style={styles.closeArea} onPress={() => {
-                            setSelectedFullImage(null);
-                            setZoomScale(1);
-                        }}>
-                            <Text style={styles.closeText}>✕ 닫기</Text>
-                        </Pressable>
-                    </View>
+                    <Pressable
+                        style={styles.closeArea}
+                        onPress={() => setSelectedFullImage(null)}
+                    >
+                        <Text style={styles.closeText}>✕ 닫기</Text>
+                    </Pressable>
                     <ScrollView
                         maximumZoomScale={5}
                         minimumZoomScale={1}
@@ -265,12 +254,12 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                     >
                         <Image
                             source={{ uri: selectedFullImage }}
-                            style={[styles.fullImage, { transform: [{ scale: zoomScale }] }]}
+                            style={styles.fullImage}
                             resizeMode="contain"
                         />
                     </ScrollView>
                     <View style={styles.zoomFooter}>
-                        <Text style={styles.zoomFooterText}>💡 상단 버튼이나 두 손가락으로 벌려 확대할 수 있습니다</Text>
+                        <Text style={styles.zoomFooterText}>💡 두 손가락으로 벌려 확대할 수 있습니다</Text>
                     </View>
                 </View>
             )}

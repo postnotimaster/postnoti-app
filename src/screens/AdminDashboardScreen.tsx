@@ -139,7 +139,7 @@ export const AdminDashboardScreen = ({ route }: any) => {
                             <Pressable
                                 style={[appStyles.premiumQuickBtn, { backgroundColor: '#1E293B', flex: 2 }]}
                                 onPress={async () => {
-                                    const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
+                                    const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
                                     if (!result.canceled) {
                                         runOCR(result.assets[0].uri);
                                         navigation.navigate('AdminRegisterMail');
