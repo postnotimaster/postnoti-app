@@ -322,23 +322,27 @@ export const AdminDashboardScreen = ({ route }: any) => {
                             <View style={{ padding: 15, borderBottomWidth: 1, borderColor: '#F1F5F9' }}>
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                     <View style={{ flex: 1 }}>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                                            <Text style={{ fontSize: 13, fontWeight: '800', color: '#6366F1', backgroundColor: '#EEF2FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, overflow: 'hidden' }}>
-                                                {selectedProfileForHistory?.room_number || '-'}
-                                            </Text>
-                                            <Text style={{ fontSize: 18, fontWeight: '800', color: '#1E293B' }}>
-                                                {selectedProfileForHistory?.company_name || '(미등록)'}
-                                            </Text>
-                                            <Text style={{ fontSize: 14, color: '#64748B' }}>{selectedProfileForHistory?.name}</Text>
-                                            {selectedProfileForHistory?.phone && (
-                                                <Pressable
-                                                    onPress={() => Linking.openURL(`tel:${selectedProfileForHistory.phone}`)}
-                                                    style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginLeft: 8 }}
-                                                >
-                                                    <Ionicons name="call" size={14} color="#6366F1" style={{ marginRight: 4 }} />
-                                                    <Text style={{ fontSize: 13, color: '#6366F1', fontWeight: '700' }}>{selectedProfileForHistory.phone}</Text>
-                                                </Pressable>
-                                            )}
+                                        <View style={{ marginBottom: 6 }}>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                                                <Text style={{ fontSize: 13, fontWeight: '800', color: '#6366F1', backgroundColor: '#EEF2FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, overflow: 'hidden' }}>
+                                                    {selectedProfileForHistory?.room_number || '-'}
+                                                </Text>
+                                                <Text style={{ fontSize: 18, fontWeight: '800', color: '#1E293B' }}>
+                                                    {selectedProfileForHistory?.company_name || '(미등록)'}
+                                                </Text>
+                                            </View>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                                <Text style={{ fontSize: 15, color: '#475569', fontWeight: '600' }}>{selectedProfileForHistory?.name}</Text>
+                                                {selectedProfileForHistory?.phone && (
+                                                    <Pressable
+                                                        onPress={() => Linking.openURL(`tel:${selectedProfileForHistory.phone}`)}
+                                                        style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F9FF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1, borderColor: '#BAE6FD' }}
+                                                    >
+                                                        <Ionicons name="call" size={12} color="#0369A1" style={{ marginRight: 4 }} />
+                                                        <Text style={{ fontSize: 12, color: '#0369A1', fontWeight: '800' }}>{selectedProfileForHistory.phone}</Text>
+                                                    </Pressable>
+                                                )}
+                                            </View>
                                         </View>
                                         <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
                                             <View style={{ backgroundColor: selectedProfileForHistory?.is_active ? '#F0FDF4' : '#FEF2F2', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>

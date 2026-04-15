@@ -76,8 +76,30 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                                         <Pressable
                                             style={[styles.resendBtn, { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }]}
                                             onPress={async () => {
+                                                // Fetch company slug
+                                                let companySlug = '';
+                                                try {
+                                                    const { data: compData } = await supabase
+                                                        .from('companies')
+                                                        .select('slug')
+                                                        .eq('id', tenant.company_id)
+                                                        .single();
+                                                    companySlug = compData?.slug || '';
+                                                } catch (e) { }
+
+                                                const link = `https://postnoti-app-two.vercel.app/branch/${companySlug}/view`;
+
                                                 if (!tenant.profile_id) {
-                                                    Alert.alert('알림 불가', '이 입주사는 앱 계정이 연결되어 있지 않습니다. 문자로 링크를 공유해 주세요.');
+                                                    Alert.alert('회원 미연동', '이 입주사는 앱 계정이 연결되어 있지 않습니다. 아래 전용 링크를 문자로 보내시겠습니까?', [
+                                                        { text: '취소', style: 'cancel' },
+                                                        {
+                                                            text: '문자 보내기',
+                                                            onPress: () => {
+                                                                const message = `[Postnoti] ${tenant.company_name || tenant.name}님, 도착한 우편물을 확인하세요.\n\n확인링크: ${link}`;
+                                                                Linking.openURL(`sms:${tenant.phone}?body=${encodeURIComponent(message)}`);
+                                                            }
+                                                        }
+                                                    ]);
                                                     return;
                                                 }
 
@@ -88,30 +110,26 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                                                     .single();
 
                                                 if (!profile?.push_token && !profile?.web_push_token) {
-                                                    Alert.alert('알림 불가', '이 입주민은 알림 수신 설정이 되어있지 않습니다.');
+                                                    Alert.alert('알림 불가', '이 입주민은 알림 수신 설정이 되어있지 않습니다. 문자로 전용 링크를 보내시겠습니까?', [
+                                                        { text: '취소', style: 'cancel' },
+                                                        {
+                                                            text: '문자 보내기',
+                                                            onPress: () => {
+                                                                const message = `[Postnoti] ${tenant.company_name || tenant.name}님, 도착한 우편물을 확인하세요.\n\n확인링크: ${link}`;
+                                                                Linking.openURL(`sms:${tenant.phone}?body=${encodeURIComponent(message)}`);
+                                                            }
+                                                        }
+                                                    ]);
                                                     return;
                                                 }
 
-                                                Alert.alert('알림 재발송', `${tenant.name}님께 알림을 다시 보내시겠습니까?`, [
+                                                Alert.alert('알림 재발송', `${tenant.name}님께 앱 푸시 알림을 다시 보내시겠습니까?`, [
                                                     { text: '취소', style: 'cancel' },
                                                     {
-                                                        text: '보내기',
+                                                        text: '푸시 보내기',
                                                         onPress: async () => {
-                                                            const title = `[우편물 도착] 알림 재발송 🔔`;
-                                                            const companyLabel = tenant.company_name || tenant.name;
-                                                            const body = `${companyLabel}님, 새로운 우편물이 도착했습니다.\n\n포스트노티 공유오피스 스마트 우편알림`;
-
-                                                            let companySlug = '';
-                                                            try {
-                                                                const { data: compData } = await supabase
-                                                                    .from('companies')
-                                                                    .select('slug')
-                                                                    .eq('id', tenant.company_id)
-                                                                    .single();
-                                                                companySlug = compData?.slug || '';
-                                                            } catch (e) { }
-
-                                                            const link = `https://postnoti-app-two.vercel.app/branch/${companySlug}/view`;
+                                                            const title = `[우편알림] ${tenant.company_name || tenant.name}님, 우편함 확인 🔔`;
+                                                            const body = `새로운 우편물이 도착했습니다. 터치하여 확인하세요.`;
 
                                                             const success = await mailService.sendPushNotification(
                                                                 [profile.push_token, profile.web_push_token].filter(Boolean),
@@ -121,7 +139,7 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                                                             );
 
                                                             if (success) Alert.alert('성공', '알림이 재발송되었습니다.');
-                                                            else Alert.alert('실패', '알림 발송 중 오류가 발생했습니다.');
+                                                            else Alert.alert('실패', '알림 발송 중 오류가 발생했습니다. 문자로 보내보세요.');
                                                         }
                                                     }
                                                 ]);
@@ -156,8 +174,16 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                                     </View>
                                 </Pressable>
                             ) : (
-                                <View style={[styles.image, styles.noImage]}>
-                                    <Text style={{ color: '#CBD5E1' }}>No Image</Text>
+                                <View style={[styles.image, styles.noImage, { padding: 20 }]}>
+                                    <Ionicons name="document-text-outline" size={32} color="#CBD5E1" style={{ marginBottom: 10 }} />
+                                    <Text style={{ color: '#64748B', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
+                                        보관 기간 만료 (사진 삭제)
+                                    </Text>
+                                    <View style={{ marginTop: 15, backgroundColor: '#fff', padding: 12, borderRadius: 10, width: '100%', borderWidth: 1, borderColor: '#E2E8F0' }}>
+                                        <Text style={{ color: '#1E293B', fontSize: 14, fontWeight: '800', textAlign: 'center' }} numberOfLines={3}>
+                                            {mail.ocr_content || '내용 없음'}
+                                        </Text>
+                                    </View>
                                 </View>
                             )}
 
@@ -264,10 +290,10 @@ const styles = StyleSheet.create({
     fullImageContainer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)' },
     zoomWrapper: { flexGrow: 1, justifyContent: 'center', alignItems: 'center' },
     fullImage: { width: Dimensions.get('window').width, height: Dimensions.get('window').height * 0.8 },
-    closeArea: { position: 'absolute', top: 50, right: 20, zIndex: 10, backgroundColor: 'rgba(0,0,0,0.5)', padding: 10, borderRadius: 20 },
-    closeText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-    rotateArea: { position: 'absolute', top: 50, right: 100, zIndex: 10, backgroundColor: 'rgba(79,70,229,0.8)', padding: 10, paddingHorizontal: 15, borderRadius: 20 },
-    rotateText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+    closeArea: { position: 'absolute', top: 30, right: 15, zIndex: 10, backgroundColor: 'rgba(0,0,0,0.5)', padding: 12, borderRadius: 25 },
+    closeText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+    rotateArea: { position: 'absolute', top: 30, right: 85, zIndex: 10, backgroundColor: 'rgba(79,70,229,0.8)', padding: 10, paddingHorizontal: 15, borderRadius: 20 },
+    rotateText: { color: '#fff', fontSize: 14, fontWeight: '700' },
     zoomFooter: { position: 'absolute', bottom: 40, width: '100%', alignItems: 'center' },
     zoomFooterText: { color: '#fff', fontSize: 12, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
     resendBtn: { backgroundColor: '#EEF2FF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#C7D2FE' },

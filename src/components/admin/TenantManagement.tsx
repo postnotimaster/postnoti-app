@@ -38,7 +38,8 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
         room_number: '',
         phone: '',
         is_active: true,
-        is_premium: false
+        is_premium: false,
+        retention_days: 14 // 기본값 2주
     });
 
     useEffect(() => {
@@ -180,6 +181,43 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                             <Text style={{ fontSize: 11, color: '#64748B' }}>{'\uc6b0\ud3b8 \ubc30\uc1a1\ubb3c \uac1c\ubd09 \ubc0f \uc0c1\uc138 \ucd2c\uc601 \ub300\uc0c1'}</Text>
                         </View>
                         <Switch value={editingTenant.is_premium} onValueChange={v => setEditingTenant({ ...editingTenant, is_premium: v })} trackColor={{ true: '#4F46E5', false: '#CBD5E1' }} />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>🖼️ 사진 자동 삭제 (보존 기간)</Text>
+                        <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+                            {[
+                                { label: '1주', days: 7 },
+                                { label: '2주', days: 14 },
+                                { label: '1달', days: 30 },
+                                { label: '영구', days: 0 }
+                            ].map((item) => (
+                                <Pressable
+                                    key={item.days}
+                                    onPress={() => setEditingTenant({ ...editingTenant, retention_days: item.days })}
+                                    style={{
+                                        flex: 1,
+                                        paddingVertical: 10,
+                                        borderRadius: 10,
+                                        borderWidth: 1,
+                                        alignItems: 'center',
+                                        backgroundColor: (editingTenant.retention_days || 14) === item.days ? '#4F46E5' : '#fff',
+                                        borderColor: (editingTenant.retention_days || 14) === item.days ? '#4F46E5' : '#E2E8F0'
+                                    }}
+                                >
+                                    <Text style={{
+                                        fontSize: 13,
+                                        fontWeight: '700',
+                                        color: (editingTenant.retention_days || 14) === item.days ? '#fff' : '#64748B'
+                                    }}>
+                                        {item.label}
+                                    </Text>
+                                </Pressable>
+                            ))}
+                        </View>
+                        <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 8 }}>
+                            * 설정 기간이 지나면 사진은 삭제되고 OCR 텍스트 정보만 남습니다.
+                        </Text>
                     </View>
                     <View style={styles.formButtons}>
                         <Pressable style={styles.cancelBtn} onPress={() => setIsEditing(false)}>
