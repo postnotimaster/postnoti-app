@@ -221,7 +221,7 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                     </View>
                     <View style={{ height: 100 }} />
                 </ScrollView>
-                <View style={[styles.formButtons, { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingVertical: 15, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#F1F5F9', marginBottom: Platform.OS === 'ios' ? 20 : 0 }]}>
+                <View style={[styles.formButtons, { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 15, paddingBottom: Platform.OS === 'ios' ? 40 : 30, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#F1F5F9' }]}>
                     <Pressable style={styles.cancelBtn} onPress={() => setIsEditing(false)}>
                         <Text style={styles.cancelBtnText}>{'\ucde8\uc18c'}</Text>
                     </Pressable>
