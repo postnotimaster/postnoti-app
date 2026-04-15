@@ -201,14 +201,14 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                                         borderRadius: 10,
                                         borderWidth: 1,
                                         alignItems: 'center',
-                                        backgroundColor: (editingTenant.retention_days || 14) === item.days ? '#4F46E5' : '#fff',
-                                        borderColor: (editingTenant.retention_days || 14) === item.days ? '#4F46E5' : '#E2E8F0'
+                                        backgroundColor: (editingTenant.retention_days ?? 14) === item.days ? '#4F46E5' : '#fff',
+                                        borderColor: (editingTenant.retention_days ?? 14) === item.days ? '#4F46E5' : '#E2E8F0'
                                     }}
                                 >
                                     <Text style={{
                                         fontSize: 13,
                                         fontWeight: '700',
-                                        color: (editingTenant.retention_days || 14) === item.days ? '#fff' : '#64748B'
+                                        color: (editingTenant.retention_days ?? 14) === item.days ? '#fff' : '#64748B'
                                     }}>
                                         {item.label}
                                     </Text>
@@ -219,13 +219,16 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                             * 설정 기간이 지나면 사진은 삭제되고 OCR 텍스트 정보만 남습니다.
                         </Text>
                     </View>
-                    <View style={styles.formButtons}>
-                        <Pressable style={styles.cancelBtn} onPress={() => setIsEditing(false)}>
-                            <Text style={styles.cancelBtnText}>{'\ucde8\uc18c'}</Text>
-                        </Pressable>
+                    <View style={{ height: 100 }} />
+                </ScrollView>
+                <View style={[styles.formButtons, { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingVertical: 15, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#F1F5F9', marginBottom: Platform.OS === 'ios' ? 20 : 0 }]}>
+                    <Pressable style={styles.cancelBtn} onPress={() => setIsEditing(false)}>
+                        <Text style={styles.cancelBtnText}>{'\ucde8\uc18c'}</Text>
+                    </Pressable>
+                    <View style={{ flex: 1 }}>
                         <PrimaryButton label={'\uc800\uc7a5\ud558\uae30'} onPress={handleSave} loading={loading} />
                     </View>
-                </ScrollView>
+                </View>
             </KeyboardAvoidingView>
         );
     }
@@ -277,6 +280,11 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                                         <View style={[styles.badge, { backgroundColor: t.is_active ? '#F0FDF4' : '#FEF2F2' }]}>
                                             <Text style={[styles.badgeText, { color: t.is_active ? '#166534' : '#991B1B' }]}>
                                                 {t.is_active ? '\uc785\uc8fc\uc911' : '\ud1f4\uac70'}
+                                            </Text>
+                                        </View>
+                                        <View style={[styles.badge, { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', borderWidth: 1 }]}>
+                                            <Text style={[styles.badgeText, { color: '#64748B' }]}>
+                                                {t.retention_days === 0 ? '영구' : `${(t.retention_days || 14) / 7}주`}
                                             </Text>
                                         </View>
                                         {t.is_premium && (

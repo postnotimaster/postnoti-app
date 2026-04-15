@@ -55,6 +55,17 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
 
     return (
         <View style={styles.container}>
+            <View style={{ backgroundColor: '#fff', paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderColor: '#F1F5F9', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Ionicons name="time-outline" size={14} color="#64748B" />
+                    <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '600' }}>사진 보관 정책</Text>
+                </View>
+                <View style={{ backgroundColor: '#F1F5F9', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 }}>
+                    <Text style={{ fontSize: 12, color: '#475569', fontWeight: '800' }}>
+                        {tenant.retention_days === 0 ? '영구 보관' : `${(tenant.retention_days || 14) / 7}주 후 사진 삭제`}
+                    </Text>
+                </View>
+            </View>
             {loading ? (
                 <ActivityIndicator style={{ marginTop: 50 }} color="#4F46E5" size="large" />
             ) : (
