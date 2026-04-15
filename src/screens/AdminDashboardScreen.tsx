@@ -8,6 +8,7 @@ import { appStyles } from '../styles/appStyles';
 import { AppHeader } from '../components/common/AppHeader';
 import { TenantMailHistory } from '../components/admin/TenantMailHistory';
 import { mailService } from '../services/mailService';
+import { tenantsService } from '../services/tenantsService';
 
 export const AdminDashboardScreen = ({ route }: any) => {
     const navigation = useNavigation<any>();
@@ -33,6 +34,7 @@ export const AdminDashboardScreen = ({ route }: any) => {
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
+    const [mailStats, setMailStats] = useState<Record<string, { total: number; read: number; lastSentAt: string | null }>>({});
 
     // 화면 포커스 시 첫 페이지 로드
     useFocusEffect(
@@ -50,6 +52,11 @@ export const AdminDashboardScreen = ({ route }: any) => {
             setMailLogs(result.data);
             setHasMore(result.hasMore);
             setPage(0);
+            // 통계도 함께 로드
+            try {
+                const stats = await tenantsService.getMailStatsByCompany(officeInfo!.id);
+                setMailStats(stats);
+            } catch (e) { }
         } catch (e) {
             console.error('Failed to load mail logs:', e);
         } finally {
@@ -235,20 +242,39 @@ export const AdminDashboardScreen = ({ route }: any) => {
                                 resizeMode="cover"
                             />
                             <View style={{ flex: 1 }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-                                    <Text style={[appStyles.logName, { fontSize: 15 }]}>{log.tenants?.name}</Text>
-                                    <Text style={{ fontSize: 12, color: '#94A3B8', marginLeft: 6 }}>{log.tenants?.room_number}</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2, gap: 6, flexWrap: 'wrap' }}>
+                                    <Text style={{ fontSize: 12, fontWeight: '800', color: '#6366F1', backgroundColor: '#EEF2FF', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, overflow: 'hidden' }}>
+                                        {log.tenants?.room_number || '-'}
+                                    </Text>
+                                    <Text style={{ fontSize: 15, fontWeight: '800', color: '#1E293B' }}>
+                                        {log.tenants?.company_name || '(미등록)'}
+                                    </Text>
+                                    <Text style={{ fontSize: 13, color: '#64748B' }}>{log.tenants?.name}</Text>
                                 </View>
-                                <Text style={[appStyles.logSender, { fontSize: 13, color: '#475569' }]} numberOfLines={1}>
-                                    {log.ocr_content ? `${log.ocr_content}` : '발신처 미상'}
-                                </Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                                    <Text style={{ fontSize: 13, color: '#475569', flex: 1 }} numberOfLines={1}>
+                                        {log.ocr_content ? `${log.ocr_content}` : '발신처 미상'}
+                                    </Text>
+                                    {log.tenants?.is_active === false && (
+                                        <View style={{ backgroundColor: '#FEF2F2', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6 }}>
+                                            <Text style={{ fontSize: 9, color: '#991B1B', fontWeight: '700' }}>퇴거</Text>
+                                        </View>
+                                    )}
+                                    {log.tenants?.is_premium && (
+                                        <View style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6, borderWidth: 1, borderColor: '#C7D2FE' }}>
+                                            <Text style={{ fontSize: 9, color: '#4338CA', fontWeight: '700' }}>P</Text>
+                                        </View>
+                                    )}
+                                </View>
                             </View>
                             <View style={{ alignItems: 'flex-end' }}>
                                 <Text style={{ fontSize: 11, color: '#94A3B8', marginBottom: 4 }}>
                                     {new Date(log.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}
                                 </Text>
-                                <View style={{ backgroundColor: '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                                    <Text style={{ fontSize: 10, color: '#64748B', fontWeight: '600' }}>{log.mail_type}</Text>
+                                <View style={{ backgroundColor: log.read_at ? '#DCFCE7' : '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                    <Text style={{ fontSize: 10, color: log.read_at ? '#15803D' : '#64748B', fontWeight: '600' }}>
+                                        {log.read_at ? '읽음' : log.mail_type}
+                                    </Text>
                                 </View>
                             </View>
                         </Pressable>
@@ -269,7 +295,6 @@ export const AdminDashboardScreen = ({ route }: any) => {
                 stickySectionHeadersEnabled={true}
             />
 
-            {/* 상세 이력 모달 */}
             <Modal
                 visible={isHistoryVisible}
                 animationType="fade"
@@ -278,13 +303,44 @@ export const AdminDashboardScreen = ({ route }: any) => {
             >
                 <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center' }}>
                     <View style={{ backgroundColor: '#fff', margin: 20, borderRadius: 20, flex: 1, maxHeight: '80%', overflow: 'hidden' }}>
-                        <View style={{ padding: 15, borderBottomWidth: 1, borderColor: '#F1F5F9', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Text style={{ fontSize: 18, fontWeight: '700' }}>
-                                {selectedProfileForHistory?.name}님의 우편함
-                            </Text>
-                            <Pressable onPress={() => setIsHistoryVisible(false)} style={{ padding: 5 }}>
-                                <Text style={{ fontSize: 16 }}>✕</Text>
-                            </Pressable>
+                        <View style={{ padding: 15, borderBottomWidth: 1, borderColor: '#F1F5F9' }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <View style={{ flex: 1 }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                        <Text style={{ fontSize: 13, fontWeight: '800', color: '#6366F1', backgroundColor: '#EEF2FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, overflow: 'hidden' }}>
+                                            {selectedProfileForHistory?.room_number || '-'}
+                                        </Text>
+                                        <Text style={{ fontSize: 18, fontWeight: '800', color: '#1E293B' }}>
+                                            {selectedProfileForHistory?.company_name || '(미등록)'}
+                                        </Text>
+                                        <Text style={{ fontSize: 14, color: '#64748B' }}>{selectedProfileForHistory?.name}</Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                                        <View style={{ backgroundColor: selectedProfileForHistory?.is_active ? '#F0FDF4' : '#FEF2F2', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
+                                            <Text style={{ fontSize: 10, fontWeight: '700', color: selectedProfileForHistory?.is_active ? '#166534' : '#991B1B' }}>
+                                                {selectedProfileForHistory?.is_active ? '입주중' : '퇴거'}
+                                            </Text>
+                                        </View>
+                                        {selectedProfileForHistory?.is_premium && (
+                                            <View style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, borderWidth: 1, borderColor: '#C7D2FE' }}>
+                                                <Text style={{ fontSize: 10, fontWeight: '700', color: '#4338CA' }}>Premium</Text>
+                                            </View>
+                                        )}
+                                        {selectedProfileForHistory?.id && mailStats[selectedProfileForHistory.id] && (() => {
+                                            const s = mailStats[selectedProfileForHistory.id!];
+                                            const rate = s.total > 0 ? Math.round((s.read / s.total) * 100) : 0;
+                                            return (
+                                                <Text style={{ fontSize: 11, fontWeight: '800', color: s.total > 0 && rate < 50 ? '#DC2626' : s.total > 0 && rate >= 80 ? '#059669' : '#D97706' }}>
+                                                    개봉 {s.read}/{s.total}
+                                                </Text>
+                                            );
+                                        })()}
+                                    </View>
+                                </View>
+                                <Pressable onPress={() => setIsHistoryVisible(false)} style={{ padding: 5 }}>
+                                    <Text style={{ fontSize: 16 }}>✕</Text>
+                                </Pressable>
+                            </View>
                         </View>
                         {selectedProfileForHistory && (
                             <TenantMailHistory

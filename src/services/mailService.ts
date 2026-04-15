@@ -53,7 +53,7 @@ export const mailService = {
     async getMailsByCompany(companyId: string) {
         const { data, error } = await supabase
             .from('mail_logs')
-            .select('*, tenants(id, name, room_number, phone, company_name, is_active)')
+            .select('*, tenants(id, name, room_number, phone, company_name, is_active, is_premium, profile_id)')
             .eq('company_id', companyId)
             .order('created_at', { ascending: false })
             .limit(50);
@@ -73,7 +73,7 @@ export const mailService = {
 
         const { data, error } = await supabase
             .from('mail_logs')
-            .select('*, tenants(id, name, room_number, phone, company_name, is_active)')
+            .select('*, tenants(id, name, room_number, phone, company_name, is_active, is_premium, profile_id)')
             .eq('company_id', companyId)
             .order('created_at', { ascending: false })
             .range(from, to);
@@ -119,7 +119,11 @@ export const mailService = {
             .from('mail_logs')
             .update({ read_at: new Date().toISOString() })
             .eq('id', mailId)
+            .is('read_at', null)
             .select();
+        if (error) {
+            console.error('markAsRead error:', error);
+        }
         return { data, error };
     }
 };
