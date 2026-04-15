@@ -214,8 +214,9 @@ export const AdminDashboardScreen = ({ route }: any) => {
                             const yesterday = yesterdayDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
 
                             let header = dateStr;
-                            if (dateStr === today) header = '오늘';
-                            if (dateStr === yesterday) header = '어제';
+                            const shortDate = date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+                            if (dateStr === today) header = `오늘 (${shortDate})`;
+                            if (dateStr === yesterday) header = `어제 (${shortDate})`;
 
                             if (!groups[header]) groups[header] = [];
                             groups[header].push(log);
@@ -287,14 +288,22 @@ export const AdminDashboardScreen = ({ route }: any) => {
                             </Pressable>
                         </View>
                     )}
-                    onEndReached={loadNextPage}
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={
-                        loadingMore ? (
-                            <ActivityIndicator size="small" color="#4F46E5" style={{ marginVertical: 20 }} />
-                        ) : !hasMore && mailLogs.length > 0 ? (
-                            <Text style={{ textAlign: 'center', color: '#94A3B8', fontSize: 12, marginVertical: 20 }}>데이터를 모두 불러왔습니다</Text>
-                        ) : null
+                        <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                            {loadingMore ? (
+                                <ActivityIndicator size="small" color="#4F46E5" />
+                            ) : hasMore ? (
+                                <Pressable
+                                    onPress={loadNextPage}
+                                    style={{ backgroundColor: '#F1F5F9', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' }}
+                                >
+                                    <Text style={{ color: '#475569', fontWeight: '700', fontSize: 13 }}>이전 내역 더보기 ⌄</Text>
+                                </Pressable>
+                            ) : mailLogs.length > 0 ? (
+                                <Text style={{ color: '#94A3B8', fontSize: 12 }}>모든 내역을 불러왔습니다</Text>
+                            ) : null}
+                        </View>
                     }
                     ListEmptyComponent={
                         <Text style={[appStyles.emptyText, { textAlign: 'center', marginTop: 30 }]}>검색 결과가 없습니다.</Text>
