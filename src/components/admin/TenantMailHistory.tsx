@@ -55,26 +55,6 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
 
     return (
         <View style={styles.container}>
-            <View style={{ backgroundColor: '#fff', paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderColor: '#F1F5F9', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Ionicons name="time-outline" size={14} color="#64748B" />
-                    <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '600' }}>사진 보관 정책</Text>
-                </View>
-                <Pressable
-                    onPress={() => {
-                        const days = tenant.retention_days ?? 14;
-                        const msg = days === 0
-                            ? "이 입주사의 우편물 사진은 삭제되지 않고 영구 보관됩니다."
-                            : `이 입주사의 우편물 사진은 등록 후 ${days}일(${days / 7}주)이 지나면 클라우드 용량 확보를 위해 자동 삭제되며, OCR 텍스트 기록만 보존됩니다.`;
-                        Alert.alert("사진 보관 정책 안내", msg);
-                    }}
-                    style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: '#C7D2FE' }}
-                >
-                    <Text style={{ fontSize: 12, color: '#4338CA', fontWeight: '800' }}>
-                        {tenant.retention_days === 0 ? '영구보관' : `${(tenant.retention_days ?? 14) / 7}주보관`}
-                    </Text>
-                </Pressable>
-            </View>
             {loading ? (
                 <ActivityIndicator style={{ marginTop: 50 }} color="#4F46E5" size="large" />
             ) : (
@@ -187,6 +167,13 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                                         style={styles.image}
                                         resizeMode="contain"
                                     />
+                                    {/* 개봉 현황 통계 (우측 상단) */}
+                                    <View style={{ position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0', flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                        <Ionicons name="mail-open-outline" size={12} color="#4F46E5" />
+                                        <Text style={{ fontSize: 11, fontWeight: '800', color: '#1E293B' }}>
+                                            개봉 {mails.filter(m => m.read_at).length}/{mails.length}
+                                        </Text>
+                                    </View>
                                     <View style={styles.zoomHint}>
                                         <Text style={styles.zoomHintText}>
                                             {isTenantMode && !mail.read_at ? '📩 터치하여 확인(읽음처리)' : '🔍 터치하여 확대'}
