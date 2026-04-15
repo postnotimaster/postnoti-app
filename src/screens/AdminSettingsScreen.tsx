@@ -21,7 +21,6 @@ export const AdminSettingsScreen = () => {
     const [adminName, setAdminName] = useState('');
     const [adminPhone, setAdminPhone] = useState('');
     const [officeName, setOfficeName] = useState('');
-    const [officeAddress, setOfficeAddress] = useState('');
     const [businessNumber, setBusinessNumber] = useState('');
     const [officeContact, setOfficeContact] = useState('');
 
@@ -42,7 +41,6 @@ export const AdminSettingsScreen = () => {
             }
             if (officeInfo) {
                 setOfficeName(officeInfo.name || '');
-                setOfficeAddress(officeInfo.address || '');
                 setBusinessNumber(officeInfo.business_number || '');
                 setOfficeContact(officeInfo.contact_phone || '');
             }
@@ -73,7 +71,6 @@ export const AdminSettingsScreen = () => {
             if (officeInfo?.id) {
                 const updatedOffice = await companiesService.updateCompany(officeInfo.id, {
                     name: officeName,
-                    address: officeAddress,
                     business_number: businessNumber,
                     contact_phone: officeContact
                 });
@@ -165,16 +162,6 @@ export const AdminSettingsScreen = () => {
                         </View>
 
                         <View style={appStyles.inputGroup}>
-                            <Text style={appStyles.label}>상세 주소</Text>
-                            <TextInput
-                                style={appStyles.input}
-                                value={officeAddress}
-                                onChangeText={setOfficeAddress}
-                                placeholder="상세 주소를 입력하세요"
-                            />
-                        </View>
-
-                        <View style={appStyles.inputGroup}>
                             <Text style={appStyles.label}>사업자 등록번호</Text>
                             <TextInput
                                 style={appStyles.input}
@@ -197,7 +184,7 @@ export const AdminSettingsScreen = () => {
                         </View>
 
                         <View style={[appStyles.inputGroup, { marginBottom: 0 }]}>
-                            <Text style={appStyles.label}>전용 링크 (URL 슬러그)</Text>
+                            <Text style={appStyles.label}>오피스 전용 접속 주소</Text>
                             <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', borderRadius: 12, paddingLeft: 14 }}>
                                 <Text style={{ color: '#94A3B8', fontSize: 13 }}>branch/</Text>
                                 <TextInput
