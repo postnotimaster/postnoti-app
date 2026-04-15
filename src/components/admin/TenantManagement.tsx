@@ -155,37 +155,73 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
             >
                 <ScrollView contentContainerStyle={styles.editForm}>
                     <Text style={styles.formTitle}>{editingTenant.id ? '\uc785\uc8fc\uc0ac \uc815\ubcf4 \uc218\uc815' : '\uc2e0\uaddc \uc785\uc8fc\uc0ac \ub4f1\ub85d'}</Text>
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>{'\ud68c\uc0ac\uba85'}</Text>
-                        <TextInput style={styles.input} value={editingTenant.company_name} onChangeText={t => setEditingTenant({ ...editingTenant, company_name: t })} placeholder={'\ud68c\uc0ac\uba85\uc744 \uc785\ub825\ud558\uc138\uc694'} />
+                    <View style={styles.compactInputGroup}>
+                        <Text style={styles.compactLabel}>{'\ud68c\uc0ac\uba85'}</Text>
+                        <TextInput
+                            style={styles.compactInput}
+                            value={editingTenant.company_name}
+                            onChangeText={t => setEditingTenant({ ...editingTenant, company_name: t })}
+                            placeholder={'\ud68c\uc0ac\uba85\uc744 \uc785\ub825\ud558\uc138\uc694'}
+                        />
                     </View>
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>{'\uc774\ub984 (\ub2f4\ub2f9\uc790)'}</Text>
-                        <TextInput style={styles.input} value={editingTenant.name} onChangeText={t => setEditingTenant({ ...editingTenant, name: t })} placeholder={'\uc774\ub984\uc744 \uc785\ub825\ud558\uc138\uc694'} />
+                    <View style={styles.compactInputGroup}>
+                        <Text style={styles.compactLabel}>{'\uc774\ub984'}</Text>
+                        <TextInput
+                            style={styles.compactInput}
+                            value={editingTenant.name}
+                            onChangeText={t => setEditingTenant({ ...editingTenant, name: t })}
+                            placeholder={'\uc774\ub984\uc744 \uc785\ub825\ud558\uc138\uc694'}
+                        />
                     </View>
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>{'\ud638\uc2e4'}</Text>
-                        <TextInput style={styles.input} value={editingTenant.room_number} onChangeText={t => setEditingTenant({ ...editingTenant, room_number: t })} placeholder={'\uc608: 301\ud638'} />
+                    <View style={styles.compactInputGroup}>
+                        <Text style={styles.compactLabel}>{'\ud638\uc2e4'}</Text>
+                        <TextInput
+                            style={styles.compactInput}
+                            value={editingTenant.room_number}
+                            onChangeText={t => setEditingTenant({ ...editingTenant, room_number: t })}
+                            placeholder={'\uc608: 301\ud638'}
+                        />
                     </View>
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>{'\uc804\ud654\ubc88\ud638'}</Text>
-                        <TextInput style={styles.input} value={editingTenant.phone} onChangeText={t => setEditingTenant({ ...editingTenant, phone: t })} placeholder="01012345678" keyboardType="phone-pad" />
-                    </View>
-                    <View style={[styles.inputGroup, styles.switchGroup]}>
-                        <Text style={styles.label}>{'\uc785\uc8fc \uc0c1\ud0dc (\uc785\uc8fc\uc911)'}</Text>
-                        <Switch value={editingTenant.is_active} onValueChange={v => setEditingTenant({ ...editingTenant, is_active: v })} />
-                    </View>
-                    <View style={[styles.inputGroup, styles.switchGroup]}>
-                        <View>
-                            <Text style={styles.label}>{'\ud504\ub9ac\ubbf8\uc5c4 \uc11c\ube44\uc2a4'}</Text>
-                            <Text style={{ fontSize: 11, color: '#64748B' }}>{'\uc6b0\ud3b8 \ubc30\uc1a1\ubb3c \uac1c\ubd09 \ubc0f \uc0c1\uc138 \ucd2c\uc601 \ub300\uc0c1'}</Text>
-                        </View>
-                        <Switch value={editingTenant.is_premium} onValueChange={v => setEditingTenant({ ...editingTenant, is_premium: v })} trackColor={{ true: '#4F46E5', false: '#CBD5E1' }} />
+                    <View style={styles.compactInputGroup}>
+                        <Text style={styles.compactLabel}>{'\uc804\ud654\ubc88\ud638'}</Text>
+                        <TextInput
+                            style={styles.compactInput}
+                            value={editingTenant.phone}
+                            onChangeText={t => setEditingTenant({ ...editingTenant, phone: t })}
+                            placeholder="01012345678"
+                            keyboardType="phone-pad"
+                        />
                     </View>
 
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>🖼️ 사진 자동 삭제 (보존 기간)</Text>
-                        <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+                    <View style={[styles.compactInputGroup, { justifyContent: 'space-between', paddingVertical: 10 }]}>
+                        <Text style={styles.compactLabel}>{'\uc785\uc8fc \uc0c1\ud0dc'}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <Text style={{ fontSize: 13, color: editingTenant.is_active ? '#10B981' : '#EF4444', fontWeight: '800' }}>
+                                {editingTenant.is_active ? '입주중' : '퇴거'}
+                            </Text>
+                            <Switch
+                                value={editingTenant.is_active}
+                                onValueChange={v => setEditingTenant({ ...editingTenant, is_active: v })}
+                                trackColor={{ true: '#10B981', false: '#CBD5E1' }}
+                            />
+                        </View>
+                    </View>
+
+                    <View style={[styles.compactInputGroup, { justifyContent: 'space-between', paddingVertical: 10 }]}>
+                        <View>
+                            <Text style={styles.compactLabel}>{'\ud504\ub9ac\ubbf8\uc5c4 \uc11c\ube44\uc2a4'}</Text>
+                            <Text style={{ fontSize: 10, color: '#94A3B8' }}>{'\uc6b0\ud3b8 \ubc30\uc1a1\ubb3c \uac1c\ubd09 \ucd2c\uc601'}</Text>
+                        </View>
+                        <Switch
+                            value={editingTenant.is_premium}
+                            onValueChange={v => setEditingTenant({ ...editingTenant, is_premium: v })}
+                            trackColor={{ true: '#4F46E5', false: '#CBD5E1' }}
+                        />
+                    </View>
+
+                    <View style={{ marginTop: 15, marginBottom: 20 }}>
+                        <Text style={[styles.compactLabel, { marginBottom: 10, width: '100%' }]}>🖼️ 사진 자동 삭제 (보존 기간)</Text>
+                        <View style={{ flexDirection: 'row', gap: 6 }}>
                             {[
                                 { label: '1주', days: 7 },
                                 { label: '2주', days: 14 },
@@ -206,8 +242,8 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                                     }}
                                 >
                                     <Text style={{
-                                        fontSize: 13,
-                                        fontWeight: '700',
+                                        fontSize: 12,
+                                        fontWeight: '800',
                                         color: (editingTenant.retention_days ?? 14) === item.days ? '#fff' : '#64748B'
                                     }}>
                                         {item.label}
@@ -215,21 +251,20 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                                 </Pressable>
                             ))}
                         </View>
-                        <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 8 }}>
-                            * 설정 기간이 지나면 사진은 삭제되고 OCR 텍스트 정보만 남습니다.
-                        </Text>
                     </View>
-                    <View style={{ height: 100 }} />
-                </ScrollView>
-                <View style={[styles.formButtons, { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 15, paddingBottom: Platform.OS === 'ios' ? 40 : 30, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#F1F5F9' }]}>
-                    <Pressable style={styles.cancelBtn} onPress={() => setIsEditing(false)}>
-                        <Text style={styles.cancelBtnText}>{'\ucde8\uc18c'}</Text>
-                    </Pressable>
-                    <View style={{ flex: 1 }}>
-                        <PrimaryButton label={'\uc800\uc7a5\ud558\uae30'} onPress={handleSave} loading={loading} />
+
+                    <View style={[styles.formButtons, { marginTop: 10, borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 20 }]}>
+                        <Pressable style={styles.cancelBtn} onPress={() => setIsEditing(false)}>
+                            <Text style={styles.cancelBtnText}>{'\ucde8\uc18c'}</Text>
+                        </Pressable>
+                        <View style={{ flex: 1 }}>
+                            <PrimaryButton label={'\uc800\uc7a5\ud558\uae30'} onPress={handleSave} loading={loading} />
+                        </View>
                     </View>
-                </View>
-            </KeyboardAvoidingView>
+                    {/* 물리 버튼 겹침 방지 여백 */}
+                    <View style={{ height: 60 }} />
+                </ScrollView >
+            </KeyboardAvoidingView >
         );
     }
 
@@ -377,5 +412,26 @@ const styles = StyleSheet.create({
     formButtons: { flexDirection: 'row', gap: 10, marginTop: 20, justifyContent: 'flex-end' },
     cancelBtn: { paddingHorizontal: 20, paddingVertical: 12, justifyContent: 'center' },
     cancelBtnText: { color: '#64748B', fontWeight: '600' },
-    emptyText: { textAlign: 'center', color: '#94A3B8', marginTop: 40 }
+    emptyText: { textAlign: 'center', color: '#94A3B8', marginTop: 40 },
+    // Compact Edit Form Styles
+    compactInputGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F1F5F9'
+    },
+    compactLabel: {
+        width: 100,
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#64748B'
+    },
+    compactInput: {
+        flex: 1,
+        fontSize: 15,
+        color: '#1E293B',
+        fontWeight: '600',
+        paddingVertical: 4
+    }
 });
