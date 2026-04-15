@@ -22,6 +22,8 @@ export const AdminSettingsScreen = () => {
     const [adminPhone, setAdminPhone] = useState('');
     const [officeName, setOfficeName] = useState('');
     const [officeAddress, setOfficeAddress] = useState('');
+    const [businessNumber, setBusinessNumber] = useState('');
+    const [officeContact, setOfficeContact] = useState('');
 
     useEffect(() => {
         loadAdminData();
@@ -41,6 +43,8 @@ export const AdminSettingsScreen = () => {
             if (officeInfo) {
                 setOfficeName(officeInfo.name || '');
                 setOfficeAddress(officeInfo.address || '');
+                setBusinessNumber(officeInfo.business_number || '');
+                setOfficeContact(officeInfo.contact_phone || '');
             }
         } catch (error) {
             console.error('Failed to load admin data', error);
@@ -69,7 +73,9 @@ export const AdminSettingsScreen = () => {
             if (officeInfo?.id) {
                 const updatedOffice = await companiesService.updateCompany(officeInfo.id, {
                     name: officeName,
-                    address: officeAddress
+                    address: officeAddress,
+                    business_number: businessNumber,
+                    contact_phone: officeContact
                 });
                 setOfficeInfo(updatedOffice);
             }
@@ -165,6 +171,28 @@ export const AdminSettingsScreen = () => {
                                 value={officeAddress}
                                 onChangeText={setOfficeAddress}
                                 placeholder="상세 주소를 입력하세요"
+                            />
+                        </View>
+
+                        <View style={appStyles.inputGroup}>
+                            <Text style={appStyles.label}>사업자 등록번호</Text>
+                            <TextInput
+                                style={appStyles.input}
+                                value={businessNumber}
+                                onChangeText={setBusinessNumber}
+                                placeholder="000-00-00000"
+                                keyboardType="numbers-and-punctuation"
+                            />
+                        </View>
+
+                        <View style={appStyles.inputGroup}>
+                            <Text style={appStyles.label}>오피스 대표 연락처</Text>
+                            <TextInput
+                                style={appStyles.input}
+                                value={officeContact}
+                                onChangeText={setOfficeContact}
+                                placeholder="02-0000-0000"
+                                keyboardType="phone-pad"
                             />
                         </View>
 
