@@ -14,6 +14,7 @@ import {
 import { mailService } from '../../services/mailService';
 import { Tenant } from '../../services/tenantsService';
 import { supabase } from '../../lib/supabase';
+import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 
 interface TenantMailHistoryProps {
     tenant: Tenant;
@@ -244,20 +245,19 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                     >
                         <Text style={styles.closeText}>✕ 닫기</Text>
                     </Pressable>
-                    <ScrollView
-                        maximumZoomScale={5}
-                        minimumZoomScale={1}
-                        centerContent={true}
-                        showsHorizontalScrollIndicator={false}
-                        showsVerticalScrollIndicator={false}
-                        contentContainerStyle={styles.zoomWrapper}
+                    <ReactNativeZoomableView
+                        maxZoom={5}
+                        minZoom={1}
+                        initialZoom={1}
+                        bindToBorders={true}
+                        style={styles.zoomWrapper}
                     >
                         <Image
                             source={{ uri: selectedFullImage }}
                             style={styles.fullImage}
                             resizeMode="contain"
                         />
-                    </ScrollView>
+                    </ReactNativeZoomableView>
                     <View style={styles.zoomFooter}>
                         <Text style={styles.zoomFooterText}>💡 두 손가락으로 벌려 확대할 수 있습니다</Text>
                     </View>

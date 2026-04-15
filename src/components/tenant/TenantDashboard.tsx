@@ -17,6 +17,7 @@ import { Platform } from 'react-native';
 import { useToast } from '../../contexts/ToastContext';
 import { SettingsModal } from './SettingsModal';
 import { MailItem, MailLog } from './MailItem';
+import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 
 type Props = {
     companyId: string;
@@ -608,13 +609,12 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
                     <Pressable style={styles.closeButton} onPress={() => setSelectedMailImage(null)}>
                         <Text style={styles.closeButtonText}>✕ 닫기</Text>
                     </Pressable>
-                    <ScrollView
-                        maximumZoomScale={5}
-                        minimumZoomScale={1}
-                        centerContent={true}
-                        showsHorizontalScrollIndicator={false}
-                        showsVerticalScrollIndicator={false}
-                        contentContainerStyle={styles.zoomWrapper}
+                    <ReactNativeZoomableView
+                        maxZoom={5}
+                        minZoom={1}
+                        initialZoom={1}
+                        bindToBorders={true}
+                        style={styles.zoomWrapper}
                     >
                         {selectedMailImage && (
                             <Image
@@ -623,7 +623,7 @@ export const TenantDashboard = ({ companyId, companyName, pushToken, webPushToke
                                 resizeMode="contain"
                             />
                         )}
-                    </ScrollView>
+                    </ReactNativeZoomableView>
                     <View style={styles.zoomFooter}>
                         <Text style={styles.zoomFooterText}>💡 두 손가락으로 벌려 확대할 수 있습니다</Text>
                     </View>
