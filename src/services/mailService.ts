@@ -115,14 +115,11 @@ export const mailService = {
     },
 
     async markAsRead(mailId: string) {
-        const { data, error } = await supabase
-            .from('mail_logs')
-            .update({ read_at: new Date().toISOString() })
-            .eq('id', mailId)
-            .is('read_at', null)
-            .select();
+        const { data, error } = await supabase.rpc('mark_mail_as_read', {
+            p_mail_id: mailId
+        });
         if (error) {
-            console.error('markAsRead error:', error);
+            console.error('markAsRead RPC error:', error);
         }
         return { data, error };
     }
