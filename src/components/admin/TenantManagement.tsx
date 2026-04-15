@@ -13,6 +13,7 @@ import {
     KeyboardAvoidingView,
     Platform
 } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { tenantsService, Tenant } from '../../services/tenantsService';
 import { PrimaryButton } from '../common/PrimaryButton';
 
@@ -153,8 +154,15 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                 style={{ flex: 1, backgroundColor: '#fff' }}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
             >
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
+                    <Pressable onPress={() => setIsEditing(false)} style={{ marginRight: 15 }}>
+                        <Ionicons name="arrow-back" size={24} color="#1E293B" />
+                    </Pressable>
+                    <Text style={{ fontSize: 18, fontWeight: '800', color: '#1E293B' }}>
+                        {editingTenant.id ? '\uc785\uc8fc\uc0ac \uc815\ubcf4 \uc218\uc815' : '\uc2e0\uaddc \uc785\uc8fc\uc0ac \ub4f1\ub85d'}
+                    </Text>
+                </View>
                 <ScrollView contentContainerStyle={styles.editForm}>
-                    <Text style={styles.formTitle}>{editingTenant.id ? '\uc785\uc8fc\uc0ac \uc815\ubcf4 \uc218\uc815' : '\uc2e0\uaddc \uc785\uc8fc\uc0ac \ub4f1\ub85d'}</Text>
                     <View style={styles.compactInputGroup}>
                         <Text style={styles.compactLabel}>{'\ud68c\uc0ac\uba85'}</Text>
                         <TextInput
