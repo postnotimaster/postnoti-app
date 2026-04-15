@@ -137,8 +137,10 @@ export const AdminMenuScreen = () => {
                 <SafeAreaView style={{ flex: 1 }}>
                     <AppHeader title="입주사 관리" onBack={async () => {
                         setIsTenantMgmtVisible(false);
-                        const p = await tenantsService.getTenantsByCompany(officeInfo.id);
-                        setProfiles(p);
+                        if (officeInfo) {
+                            const p = await tenantsService.getTenantsByCompany(officeInfo.id);
+                            setProfiles(p);
+                        }
                     }} />
                     {officeInfo && (
                         <TenantManagement

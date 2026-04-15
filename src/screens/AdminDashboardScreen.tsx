@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Image, Modal, SafeAreaView, ActivityIndicator, SectionList, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, ScrollView, Pressable, TextInput, Image, Modal, SafeAreaView, ActivityIndicator, SectionList, Alert, BackHandler } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
@@ -7,24 +7,16 @@ import { useAppContent } from '../contexts/AppContext';
 import { appStyles } from '../styles/appStyles';
 import { AppHeader } from '../components/common/AppHeader';
 import { TenantMailHistory } from '../components/admin/TenantMailHistory';
-import { tenantsService } from '../services/tenantsService';
-import { masterSendersService } from '../services/masterSendersService';
-import { BackHandler } from 'react-native';
+import { mailService } from '../services/mailService';
 
 export const AdminDashboardScreen = ({ route }: any) => {
     const navigation = useNavigation<any>();
     const {
         officeInfo,
-        mailLogs,
-        setMailLogs,
         profiles,
         setProfiles,
         masterSenders,
         setMasterSenders,
-        logSearchQuery,
-        setLogSearchQuery,
-        logPageSize,
-        setLogPageSize,
         isHistoryVisible,
         setIsHistoryVisible,
         selectedProfileForHistory,
@@ -32,8 +24,54 @@ export const AdminDashboardScreen = ({ route }: any) => {
         runOCR,
         isManualSearchVisible,
         setIsManualSearchVisible,
-        isRefreshing,
     } = useAppContent();
+
+    // 자체 대시보드 상태 (AppContext에서 분리됨)
+    const [mailLogs, setMailLogs] = useState<any[]>([]);
+    const [logSearchQuery, setLogSearchQuery] = useState('');
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(true);
+
+    // 화면 포커스 시 첫 페이지 로드
+    useFocusEffect(
+        useCallback(() => {
+            if (officeInfo?.id) {
+                loadFirstPage();
+            }
+        }, [officeInfo?.id])
+    );
+
+    const loadFirstPage = async () => {
+        try {
+            setInitialLoading(true);
+            const result = await mailService.getMailsByCompanyPaginated(officeInfo!.id, 0);
+            setMailLogs(result.data);
+            setHasMore(result.hasMore);
+            setPage(0);
+        } catch (e) {
+            console.error('Failed to load mail logs:', e);
+        } finally {
+            setInitialLoading(false);
+        }
+    };
+
+    const loadNextPage = async () => {
+        if (!hasMore || loadingMore || !officeInfo?.id) return;
+        try {
+            setLoadingMore(true);
+            const nextPage = page + 1;
+            const result = await mailService.getMailsByCompanyPaginated(officeInfo.id, nextPage);
+            setMailLogs(prev => [...prev, ...result.data]);
+            setHasMore(result.hasMore);
+            setPage(nextPage);
+        } catch (e) {
+            console.error('Failed to load next page:', e);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
 
     // 뒤로가기 종료 처리 (포커스되었을 때만 작동)
     useFocusEffect(
@@ -136,7 +174,7 @@ export const AdminDashboardScreen = ({ route }: any) => {
                                     value={logSearchQuery}
                                     onChangeText={setLogSearchQuery}
                                 />
-                                {isRefreshing && (
+                                {initialLoading && (
                                     <ActivityIndicator size="small" color="#4F46E5" style={{ position: 'absolute', right: 14, top: 14 }} />
                                 )}
                             </View>
@@ -150,7 +188,7 @@ export const AdminDashboardScreen = ({ route }: any) => {
                         const room = log.tenants?.room_number?.toLowerCase() || '';
                         const sender = log.ocr_content?.toLowerCase() || '';
                         return name.includes(query) || room.includes(query) || sender.includes(query);
-                    }).slice(0, logPageSize);
+                    });
 
                     const groups: { [key: string]: any[] } = {};
                     filtered.forEach(log => {
@@ -216,12 +254,15 @@ export const AdminDashboardScreen = ({ route }: any) => {
                         </Pressable>
                     </View>
                 )}
-                onEndReached={() => {
-                    if (logPageSize < mailLogs.length) {
-                        setLogPageSize(logPageSize + 20);
-                    }
-                }}
+                onEndReached={loadNextPage}
                 onEndReachedThreshold={0.5}
+                ListFooterComponent={
+                    loadingMore ? (
+                        <ActivityIndicator size="small" color="#4F46E5" style={{ marginVertical: 20 }} />
+                    ) : !hasMore && mailLogs.length > 0 ? (
+                        <Text style={{ textAlign: 'center', color: '#94A3B8', fontSize: 12, marginVertical: 20 }}>데이터를 모두 불러왔습니다</Text>
+                    ) : null
+                }
                 ListEmptyComponent={
                     <Text style={[appStyles.emptyText, { textAlign: 'center', marginTop: 30 }]}>검색 결과가 없습니다.</Text>
                 }

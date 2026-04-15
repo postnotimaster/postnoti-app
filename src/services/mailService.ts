@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase';
 
+const PAGE_SIZE = 30;
+
 export const mailService = {
     async registerMail(
         companyId: string,
@@ -57,6 +59,59 @@ export const mailService = {
             .limit(50);
         if (error) throw error;
         return data || [];
+    },
+
+    /**
+     * 관리자 대시보드용 페이지네이션 조회
+     * @param companyId 오피스 ID
+     * @param page 페이지 번호 (0부터 시작)
+     * @returns { data, hasMore }
+     */
+    async getMailsByCompanyPaginated(companyId: string, page: number = 0) {
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+
+        const { data, error } = await supabase
+            .from('mail_logs')
+            .select('*, tenants(id, name, room_number, phone, company_name, is_active)')
+            .eq('company_id', companyId)
+            .order('created_at', { ascending: false })
+            .range(from, to);
+
+        if (error) throw error;
+
+        return {
+            data: data || [],
+            hasMore: (data?.length || 0) >= PAGE_SIZE
+        };
+    },
+
+    /**
+     * 입주사(Tenant) 대시보드용 페이지네이션 조회
+     * @param tenantId 입주사 ID
+     * @param page 페이지 번호 (0부터 시작)
+     * @returns { data, hasMore }
+     */
+    async getMailsByTenantPaginated(tenantId: string, page: number = 0) {
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+
+        const { data, error } = await supabase
+            .from('mail_logs')
+            .select('*')
+            .eq('tenant_id', tenantId)
+            .order('created_at', { ascending: false })
+            .range(from, to);
+
+        if (error) {
+            console.error('getMailsByTenantPaginated error:', error);
+            throw error;
+        }
+
+        return {
+            data: data || [],
+            hasMore: (data?.length || 0) >= PAGE_SIZE
+        };
     },
 
     async markAsRead(mailId: string) {

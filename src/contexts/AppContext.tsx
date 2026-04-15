@@ -38,10 +38,8 @@ interface AppContextType {
     // Admin Data
     officeInfo: Company | null;
     setOfficeInfo: (comp: Company | null) => void;
-    profiles: Tenant[]; // Tenants inside current office (RENAMED from Profile to Tenant internally)
+    profiles: Tenant[];
     setProfiles: (tenants: Tenant[]) => void;
-    mailLogs: any[];
-    setMailLogs: (logs: any[]) => void;
     masterSenders: string[];
     setMasterSenders: (senders: string[]) => void;
 
@@ -60,10 +58,6 @@ interface AppContextType {
     // Other UI States
     selectedProfileForHistory: Tenant | null;
     setSelectedProfileForHistory: (p: Tenant | null) => void;
-    logSearchQuery: string;
-    setLogSearchQuery: (q: string) => void;
-    logPageSize: number;
-    setLogPageSize: (s: number) => void;
     manualSearchQuery: string;
     setManualSearchQuery: (q: string) => void;
 
@@ -81,7 +75,7 @@ interface AppContextType {
     extraImages: string[];
     setExtraImages: (imgs: string[]) => void;
 
-    isRefreshing: boolean;
+
 
     // Actions
     loadData: () => Promise<void>;
@@ -113,7 +107,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const [officeInfo, setOfficeInfo] = useState<Company | null>(null);
     const [profiles, setProfiles] = useState<Tenant[]>([]);
     const [masterSenders, setMasterSenders] = useState<string[]>([]);
-    const [mailLogs, setMailLogs] = useState<any[]>([]);
 
     // UI Visibility
     const [isAdminMgmtVisible, setIsAdminMgmtVisible] = useState(false);
@@ -124,8 +117,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     // Search & Filters
     const [selectedProfileForHistory, setSelectedProfileForHistory] = useState<Tenant | null>(null);
-    const [logSearchQuery, setLogSearchQuery] = useState('');
-    const [logPageSize, setLogPageSize] = useState(10);
     const [manualSearchQuery, setManualSearchQuery] = useState('');
 
     // --- Hooks (Modularized Logic) ---
@@ -143,26 +134,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const { handleRegisterMail: registerMailLogic } = useMailRegistration(
         officeInfo,
-        setMailLogs,
+        null,
         setOcrLoading,
         resetOCR
     );
 
     // --- UI/Loading States ---
-    const [isRefreshing, setIsRefreshing] = useState(false);
 
     const handleLoginSuccess = async (profile: any) => {
         if (profile && profile.companies) {
             const myOffice = profile.companies as Company;
             setOfficeInfo(myOffice);
 
-            // 해당 오피스의 입주사 및 우편 로그 로드
-            const [p, m] = await Promise.all([
+            const [p] = await Promise.all([
                 tenantsService.getTenantsByCompany(myOffice.id),
-                mailService.getMailsByCompany(myOffice.id)
             ]);
             setProfiles(p);
-            setMailLogs(m);
             setMode('admin_dashboard');
         }
     };
@@ -188,13 +175,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                     const myOffice = profile.companies as Company;
                     setOfficeInfo(myOffice);
 
-                    // 4. 해당 오피스의 입주사 및 우편 로그 로드
-                    const [p, m] = await Promise.all([
-                        tenantsService.getTenantsByCompany(myOffice.id),
-                        mailService.getMailsByCompany(myOffice.id)
-                    ]);
+                    // 4. 해당 오피스의 입주사 로드
+                    const p = await tenantsService.getTenantsByCompany(myOffice.id);
                     setProfiles(p);
-                    setMailLogs(m);
                 }
             }
         } catch (e) {
@@ -354,13 +337,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             value={{
                 mode, setMode,
                 isInitializing: isInitialLoading,
-                isRefreshing,
                 expoPushToken,
                 webPushToken,
                 brandingCompany, setBrandingCompany,
                 officeInfo, setOfficeInfo,
                 profiles, setProfiles,
-                mailLogs, setMailLogs,
                 masterSenders, setMasterSenders,
                 isAdminMgmtVisible, setIsAdminMgmtVisible,
                 isTenantMgmtVisible, setIsTenantMgmtVisible,
@@ -368,8 +349,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 isHistoryVisible, setIsHistoryVisible,
                 isManualSearchVisible, setIsManualSearchVisible,
                 selectedProfileForHistory, setSelectedProfileForHistory,
-                logSearchQuery, setLogSearchQuery,
-                logPageSize, setLogPageSize,
                 manualSearchQuery, setManualSearchQuery,
                 selectedImage, setSelectedImage,
                 ocrLoading,

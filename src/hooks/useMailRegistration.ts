@@ -9,7 +9,7 @@ import { useToast } from '../contexts/ToastContext';
 
 export const useMailRegistration = (
     officeInfo: Company | null,
-    setMailLogs: (logs: any[]) => void,
+    onMailRegistered: (() => void) | null,
     setOcrLoading: (loading: boolean) => void,
     resetOCR: () => void
 ) => {
@@ -85,9 +85,8 @@ export const useMailRegistration = (
 
             // Alert.alert('완료', `${matchedProfile.name}님께 알림을 보냈습니다.`); // 이전 단순 알림 제거
 
-            // 데이터 갱신
-            const refreshedMails = await mailService.getMailsByCompany(officeInfo.id);
-            setMailLogs(refreshedMails);
+            // 데이터 갱신을 호출자에게 위임
+            if (onMailRegistered) onMailRegistered();
 
             // Reset UI States (Success) 제거 - UI 컴포넌트에서 제어하도록 변경
             // resetOCR(); 
