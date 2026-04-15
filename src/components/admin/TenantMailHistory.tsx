@@ -167,13 +167,7 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                                         style={styles.image}
                                         resizeMode="contain"
                                     />
-                                    {/* 개봉 현황 통계 (우측 상단) */}
-                                    <View style={{ position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0', flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                        <Ionicons name="mail-open-outline" size={12} color="#4F46E5" />
-                                        <Text style={{ fontSize: 11, fontWeight: '800', color: '#1E293B' }}>
-                                            개봉 {mails.filter(m => m.read_at).length}/{mails.length}
-                                        </Text>
-                                    </View>
+
                                     <View style={styles.zoomHint}>
                                         <Text style={styles.zoomHintText}>
                                             {isTenantMode && !mail.read_at ? '📩 터치하여 확인(읽음처리)' : '🔍 터치하여 확대'}
