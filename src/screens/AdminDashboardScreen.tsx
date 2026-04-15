@@ -345,26 +345,42 @@ export const AdminDashboardScreen = ({ route }: any) => {
                                             </View>
                                         </View>
                                         <View style={{ gap: 6, alignItems: 'flex-start', marginTop: 4 }}>
+                                            {/* 입주 상태 배지 */}
                                             <View style={{ backgroundColor: selectedProfileForHistory?.is_active ? '#059669' : '#DC2626', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                                                 <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#fff' }} />
                                                 <Text style={{ fontSize: 11, fontWeight: '900', color: '#fff' }}>
                                                     {selectedProfileForHistory?.is_active ? '입주중' : '퇴거'}
                                                 </Text>
                                             </View>
-                                            <Pressable
-                                                onPress={() => {
-                                                    const days = selectedProfileForHistory?.retention_days ?? 14;
-                                                    const msg = days === 0
-                                                        ? "이 입주사의 우편물 사진은 삭제되지 않고 영구 보관됩니다."
-                                                        : `이 입주사의 우편물 사진은 등록 후 ${days}일(${days / 7}주)이 지나면 자동 삭제되며, OCR 텍스트 기록만 보존됩니다.`;
-                                                    Alert.alert("사진 보관 정책 안내", msg);
-                                                }}
-                                                style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 30, borderWidth: 1, borderColor: '#C7D2FE' }}
-                                            >
-                                                <Text style={{ fontSize: 10, color: '#4338CA', fontWeight: '800' }}>
-                                                    {selectedProfileForHistory?.retention_days === 0 ? '영구보관' : `${(selectedProfileForHistory?.retention_days ?? 14) / 7}주보관`}
-                                                </Text>
-                                            </Pressable>
+
+                                            {/* 보관 정책 및 개봉 현황 (한 줄에 배치) */}
+                                            <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                                                <Pressable
+                                                    onPress={() => {
+                                                        const days = selectedProfileForHistory?.retention_days ?? 14;
+                                                        const msg = days === 0
+                                                            ? "이 입주사의 우편물 사진은 삭제되지 않고 영구 보관됩니다."
+                                                            : `이 입주사의 우편물 사진은 등록 후 ${days}일(${days / 7}주)이 지나면 자동 삭제되며, OCR 텍스트 기록만 보존됩니다.`;
+                                                        Alert.alert("사진 보관 정책 안내", msg);
+                                                    }}
+                                                    style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 30, borderWidth: 1, borderColor: '#C7D2FE' }}
+                                                >
+                                                    <Text style={{ fontSize: 10, color: '#4338CA', fontWeight: '800' }}>
+                                                        {selectedProfileForHistory?.retention_days === 0 ? '영구보관' : `${(selectedProfileForHistory?.retention_days ?? 14) / 7}주보관`}
+                                                    </Text>
+                                                </Pressable>
+
+                                                {selectedProfileForHistory?.id && mailStats[selectedProfileForHistory.id] && (() => {
+                                                    const s = mailStats[selectedProfileForHistory.id!];
+                                                    return (
+                                                        <View style={{ backgroundColor: '#F8FAFC', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 30, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                                                            <Text style={{ fontSize: 10, fontWeight: '800', color: '#475569' }}>
+                                                                개봉 {s.read}/{s.total}
+                                                            </Text>
+                                                        </View>
+                                                    );
+                                                })()}
+                                            </View>
                                         </View>
                                     </View>
                                     <Pressable onPress={() => setIsHistoryVisible(false)} style={{ padding: 15, marginRight: -10 }}>
