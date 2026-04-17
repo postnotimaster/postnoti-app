@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, Text, Pressable, ScrollView, SafeAreaView, Alert } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
@@ -17,10 +18,10 @@ export const AdminMenuScreen = () => {
     const navigation = useNavigation<any>();
     const {
         officeInfo,
-        isTenantMgmtVisible, setIsTenantMgmtVisible,
-        isSenderMgmtVisible, setIsSenderMgmtVisible,
         setProfiles, setMasterSenders
     } = useAppContent();
+
+    const tenantMgmtRef = useRef<any>(null);
 
     const handleLogout = async () => {
         Alert.alert('로그아웃', '정말 로그아웃 하시겠습니까?', [
@@ -43,19 +44,19 @@ export const AdminMenuScreen = () => {
     };
 
     return (
-        <SafeAreaView style={appStyles.safeArea}>
+        <SafeAreaView style={appStyles.safeArea} edges={['top', 'left', 'right']}>
             <AppHeader title="관리 메뉴" onBack={() => navigation.goBack()} />
 
             <ScrollView style={{ flex: 1, backgroundColor: '#F8FAFC' }} contentContainerStyle={{ padding: 20 }}>
-                <View style={appStyles.bottomSheetHeader}>
-                    <Text style={appStyles.bottomSheetTitle}>오피스 설정 및 관리</Text>
+                <View style={[appStyles.bottomSheetHeader, { marginBottom: 15 }]}>
+                    <Text style={[appStyles.bottomSheetTitle, { fontSize: 18 }]}>오피스 설정 및 관리</Text>
                     <Text style={appStyles.bottomSheetSubtitle}>원하시는 관리 기능을 선택해 주세요</Text>
                 </View>
 
-                <View style={{ gap: 12 }}>
+                <View style={{ gap: 8 }}>
                     <Pressable
                         onPress={() => navigation.navigate('AdminSettings')}
-                        style={appStyles.premiumMenuBtn}
+                        style={[appStyles.premiumMenuBtn, { padding: 15 }]}
                     >
                         <Ionicons name="person-circle-outline" size={24} color="#4F46E5" style={{ marginRight: 16 }} />
                         <View style={appStyles.menuBtnTextGroup}>
@@ -69,23 +70,9 @@ export const AdminMenuScreen = () => {
 
                     <Pressable
                         onPress={() => {
-                            setIsTenantMgmtVisible(true);
+                            navigation.navigate('AdminSenders');
                         }}
-                        style={appStyles.premiumMenuBtn}
-                    >
-                        <Ionicons name="business-outline" size={24} color="#1E293B" style={{ marginRight: 16 }} />
-                        <View style={appStyles.menuBtnTextGroup}>
-                            <Text style={appStyles.menuBtnLabel}>입주사 데이터 관리</Text>
-                            <Text style={appStyles.menuBtnDesc}>입주사 등록, 수정 및 거주 상태 관리</Text>
-                        </View>
-                        <Ionicons name="chevron-forward-outline" size={20} color="#CBD5E1" />
-                    </Pressable>
-
-                    <Pressable
-                        onPress={() => {
-                            setIsSenderMgmtVisible(true);
-                        }}
-                        style={appStyles.premiumMenuBtn}
+                        style={[appStyles.premiumMenuBtn, { padding: 15 }]}
                     >
                         <Ionicons name="key-outline" size={24} color="#1E293B" style={{ marginRight: 16 }} />
                         <View style={appStyles.menuBtnTextGroup}>
@@ -95,19 +82,19 @@ export const AdminMenuScreen = () => {
                         <Ionicons name="chevron-forward-outline" size={20} color="#CBD5E1" />
                     </Pressable>
 
-                    <View style={[appStyles.premiumMenuBtn, { backgroundColor: '#F1F5F9', borderStyle: 'dashed' }]}>
-                        <Ionicons name="link-outline" size={24} color="#4F46E5" style={{ marginRight: 16 }} />
+                    <View style={[appStyles.premiumMenuBtn, { backgroundColor: '#F1F5F9', borderStyle: 'dashed', padding: 12 }]}>
+                        <Ionicons name="link-outline" size={24} color="#4F46E5" style={{ marginRight: 12 }} />
                         <View style={appStyles.menuBtnTextGroup}>
-                            <Text style={[appStyles.menuBtnLabel, { color: '#4F46E5' }]}>입주자 전용 링크</Text>
+                            <Text style={[appStyles.menuBtnLabel, { color: '#4F46E5', fontSize: 14 }]}>입주자 전용 링크</Text>
                             <Text style={appStyles.menuBtnDesc} numberOfLines={1}>
                                 branch/{officeInfo?.slug}
                             </Text>
                         </View>
                         <Pressable
                             onPress={copyLink}
-                            style={{ backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0' }}
+                            style={{ backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0' }}
                         >
-                            <Text style={{ fontSize: 12, fontWeight: '700', color: '#64748B' }}>복사</Text>
+                            <Text style={{ fontSize: 11, fontWeight: '700', color: '#64748B' }}>복사</Text>
                         </Pressable>
                     </View>
 
@@ -115,11 +102,11 @@ export const AdminMenuScreen = () => {
 
                     <Pressable
                         onPress={handleLogout}
-                        style={appStyles.premiumExitBtn}
+                        style={[appStyles.premiumExitBtn, { padding: 15 }]}
                     >
                         <Ionicons name="log-out-outline" size={22} color="#E11D48" style={{ marginRight: 12 }} />
                         <View style={{ flex: 1 }}>
-                            <Text style={appStyles.exitBtnLabel}>로그아웃</Text>
+                            <Text style={[appStyles.exitBtnLabel, { fontSize: 14 }]}>로그아웃</Text>
                             <Text style={appStyles.exitBtnDesc}>현재 계정에서 안전하게 나가기</Text>
                         </View>
                     </Pressable>
@@ -127,50 +114,6 @@ export const AdminMenuScreen = () => {
 
                 <View style={{ height: 40 }} />
             </ScrollView>
-
-            {/* 입주사 관리 모달 */}
-            <Modal
-                visible={isTenantMgmtVisible}
-                animationType="slide"
-                onRequestClose={() => setIsTenantMgmtVisible(false)}
-            >
-                <SafeAreaView style={{ flex: 1 }}>
-                    <AppHeader title="입주사 관리" onBack={async () => {
-                        setIsTenantMgmtVisible(false);
-                        if (officeInfo) {
-                            const p = await tenantsService.getTenantsByCompany(officeInfo.id);
-                            setProfiles(p);
-                        }
-                    }} />
-                    {officeInfo && (
-                        <TenantManagement
-                            companyId={officeInfo.id}
-                            onComplete={async () => {
-                                setIsTenantMgmtVisible(false);
-                                const p = await tenantsService.getTenantsByCompany(officeInfo.id);
-                                setProfiles(p);
-                            }}
-                            onCancel={() => setIsTenantMgmtVisible(false)}
-                        />
-                    )}
-                </SafeAreaView>
-            </Modal>
-
-            {/* 발신처 관리 모달 */}
-            <Modal
-                visible={isSenderMgmtVisible}
-                animationType="slide"
-                onRequestClose={() => setIsSenderMgmtVisible(false)}
-            >
-                <SafeAreaView style={{ flex: 1 }}>
-                    <AppHeader title="발신처 키워드 관리" onBack={async () => {
-                        setIsSenderMgmtVisible(false);
-                        const senders = await masterSendersService.getAllSenders();
-                        setMasterSenders(senders.map(s => s.name));
-                    }} />
-                    <SenderManagement onClose={() => setIsSenderMgmtVisible(false)} />
-                </SafeAreaView>
-            </Modal>
         </SafeAreaView>
     );
 };

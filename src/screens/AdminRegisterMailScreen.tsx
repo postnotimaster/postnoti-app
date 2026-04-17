@@ -36,13 +36,55 @@ export const AdminRegisterMailScreen = () => {
         ocrPreprocess,
         optimizeImage,
         officeInfo,
-        resetOCR
+        resetOCR,
+        setSelectedProfileForHistory,
+        setIsHistoryVisible
     } = useAppContent() as any;
 
     const [customMessage, setCustomMessage] = React.useState('');
     const [selectedPreset, setSelectedPreset] = React.useState<string | null>(null);
     const [resultModalVisible, setResultModalVisible] = React.useState(false);
     const [lastNotifResult, setLastNotifResult] = React.useState<NotificationResult | null>(null);
+
+    const prevOcrLoading = React.useRef(ocrLoading);
+
+    React.useEffect(() => {
+        if (prevOcrLoading.current === true && ocrLoading === false) {
+            if (matchedProfile) {
+                const status = matchedProfile.status || (matchedProfile.is_active ? '입주' : '퇴거');
+                if (status !== '입주') {
+                    const compName = matchedProfile.company_name || '(미등록)';
+                    Alert.alert(
+                        `⚠️ 주의: [${status}] 상태 입주사`,
+                        `진단 대상: ${compName} / ${matchedProfile.name}\n이 입주사는 현재 [${status}] 상태입니다.\n\n다른 우편물을 찍으시겠습니까? 아니면 해당 입주사의 정보 페이지로 가시겠습니까?`,
+                        [
+                            {
+                                text: '📷 다시 촬영',
+                                onPress: async () => {
+                                    const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
+                                    if (!result.canceled) runOCR(result.assets[0].uri);
+                                }
+                            },
+                            {
+                                text: '해당 입주사 정보 보기',
+                                onPress: () => {
+                                    resetOCR();
+                                    setSelectedProfileForHistory(matchedProfile);
+                                    setIsHistoryVisible(true);
+                                    navigation.navigate('AdminHome');
+                                }
+                            },
+                            {
+                                text: '무시하고 등록 진행',
+                                style: 'cancel'
+                            }
+                        ]
+                    );
+                }
+            }
+        }
+        prevOcrLoading.current = ocrLoading;
+    }, [ocrLoading, matchedProfile, runOCR, resetOCR, setSelectedProfileForHistory, setIsHistoryVisible, navigation]);
 
     const presets = [
         "주문하신 택배가 도착했습니다 📦",
@@ -80,7 +122,7 @@ export const AdminRegisterMailScreen = () => {
         setSelectedPreset(null);
         setResultModalVisible(false);
         if (resetOCR) resetOCR(); // 화면을 나갈 때 초기화
-        navigation.navigate('AdminDashboard');
+        navigation.navigate('AdminHome');
     };
 
     const handleSmsFallback = async () => {
@@ -134,7 +176,7 @@ export const AdminRegisterMailScreen = () => {
         if (navigation.canGoBack()) {
             navigation.goBack();
         } else {
-            navigation.navigate('AdminDashboard');
+            navigation.navigate('AdminHome');
         }
     };
 

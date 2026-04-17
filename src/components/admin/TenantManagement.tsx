@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
     View,
     Text,
@@ -25,13 +25,26 @@ interface TenantManagementProps {
     onCancel: () => void;
 }
 
-export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantManagementProps) => {
+export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }: TenantManagementProps, ref) => {
     const [tenants, setTenants] = useState<Tenant[]>([]);
     const [mailStats, setMailStats] = useState<MailStats>({});
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [sortOrder, setSortOrder] = useState<'recent' | 'name' | 'room'>('recent');
     const [isEditing, setIsEditing] = useState(false);
+
+    useImperativeHandle(ref, () => ({
+        handleBack: () => {
+            if (isEditing) {
+                setIsEditing(false);
+                return true;
+            }
+            return false;
+        },
+        resetToListView: () => {
+            setIsEditing(false);
+        }
+    }));
     const [editingTenant, setEditingTenant] = useState<Partial<Tenant>>({
         company_id: companyId,
         company_name: '',
@@ -50,11 +63,13 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
     useEffect(() => {
         const backAction = () => {
             if (isEditing) {
+                console.log('BackHandler: set isEditing to false');
                 setIsEditing(false);
-                return true;
+                return true; // Prevent default (closing modal)
             }
-            return false;
+            return false; // Exit modal
         };
+        // Add a small delay to ensure this takes priority within the Modal
         const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
         return () => backHandler.remove();
     }, [isEditing]);
@@ -83,10 +98,18 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
         }
         try {
             setLoading(true);
-            if (editingTenant.id) {
-                await tenantsService.updateTenant(editingTenant.id, editingTenant);
+
+            // 상태값에 따른 is_active 강제 동기화 (하위 호환성 유지)
+            const finalTenant = { ...editingTenant };
+            if (!finalTenant.status) {
+                finalTenant.status = finalTenant.is_active ? '입주' : '퇴거';
+            }
+            finalTenant.is_active = finalTenant.status === '입주';
+
+            if (finalTenant.id) {
+                await tenantsService.updateTenant(finalTenant.id, finalTenant);
             } else {
-                await tenantsService.createTenant(editingTenant as Tenant);
+                await tenantsService.createTenant(finalTenant as Tenant);
             }
             Alert.alert('\uc131\uacf5', '\uc785\uc8fc\uc0ac \uc815\ubcf4\uac00 \uc800\uc7a5\ub418\uc5c8\uc2b5\ub2c8\ub2e4.');
             loadTenants();
@@ -154,44 +177,44 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                 style={{ flex: 1, backgroundColor: '#fff' }}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
             >
-                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
-                    <Pressable onPress={() => setIsEditing(false)} style={{ marginRight: 15 }}>
-                        <Ionicons name="arrow-back" size={24} color="#1E293B" />
-                    </Pressable>
-                    <Text style={{ fontSize: 18, fontWeight: '800', color: '#1E293B' }}>
-                        {editingTenant.id ? '\uc785\uc8fc\uc0ac \uc815\ubcf4 \uc218\uc815' : '\uc2e0\uaddc \uc785\uc8fc\uc0ac \ub4f1\ub85d'}
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
+                    <Text style={{ fontSize: 16, fontWeight: '800', color: '#1E293B' }}>
+                        {editingTenant.id ? '정보 수정' : '신규 등록'}
                     </Text>
+                    <Pressable onPress={() => setIsEditing(false)} style={{ marginLeft: 'auto', padding: 5 }}>
+                        <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '700' }}>{'리스트로 복귀'}</Text>
+                    </Pressable>
                 </View>
                 <ScrollView contentContainerStyle={styles.editForm}>
                     <View style={styles.compactInputGroup}>
-                        <Text style={styles.compactLabel}>{'\ud68c\uc0ac\uba85'}</Text>
+                        <Text style={styles.compactLabel}>회사명</Text>
                         <TextInput
                             style={styles.compactInput}
                             value={editingTenant.company_name}
                             onChangeText={t => setEditingTenant({ ...editingTenant, company_name: t })}
-                            placeholder={'\ud68c\uc0ac\uba85\uc744 \uc785\ub825\ud558\uc138\uc694'}
+                            placeholder="회사명 입력"
                         />
                     </View>
                     <View style={styles.compactInputGroup}>
-                        <Text style={styles.compactLabel}>{'\uc774\ub984'}</Text>
+                        <Text style={styles.compactLabel}>이름</Text>
                         <TextInput
                             style={styles.compactInput}
                             value={editingTenant.name}
                             onChangeText={t => setEditingTenant({ ...editingTenant, name: t })}
-                            placeholder={'\uc774\ub984\uc744 \uc785\ub825\ud558\uc138\uc694'}
+                            placeholder="이름 입력"
                         />
                     </View>
                     <View style={styles.compactInputGroup}>
-                        <Text style={styles.compactLabel}>{'\ud638\uc2e4'}</Text>
+                        <Text style={styles.compactLabel}>호실</Text>
                         <TextInput
                             style={styles.compactInput}
                             value={editingTenant.room_number}
                             onChangeText={t => setEditingTenant({ ...editingTenant, room_number: t })}
-                            placeholder={'\uc608: 301\ud638'}
+                            placeholder="호실 입력"
                         />
                     </View>
                     <View style={styles.compactInputGroup}>
-                        <Text style={styles.compactLabel}>{'\uc804\ud654\ubc88\ud638'}</Text>
+                        <Text style={styles.compactLabel}>전화번호</Text>
                         <TextInput
                             style={styles.compactInput}
                             value={editingTenant.phone}
@@ -201,34 +224,53 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                         />
                     </View>
 
-                    <View style={[styles.compactInputGroup, { justifyContent: 'space-between', paddingVertical: 10 }]}>
-                        <Text style={styles.compactLabel}>{'\uc785\uc8fc \uc0c1\ud0dc'}</Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                            <Text style={{ fontSize: 13, color: editingTenant.is_active ? '#10B981' : '#EF4444', fontWeight: '800' }}>
-                                {editingTenant.is_active ? '입주중' : '퇴거'}
-                            </Text>
-                            <Switch
-                                value={editingTenant.is_active}
-                                onValueChange={v => setEditingTenant({ ...editingTenant, is_active: v })}
-                                trackColor={{ true: '#10B981', false: '#CBD5E1' }}
-                            />
+                    <View style={{ marginTop: 8, marginBottom: 10 }}>
+                        <Text style={[styles.compactLabel, { marginBottom: 6, width: '100%' }]}>📋 입주 상태</Text>
+                        <View style={{ flexDirection: 'row', gap: 6 }}>
+                            {['입주', '퇴거', '폐업', '이전', '소재불명'].map((st) => {
+                                const currentStatus = editingTenant.status || (editingTenant.is_active ? '입주' : '퇴거');
+                                const isSelected = currentStatus === st;
+                                return (
+                                    <Pressable
+                                        key={st}
+                                        onPress={() => setEditingTenant({ ...editingTenant, status: st })}
+                                        style={{
+                                            flex: 1,
+                                            paddingVertical: 8,
+                                            borderRadius: 8,
+                                            borderWidth: 1,
+                                            alignItems: 'center',
+                                            backgroundColor: isSelected ? (st === '입주' ? '#10B981' : '#F1F5F9') : '#fff',
+                                            borderColor: isSelected ? (st === '입주' ? '#10B981' : '#CBD5E1') : '#E2E8F0'
+                                        }}
+                                    >
+                                        <Text style={{
+                                            fontSize: 11,
+                                            fontWeight: '800',
+                                            color: isSelected ? (st === '입주' ? '#fff' : '#475569') : '#94A3B8'
+                                        }}>
+                                            {st}
+                                        </Text>
+                                    </Pressable>
+                                );
+                            })}
                         </View>
                     </View>
 
-                    <View style={[styles.compactInputGroup, { justifyContent: 'space-between', paddingVertical: 10 }]}>
+                    <View style={[styles.compactInputGroup, { justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 0 }]}>
                         <View>
-                            <Text style={styles.compactLabel}>{'\ud504\ub9ac\ubbf8\uc5c4 \uc11c\ube44\uc2a4'}</Text>
-                            <Text style={{ fontSize: 10, color: '#94A3B8' }}>{'\uc6b0\ud3b8 \ubc30\uc1a1\ubb3c \uac1c\ubd09 \ucd2c\uc601'}</Text>
+                            <Text style={styles.compactLabel}>{"프리미엄 서비스"}</Text>
                         </View>
                         <Switch
                             value={editingTenant.is_premium}
                             onValueChange={v => setEditingTenant({ ...editingTenant, is_premium: v })}
                             trackColor={{ true: '#4F46E5', false: '#CBD5E1' }}
+                            style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
                         />
                     </View>
 
-                    <View style={{ marginTop: 15, marginBottom: 20 }}>
-                        <Text style={[styles.compactLabel, { marginBottom: 10, width: '100%' }]}>🖼️ 사진 자동 삭제 (보존 기간)</Text>
+                    <View style={{ marginTop: 8, marginBottom: 10 }}>
+                        <Text style={[styles.compactLabel, { marginBottom: 6, width: '100%' }]}>🖼️ 사진 자동 삭제</Text>
                         <View style={{ flexDirection: 'row', gap: 6 }}>
                             {[
                                 { label: '1주', days: 7 },
@@ -241,16 +283,16 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                                     onPress={() => setEditingTenant({ ...editingTenant, retention_days: item.days })}
                                     style={{
                                         flex: 1,
-                                        paddingVertical: 10,
-                                        borderRadius: 10,
+                                        paddingVertical: 8,
+                                        borderRadius: 8,
                                         borderWidth: 1,
                                         alignItems: 'center',
-                                        backgroundColor: (editingTenant.retention_days ?? 14) === item.days ? '#4F46E5' : '#fff',
-                                        borderColor: (editingTenant.retention_days ?? 14) === item.days ? '#4F46E5' : '#E2E8F0'
+                                        backgroundColor: (editingTenant.retention_days ?? 14) === item.days ? '#0D9488' : '#fff',
+                                        borderColor: (editingTenant.retention_days ?? 14) === item.days ? '#0D9488' : '#E2E8F0'
                                     }}
                                 >
                                     <Text style={{
-                                        fontSize: 12,
+                                        fontSize: 11,
                                         fontWeight: '800',
                                         color: (editingTenant.retention_days ?? 14) === item.days ? '#fff' : '#64748B'
                                     }}>
@@ -261,12 +303,39 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                         </View>
                     </View>
 
-                    <View style={[styles.formButtons, { marginTop: 10, borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 20 }]}>
-                        <Pressable style={styles.cancelBtn} onPress={() => setIsEditing(false)}>
-                            <Text style={styles.cancelBtnText}>{'\ucde8\uc18c'}</Text>
+                    <View style={{
+                        flexDirection: 'row',
+                        gap: 15,
+                        marginTop: 10,
+                        borderTopWidth: 1,
+                        borderTopColor: '#F1F5F9',
+                        paddingTop: 15,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        width: '100%'
+                    }}>
+                        <Pressable
+                            style={{
+                                width: 120,
+                                paddingVertical: 10,
+                                borderRadius: 10,
+                                backgroundColor: '#F1F5F9',
+                                borderWidth: 1,
+                                borderColor: '#E2E8F0',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                            onPress={() => setIsEditing(false)}
+                        >
+                            <Text style={{ color: '#64748B', fontWeight: '800', fontSize: 15 }}>취소</Text>
                         </Pressable>
-                        <View style={{ flex: 1 }}>
-                            <PrimaryButton label={'\uc800\uc7a5\ud558\uae30'} onPress={handleSave} loading={loading} />
+                        <View style={{ width: 120 }}>
+                            <PrimaryButton
+                                label="저장하기"
+                                onPress={handleSave}
+                                loading={loading}
+                                style={{ width: '100%', height: 44, alignItems: 'center', justifyContent: 'center' }}
+                            />
                         </View>
                     </View>
                     {/* 물리 버튼 겹침 방지 여백 */}
@@ -288,8 +357,30 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                 </Pressable>
             </View>
 
-            <View style={styles.searchBarContainer}>
-                <TextInput style={styles.searchInput} placeholder={'\uc774\ub984, \ud68c\uc0ac\uba85, \ud638\uc2e4, \uc804\ud654\ubc88\ud638 \uac80\uc0c9'} value={searchQuery} onChangeText={setSearchQuery} />
+            <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#F1F5F9',
+                borderRadius: 12,
+                paddingHorizontal: 12,
+                marginBottom: 15,
+                borderWidth: 1,
+                borderColor: '#E2E8F0'
+            }}>
+                <Ionicons name="search" size={20} color="#64748B" />
+                <TextInput
+                    style={{
+                        flex: 1,
+                        paddingVertical: 12,
+                        paddingHorizontal: 8,
+                        fontSize: 15,
+                        color: '#1E293B',
+                    }}
+                    placeholder={'\uc774\ub984, \ud68c\uc0ac\uba85, \ud638\uc2e4, \uc804\ud654\ubc88\ud638 \uac80\uc0c9'}
+                    placeholderTextColor="#94A3B8"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                />
             </View>
 
             <View style={styles.sortContainer}>
@@ -314,49 +405,32 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
                         return (
                             <Pressable key={t.id} style={styles.tenantCard} onPress={() => { setEditingTenant(t); setIsEditing(true); }}>
                                 <View style={styles.tenantInfo}>
-                                    <View style={styles.nameRow}>
-                                        <Text style={styles.roomNumber}>{t.room_number || '-'}</Text>
-                                        <Text style={styles.companyName}>{t.company_name || '(\ubbf8\ub4f1\ub85d)'}</Text>
-                                        <Text style={styles.tenantName}>{t.name}</Text>
+                                    <View style={[styles.nameRow, { marginBottom: 6 }]}>
+                                        <View style={[styles.badge, { backgroundColor: t.is_active ? '#F0FDF4' : '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, marginRight: 2 }]}>
+                                            <Text style={[styles.badgeText, { color: t.is_active ? '#166534' : '#475569', fontSize: 10 }]}>
+                                                {t.status || (t.is_active ? '입주' : '퇴거')}
+                                            </Text>
+                                        </View>
+                                        {t.room_number ? <Text style={styles.roomNumber}>{t.room_number}</Text> : null}
+                                        <Text style={[styles.companyName, { fontSize: 15, flexShrink: 1 }]} numberOfLines={1}>
+                                            {t.company_name || '(\ubbf8\ub4f1\ub85d)'}
+                                        </Text>
+                                        <Text style={styles.tenantName} numberOfLines={1}>{t.name}</Text>
                                     </View>
-                                    <View style={styles.badgeRow}>
-                                        <View style={[styles.badge, { backgroundColor: t.is_active ? '#F0FDF4' : '#FEF2F2' }]}>
-                                            <Text style={[styles.badgeText, { color: t.is_active ? '#166534' : '#991B1B' }]}>
-                                                {t.is_active ? '\uc785\uc8fc\uc911' : '\ud1f4\uac70'}
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                                        <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '600' }}>
+                                            보관기간 <Text style={{ color: '#4F46E5' }}>{t.retention_days === 0 ? '영구' : `${(t.retention_days || 14) / 7}주`}</Text>
+                                        </Text>
+                                        <Text style={{ fontSize: 10, color: '#CBD5E1' }}>|</Text>
+                                        <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '600' }}>
+                                            개봉횟수 <Text style={{ color: '#059669' }}>{total > 0 ? `${read}/${total}` : '-'}</Text>
+                                        </Text>
+                                        <Text style={{ fontSize: 10, color: '#CBD5E1' }}>|</Text>
+                                        <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '600' }}>
+                                            최근 발송 <Text style={{ color: '#334155' }}>
+                                                {stat?.lastSentAt ? new Date(stat.lastSentAt).toLocaleDateString('ko-KR', { year: '2-digit', month: 'numeric', day: 'numeric' }).replace(/\./g, '/').replace(/ /g, '').replace(/\/$/, '') : '-'}
                                             </Text>
-                                        </View>
-                                        <View style={[styles.badge, { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', borderWidth: 1 }]}>
-                                            <Text style={[styles.badgeText, { color: '#64748B' }]}>
-                                                {t.retention_days === 0 ? '영구' : `${(t.retention_days || 14) / 7}주`}
-                                            </Text>
-                                        </View>
-                                        {t.is_premium && (
-                                            <View style={[styles.badge, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE', borderWidth: 1 }]}>
-                                                <Text style={[styles.badgeText, { color: '#4338CA' }]}>Premium</Text>
-                                            </View>
-                                        )}
-                                        {t.profile_id && (
-                                            <View style={[styles.badge, { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD', borderWidth: 1 }]}>
-                                                <Text style={[styles.badgeText, { color: '#0369A1' }]}>{'\ud83d\udcf1 \uc5f0\uacb0'}</Text>
-                                            </View>
-                                        )}
-                                    </View>
-                                    <View style={styles.statsRow}>
-                                        <View style={styles.mailStatBox}>
-                                            <Text style={styles.mailStatLabel}>{'\uc6b0\ud3b8 \uac1c\ubd09\ub960'}</Text>
-                                            <Text style={[
-                                                styles.mailStatValue,
-                                                total > 0 && readRate < 50 && { color: '#DC2626' },
-                                                total > 0 && readRate >= 50 && readRate < 80 && { color: '#D97706' },
-                                                total > 0 && readRate >= 80 && { color: '#059669' },
-                                            ]}>
-                                                {total > 0 ? `${read}/${total}` : '-'}
-                                            </Text>
-                                        </View>
-                                        <View style={styles.mailStatBox}>
-                                            <Text style={styles.mailStatLabel}>{'\ucd5c\uadfc \ubc1c\uc1a1'}</Text>
-                                            <Text style={styles.mailStatValue}>{formatShortDate(stat?.lastSentAt || null)}</Text>
-                                        </View>
+                                        </Text>
                                     </View>
                                 </View>
                                 <View style={styles.cardActions}>
@@ -377,7 +451,7 @@ export const TenantManagement = ({ companyId, onComplete, onCancel }: TenantMana
             )}
         </View>
     );
-};
+});
 
 const styles = StyleSheet.create({
     container: { flex: 1, padding: 15 },
@@ -425,7 +499,7 @@ const styles = StyleSheet.create({
     compactInputGroup: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
+        paddingVertical: 8,
         borderBottomWidth: 1,
         borderBottomColor: '#F1F5F9'
     },

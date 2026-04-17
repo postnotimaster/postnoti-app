@@ -81,7 +81,7 @@ export const LandingScreen = () => {
                                 <LoginScreen
                                     onLoginSuccess={async (profile) => {
                                         await handleLoginSuccess(profile);
-                                        navigation.replace('AdminDashboard');
+                                        navigation.replace('AdminHome');
                                     }}
                                     onBack={() => { }}
                                     isEmbedded={true}

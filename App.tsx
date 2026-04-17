@@ -17,6 +17,8 @@ import { AdminRegisterMailScreen } from './src/screens/AdminRegisterMailScreen';
 import { AdminSignupScreen } from './src/screens/AdminSignupScreen';
 import { AdminSettingsScreen } from './src/screens/AdminSettingsScreen';
 import { AdminMenuScreen } from './src/screens/AdminMenuScreen';
+import { AdminSendersScreen } from './src/screens/AdminSendersScreen';
+import { AdminTabNavigator } from './src/navigation/AdminTabNavigator';
 import { TenantDashboard } from './src/components/tenant/TenantDashboard';
 import { KakaoGuideOverlay } from './src/components/common/KakaoGuideOverlay';
 // Note: TenantDashboard is still in components, can be moved later. 
@@ -106,11 +108,12 @@ function AppContent() {
       <StatusBar style="dark" />
       <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Landing" component={LandingScreen} />
-        <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
+        <Stack.Screen name="AdminHome" component={AdminTabNavigator} />
         <Stack.Screen name="AdminRegisterMail" component={AdminRegisterMailScreen} />
         <Stack.Screen name="AdminSignup" component={AdminSignupScreen} />
         <Stack.Screen name="AdminSettings" component={AdminSettingsScreen} />
         <Stack.Screen name="AdminMenu" component={AdminMenuScreen} />
+        <Stack.Screen name="AdminSenders" component={AdminSendersScreen} />
 
         {/* Special Case: Tenant Dashboard */}
         <Stack.Screen name="TenantDashboard" component={TenantDashboardWrapper} />

@@ -67,14 +67,22 @@ export const mailService = {
      * @param page 페이지 번호 (0부터 시작)
      * @returns { data, hasMore }
      */
-    async getMailsByCompanyPaginated(companyId: string, page: number = 0) {
+    async getMailsByCompanyPaginated(companyId: string, page: number = 0, months?: number) {
         const from = page * PAGE_SIZE;
         const to = from + PAGE_SIZE - 1;
 
-        const { data, error } = await supabase
+        let query = supabase
             .from('mail_logs')
             .select('*, tenants(id, name, room_number, phone, company_name, is_active, is_premium, profile_id)')
-            .eq('company_id', companyId)
+            .eq('company_id', companyId);
+
+        if (months) {
+            const date = new Date();
+            date.setMonth(date.getMonth() - months);
+            query = query.gte('created_at', date.toISOString());
+        }
+
+        const { data, error } = await query
             .order('created_at', { ascending: false })
             .range(from, to);
 

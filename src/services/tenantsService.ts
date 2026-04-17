@@ -9,6 +9,7 @@ export interface Tenant {
     room_number?: string;
     mailbox_code?: string;
     is_active: boolean;
+    status?: string;       // 입주/퇴거/폐업/이전/소재불명 등 다중 상태
     is_premium: boolean;
     profile_id?: string;   // 연결된 앱 계정 (선택)
     retention_days?: number; // 사진 보관 기간 (단위: 일, 0은 영구보관)
