@@ -126,23 +126,27 @@ function TenantDashboardWrapper(props: any) {
   const slugFromParam = (props.route.params as any)?.slug;
   const rawParamP = (props.route.params as any)?.p;
 
-  // [3차 보강] UUID 패턴 강제 추출 방식 (정규식/인코딩 상관없이 36자리 UUID만 포착)
+  // [최종 병기] 모든 레벨에서의 ID 추출 시도 (v24:05 Final)
   const paramP = React.useMemo(() => {
-    if (!rawParamP) return '';
-    const decoded = decodeURIComponent(rawParamP);
-    const uuidMatch = decoded.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-    if (uuidMatch) return uuidMatch[0];
+    let bestId = '';
 
-    // Fallback: 기존 정규식
-    const match = decoded.match(/(?:\?|&|%3F|%26)p=([^&/?#]+)/i);
-    if (match) return match[1];
-
-    // Fallback: Brute-force Split
-    if (decoded.includes('p=')) {
-      return decoded.split('p=')[1].split('&')[0].split('/')[0];
+    // 1. 브라우저 주소창 직접 분석 (가장 확실함)
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const href = window.location.href;
+      const decoded = decodeURIComponent(href);
+      const uuidMatch = decoded.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+      if (uuidMatch) bestId = uuidMatch[0];
     }
 
-    return rawParamP;
+    // 2. React Navigation에서 준 값 (보조)
+    if (!bestId && rawParamP) {
+      const decodedRaw = decodeURIComponent(rawParamP);
+      const uuidMatchRaw = decodedRaw.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+      if (uuidMatchRaw) bestId = uuidMatchRaw[0];
+      else if (rawParamP.length === 36) bestId = rawParamP;
+    }
+
+    return bestId;
   }, [rawParamP]);
 
   const company = brandingCompany;
@@ -153,7 +157,7 @@ function TenantDashboardWrapper(props: any) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
         <ActivityIndicator size="large" color="#4F46E5" />
-        <Text style={{ marginTop: 16, color: '#64748B', fontSize: 14 }}>매직링크 보호 시스템 가동 중...</Text>
+        <Text style={{ marginTop: 16, color: '#64748B', fontSize: 14 }}>보안 링크 확인 중...</Text>
       </View>
     );
   }
@@ -163,12 +167,10 @@ function TenantDashboardWrapper(props: any) {
     const handleReload = async () => {
       if (Platform.OS === 'web') {
         try {
-          // 캐시 강제 삭제 시도 (PWA/ServiceWorker 대응)
           if ('caches' in window) {
             const cacheNames = await caches.keys();
             await Promise.all(cacheNames.map(name => caches.delete(name)));
           }
-          window.location.href = window.location.href.split('#')[0]; // fragment 제거 후 이동
           window.location.reload();
         } catch (e) {
           window.location.reload();
@@ -180,41 +182,29 @@ function TenantDashboardWrapper(props: any) {
     };
 
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', padding: 30 }}>
-        <Ionicons name="alert-circle-outline" size={60} color="#E11D48" />
-        <Text style={{ fontSize: 18, fontWeight: '700', color: '#1E293B', marginTop: 16, textAlign: 'center' }}>
-          지점 정보를 찾을 수 없습니다.
-        </Text>
-        <Text style={{ fontSize: 14, color: '#64748B', marginTop: 8, textAlign: 'center', lineHeight: 20 }}>
-          URL이 잘못되었거나 만료된 링크일 수 있습니다. 관리자에게 문의해 주세요.
-        </Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', padding: 25 }}>
+        <Ionicons name="alert-circle-outline" size={50} color="#E11D48" />
+        <Text style={{ fontSize: 18, fontWeight: '700', color: '#1E293B', marginTop: 16 }}>지점 정보 불일치</Text>
+        <Text style={{ fontSize: 13, color: '#64748B', marginTop: 6, textAlign: 'center' }}>만료되었거나 잘못된 링크입니다.</Text>
 
-        <View style={{ marginTop: 30, padding: 16, backgroundColor: '#F8FAFC', borderRadius: 12, width: '100%', borderWidth: 1, borderColor: '#E2E8F0' }}>
-          <Text style={{ fontSize: 11, color: '#475569', fontWeight: '800', marginBottom: 8, opacity: 0.7 }}>🔍 시스템 진단 정보 (v23:55 Deep)</Text>
-          <Text style={{ fontSize: 11, color: '#64748B' }}>• MagicID: <Text style={{ color: '#0F172A', fontWeight: 'bold' }}>{resolvedMagicId || '(없음)'}</Text></Text>
-          <Text style={{ fontSize: 11, color: '#64748B' }}>• Context: <Text style={{ color: brandingCompany ? '#10B981' : '#EF4444', fontWeight: 'bold' }}>{brandingCompany ? 'Resolved' : 'Missing'}</Text></Text>
-          <Text style={{ fontSize: 11, color: '#64748B', marginTop: 4 }}>• Raw: <Text style={{ color: '#94A3B8', fontSize: 9 }}>{rawParamP?.substring(0, 50)}...</Text></Text>
-          <Text style={{ fontSize: 11, color: '#64748B' }}>• Env: <Text style={{ color: '#94A3B8', fontSize: 9 }}>{Platform.OS} / {typeof window !== 'undefined' ? 'Web' : 'Native'}</Text></Text>
+        <View style={{ marginTop: 25, padding: 16, backgroundColor: '#F1F5F9', borderRadius: 12, width: '100%', borderWidth: 1, borderColor: '#CBD5E1' }}>
+          <Text style={{ fontSize: 10, color: '#475569', fontWeight: '800', marginBottom: 8 }}>📝 정밀 진단 (v24:05 Final)</Text>
+          <Text style={{ fontSize: 11, color: '#475569' }}>• 추출 ID: <Text style={{ color: '#0F172A', fontWeight: 'bold' }}>{resolvedMagicId || '(실패)'}</Text></Text>
+          <Text style={{ fontSize: 11, color: '#475569' }}>• 상태: <Text style={{ color: brandingCompany ? '#10B981' : '#EF4444' }}>{brandingCompany ? '정상조회' : '데이터없음'}</Text></Text>
+          <Text style={{ fontSize: 10, color: '#64748B', marginTop: 5 }}>• URI: {typeof window !== 'undefined' ? window.location.href.substring(0, 60) : 'Native'}...</Text>
         </View>
 
         <Pressable
           onPress={handleReload}
-          style={{ marginTop: 20, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: '#4F46E5', borderRadius: 10, width: '100%', alignItems: 'center' }}
+          style={{ marginTop: 20, paddingVertical: 12, width: '100%', backgroundColor: '#4F46E5', borderRadius: 10, alignItems: 'center' }}
         >
-          <Text style={{ color: '#fff', fontWeight: '700' }}>강력새로고침 (캐시삭제)</Text>
+          <Text style={{ color: '#fff', fontWeight: '700' }}>강력 새로고침</Text>
         </Pressable>
 
-        <Pressable
-          onPress={() => { setMode('landing'); setBrandingCompany(null); props.navigation.replace('Landing'); }}
-          style={{ marginTop: 12, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: '#F1F5F9', borderRadius: 10, width: '100%', alignItems: 'center' }}
-        >
-          <Text style={{ color: '#475569', fontWeight: '700' }}>홈으로 이동</Text>
-        </Pressable>
+        <Text onPress={() => setMode('landing')} style={{ marginTop: 20, color: '#94A3B8', fontSize: 11, textDecorationLine: 'underline' }}>첫 화면으로</Text>
       </View>
     );
   }
-
-  console.log(`[TenantDashboardWrapper] 렌더링 시작. 지점: ${company.name}, 매직ID: ${resolvedMagicId}`);
 
   return (
     <TenantDashboard
