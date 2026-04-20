@@ -116,3 +116,18 @@ BEGIN
     AND phone LIKE '%' || p_phone_suffix;
 END;
 $$;
+
+-- ==========================================
+-- 5. 🔓 익명(Anon) 권한 부여 (Magic Link 작동 필수)
+-- ==========================================
+
+-- 함수 실행 권한 부여
+GRANT EXECUTE ON FUNCTION get_tenant_by_id_secure(UUID) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION find_tenant_by_name_and_phone_secure(UUID, TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION get_mail_stats_by_company(UUID) TO anon, authenticated;
+
+-- Companies 테이블 익명 조회 정책 (지점명/로고 노출 위함)
+DROP POLICY IF EXISTS "Anyone can view company info" ON companies;
+CREATE POLICY "Anyone can view company info" ON companies
+    FOR SELECT
+    USING (true);
