@@ -159,19 +159,19 @@ function TenantDashboardWrapper(props: any) {
 
   // 지점 정보를 찾지 못한 경우 (대기 시간이 길어지거나 진짜 없는 경우)
   if (!company || (!company.id && !company.name)) {
-    // [보완] 매직 ID는 있는데 아직 회사 정보가 로드 안 된 경우면 조금 더 대기 (Loading)
-    if (resolvedMagicId && !magicIdResolved) {
-      return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
-          <ActivityIndicator size="large" color="#4F46E5" />
-          <Text style={{ marginTop: 16, color: '#64748B', fontSize: 14 }}>지점 정보를 확인하는 중입니다...</Text>
-        </View>
-      );
-    }
-
-    const handleReload = () => {
+    const handleReload = async () => {
       if (Platform.OS === 'web') {
-        window.location.reload();
+        try {
+          // 캐시 강제 삭제 시도 (PWA/ServiceWorker 대응)
+          if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+          }
+          window.location.href = window.location.href.split('#')[0]; // fragment 제거 후 이동
+          window.location.reload();
+        } catch (e) {
+          window.location.reload();
+        }
       } else {
         setMode('landing');
         props.navigation.replace('Landing');
@@ -189,17 +189,18 @@ function TenantDashboardWrapper(props: any) {
         </Text>
 
         <View style={{ marginTop: 30, padding: 16, backgroundColor: '#F8FAFC', borderRadius: 12, width: '100%', borderWidth: 1, borderColor: '#E2E8F0' }}>
-          <Text style={{ fontSize: 11, color: '#475569', fontWeight: '800', marginBottom: 8, opacity: 0.7 }}>🔍 시스템 진단 정보 (Debug v4)</Text>
+          <Text style={{ fontSize: 11, color: '#475569', fontWeight: '800', marginBottom: 8, opacity: 0.7 }}>🔍 시스템 진단 정보 (v23:45)</Text>
           <Text style={{ fontSize: 11, color: '#64748B' }}>• MagicID: <Text style={{ color: '#0F172A', fontWeight: 'bold' }}>{resolvedMagicId || '(없음)'}</Text></Text>
           <Text style={{ fontSize: 11, color: '#64748B' }}>• Context: <Text style={{ color: brandingCompany ? '#10B981' : '#EF4444', fontWeight: 'bold' }}>{brandingCompany ? 'Resolved' : 'Missing'}</Text></Text>
           <Text style={{ fontSize: 11, color: '#64748B', marginTop: 4 }}>• Raw: <Text style={{ color: '#94A3B8', fontSize: 9 }}>{rawParamP?.substring(0, 50)}...</Text></Text>
+          <Text style={{ fontSize: 11, color: '#64748B' }}>• Env: <Text style={{ color: '#94A3B8', fontSize: 9 }}>{Platform.OS} / {typeof window !== 'undefined' ? 'Web' : 'Native'}</Text></Text>
         </View>
 
         <Pressable
           onPress={handleReload}
           style={{ marginTop: 20, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: '#4F46E5', borderRadius: 10, width: '100%', alignItems: 'center' }}
         >
-          <Text style={{ color: '#fff', fontWeight: '700' }}>새로고침 및 다시 시도</Text>
+          <Text style={{ color: '#fff', fontWeight: '700' }}>강력새로고침 (캐시삭제)</Text>
         </Pressable>
 
         <Pressable
