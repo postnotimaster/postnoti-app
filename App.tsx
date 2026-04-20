@@ -9,6 +9,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AppProvider, useAppContent } from './src/contexts/AppContext';
 import { ToastProvider } from './src/contexts/ToastContext';
 import { StatusBar } from 'expo-status-bar';
+import { supabase } from './src/lib/supabase';
 
 // Screens
 import { LandingScreen } from './src/screens/LandingScreen';
@@ -109,18 +110,52 @@ function AppContent() {
  * TenantDashboard 전용 래퍼 (정적 컴포넌트로 선언하여 리마운트 방지)
  */
 function TenantDashboardWrapper(props: any) {
-  const { brandingCompany, expoPushToken, webPushToken, setMode, setBrandingCompany } = useAppContent();
+  const { brandingCompany, setBrandingCompany, expoPushToken, webPushToken, setMode } = useAppContent();
   const [showRetry, setShowRetry] = useState(false);
+  const [localBranding, setLocalBranding] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
   // 5초 이상 로딩되면 재시도 버튼 노출
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!brandingCompany?.id) setShowRetry(true);
+      if (!brandingCompany?.id && !localBranding?.id) setShowRetry(true);
     }, 5000);
     return () => clearTimeout(timer);
-  }, [brandingCompany?.id]);
+  }, [brandingCompany?.id, localBranding?.id]);
 
-  const company = brandingCompany || (props.route.params as any);
+  // [긴급 복구] AppContext에서 지점 정보를 못 가져올 경우 직접 시도
+  useEffect(() => {
+    const directFetch = async () => {
+      if (brandingCompany?.id) return;
+
+      const slug = (props.route.params as any)?.slug;
+      if (!slug) return;
+
+      console.log(`[TenantDashboardWrapper] Emergency direct fetch for slug: ${slug}`);
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('companies')
+          .select('*')
+          .ilike('slug', slug.trim())
+          .single();
+
+        if (data) {
+          console.log(`[TenantDashboardWrapper] Found via direct fetch: ${data.name}`);
+          setLocalBranding(data);
+          // 전역 상태도 업데이트 시도
+          setBrandingCompany({ ...data, magicId: (props.route.params as any)?.p } as any);
+        }
+      } catch (e) {
+        console.error('[TenantDashboardWrapper] Direct fetch error:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    directFetch();
+  }, [props.route.params]);
+
+  const company = brandingCompany || localBranding || (props.route.params as any);
 
   if (!company?.id) {
     return (
@@ -158,8 +193,8 @@ function TenantDashboardWrapper(props: any) {
       companyName={company.name}
       pushToken={expoPushToken}
       webPushToken={webPushToken}
-      magicProfileId={company.magicId}
-      magicTenantId={company.magicId}
+      magicProfileId={company.magicId || (props.route.params as any)?.p}
+      magicTenantId={company.magicId || (props.route.params as any)?.p}
       onBack={() => {
         setMode('landing');
         setBrandingCompany(null);
