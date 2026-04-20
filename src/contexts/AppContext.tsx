@@ -216,45 +216,43 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const setupDeepLinking = async () => {
         const handleDeepLink = async (url: string | null) => {
-            // ... (existing handleDeepLink logic - I will replace the whole function for clarity)
+            console.log(`[AppContext] Handling DeepLink: ${url}`);
             if (!url) return;
 
             let slug = '';
-            // 1. 웹 브라우저 직접 접속인 경우
-            if (Platform.OS === 'web' && typeof window !== 'undefined') {
-                const path = window.location.pathname;
-                if (path.includes('/branch/')) {
-                    slug = path.split('/branch/')[1].split('/')[0];
-                }
-            }
+            let magicId = '';
 
-            // 2. Linking API를 통한 유입
-            if (!slug) {
-                if (url.includes('postnoti://')) {
-                    const parts = url.replace('postnoti://', '').split('/');
-                    if (parts[0] === 'branch') slug = parts[1];
-                } else {
-                    try {
-                        const urlObj = new URL(url);
-                        const pathParts = urlObj.pathname.split('/').filter(p => p);
-                        if (pathParts[0] === 'branch') slug = pathParts[1];
-                    } catch (e) {
-                        if (url.includes('/branch/')) {
-                            slug = url.split('/branch/')[1].split('/')[0].split('?')[0];
-                        }
+            // 1. 고도화된 URL 파싱 (Native Safe Regex & Expo Linking Parser)
+            try {
+                // A) Regex 추출 (Native에서 가장 안전함)
+                const pMatch = url.match(/[?&]p=([^&]+)/);
+                if (pMatch) magicId = pMatch[1];
+
+                const slugMatch = url.match(/\/branch\/([^/?#]+)/);
+                if (slugMatch) slug = slugMatch[1];
+
+                // B) Expo Linking API 파서 활용
+                const parsed = Linking.parse(url);
+                if (!magicId && parsed.queryParams?.p) magicId = parsed.queryParams.p as string;
+                if (!slug) {
+                    if (parsed.hostname === 'branch') slug = parsed.path || '';
+                    else if (parsed.path?.includes('branch/')) {
+                        slug = parsed.path.split('branch/')[1].split('/')[0];
                     }
                 }
-            }
-
-            // 3. 지점명(slug) 또는 매직ID(p) 파싱
-            let magicId = '';
-            try {
-                const urlObj = new URL(url);
-                magicId = urlObj.searchParams.get('p') || '';
             } catch (e) {
+                console.warn('[AppContext] Parsing error, falling back to manual split:', e);
                 if (url.includes('p=')) magicId = url.split('p=')[1].split('&')[0];
+                if (url.includes('/branch/')) slug = url.split('/branch/')[1].split('/')[0].split('?')[0];
             }
 
+            // Web 전용 패스 추출 보강
+            if (!slug && Platform.OS === 'web' && typeof window !== 'undefined') {
+                const path = window.location.pathname;
+                if (path.includes('/branch/')) slug = path.split('/branch/')[1].split('/')[0];
+            }
+
+            // Web 전용 p 추출 보강
             if (!magicId && Platform.OS === 'web' && typeof window !== 'undefined') {
                 try {
                     const params = new URLSearchParams(window.location.search);
