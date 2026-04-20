@@ -72,7 +72,14 @@ function AppContent() {
     config: {
       screens: {
         Landing: 'Landing',
-        TenantDashboard: 'branch/:slug/view',
+        TenantDashboard: {
+          // /branch/:slug/view?p=TENANT_ID 형식의 URL을 파싱
+          path: 'branch/:slug/view',
+          parse: {
+            slug: (slug: string) => slug,
+            p: (p: string) => p,  // [핵심] ?p= 쿼리파라미터를 route.params.p로 매핑
+          },
+        },
         AdminDashboard: 'admin',
         AdminRegisterMail: 'register',
       },
@@ -121,17 +128,20 @@ function TenantDashboardWrapper(props: any) {
 
   // [핵심] window.location에서 직접 magicId 추출 (가장 신뢰할 수 있는 소스)
   const [magicIdDirect, setMagicIdDirect] = useState<string>('');
+  const [magicIdResolved, setMagicIdResolved] = useState(false); // magicId 파싱이 완료되었는지
   useEffect(() => {
+    let resolved = '';
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       try {
         const params = new URLSearchParams(window.location.search);
-        const pVal = params.get('p') || '';
-        console.log(`[TenantDashboardWrapper] window.location.search p= : ${pVal}`);
-        if (pVal) setMagicIdDirect(pVal);
+        resolved = params.get('p') || '';
+        console.log(`[TenantDashboardWrapper] window.location.search p= : "${resolved}"`);
       } catch (e) {
         console.warn('[TenantDashboardWrapper] Failed to parse window.location', e);
       }
     }
+    setMagicIdDirect(resolved);
+    setMagicIdResolved(true); // 파싱 완료 플래그
   }, []);
 
   // 최종 magicId: window.location > route.params > brandingCompany
@@ -246,11 +256,20 @@ function TenantDashboardWrapper(props: any) {
     );
   }
 
-  console.log(`[TenantDashboardWrapper] Rendering TenantDashboard. Company: ${company.name}, MagicID: ${resolvedMagicId}`);
+  // [중요] magicId 파싱이 아직 끝나지 않았으면 잠시 대기 (web 환경)
+  if (Platform.OS === 'web' && !magicIdResolved) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+        <ActivityIndicator size="large" color="#4F46E5" />
+        <Text style={{ marginTop: 16, color: '#64748B', fontSize: 14 }}>인증 정보 확인 중...</Text>
+      </View>
+    );
+  }
+
+  console.log(`[TenantDashboardWrapper] Rendering TenantDashboard. Company: ${company.name}, MagicID: ${resolvedMagicId}, paramP: ${paramP}`);
 
   return (
     <TenantDashboard
-      {...props}
       companyId={company.id}
       companyName={company.name}
       pushToken={expoPushToken}
