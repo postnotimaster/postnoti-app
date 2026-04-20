@@ -96,7 +96,7 @@ export const TenantDashboard = ({
     });
 
     // 5. 공지사항 관리
-    const { announcements } = useAnnouncements({
+    const { announcements, refreshAnnouncements } = useAnnouncements({
         companyId,
         tenantId: myProfile?.tenant_id || myProfile?.id
     });
@@ -231,31 +231,36 @@ export const TenantDashboard = ({
                         </Pressable>
                     </View>
                     <Text style={styles.subtitle}>{companyName} 스마트 우편함</Text>
+
+                    {/* [NEW] 이름 아래 공지사항 텍스트 노출 */}
+                    {announcements.length > 0 && (
+                        <View style={styles.compactNoticeBox}>
+                            <Text style={styles.compactNoticeLabel}>📢</Text>
+                            <Text style={styles.compactNoticeTitle} numberOfLines={1}>
+                                {announcements[0].title}
+                            </Text>
+                            {announcements.length > 1 && (
+                                <Text style={styles.compactNoticeCount}>외 {announcements.length - 1}건</Text>
+                            )}
+                        </View>
+                    )}
                 </View>
-                <Pressable onPress={handleLogout} style={{ marginLeft: 10 }}>
-                    <Text style={{ color: '#EF4444', fontWeight: '600', fontSize: 13 }}>로그아웃</Text>
-                </Pressable>
+
+                <View style={{ alignItems: 'flex-end', gap: 8 }}>
+                    <Pressable onPress={() => handleLogout()}>
+                        <Text style={{ color: '#EF4444', fontWeight: '600', fontSize: 13 }}>로그아웃</Text>
+                    </Pressable>
+                    <Pressable
+                        onPress={() => refreshAnnouncements()}
+                        style={styles.refreshButton}
+                    >
+                        <Ionicons name="refresh" size={18} color="#6366F1" />
+                        <Text style={styles.refreshButtonText}>새로고침</Text>
+                    </Pressable>
+                </View>
             </View>
 
-            {/* 공지사항 퀵 배너 */}
-            {announcements.length > 0 && (
-                <View style={styles.noticeContainer}>
-                    <View style={styles.noticeHeader}>
-                        <Text style={styles.noticeLabel}>📢 공지사항</Text>
-                        {announcements.length > 5 && (
-                            <Text style={styles.noticeMore}>전체보기</Text>
-                        )}
-                    </View>
-                    <View style={styles.noticeList}>
-                        {announcements.slice(0, 5).map((notice) => (
-                            <View key={notice.id} style={styles.noticeItem}>
-                                <View style={styles.noticeDot} />
-                                <Text style={styles.noticeText} numberOfLines={1}>{notice.title}</Text>
-                            </View>
-                        ))}
-                    </View>
-                </View>
-            )}
+            {/* 기존 공지사항 퀵 배너 제거됨 (헤더로 통합) */}
 
             {/* 알림 배너 */}
             {Platform.OS === 'web' && typeof Notification !== 'undefined' && Notification.permission !== 'granted' && !myProfile.web_push_token && (
@@ -415,26 +420,38 @@ const styles = StyleSheet.create({
     },
     installButtonText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 
-    // 공지사항 스타일
-    noticeContainer: {
-        backgroundColor: '#fff',
-        marginHorizontal: 16,
-        marginTop: 12,
-        padding: 16,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#F1F5F9',
-        shadowColor: '#64748B',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
-    },
-    noticeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-    noticeLabel: { fontSize: 14, fontWeight: '800', color: '#1E293B' },
-    noticeMore: { fontSize: 12, color: '#6366F1', fontWeight: '600' },
-    noticeList: { gap: 8 },
-    noticeItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    noticeDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#94A3B8' },
     noticeText: { fontSize: 13, color: '#475569', flex: 1 },
+
+    // 컴팩트 공지사항 스타일
+    compactNoticeBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F1F5F9',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 10,
+        marginTop: 8,
+        alignSelf: 'flex-start',
+    },
+    compactNoticeLabel: { fontSize: 12, marginRight: 6 },
+    compactNoticeTitle: { fontSize: 13, color: '#475569', fontWeight: '600', maxWidth: 180 },
+    compactNoticeCount: { fontSize: 11, color: '#94A3B8', marginLeft: 6, fontWeight: '500' },
+
+    // 새로고침 버튼 스타일
+    refreshButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#EEF2FF',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E0E7FF',
+    },
+    refreshButtonText: {
+        fontSize: 12,
+        color: '#4F46E5',
+        fontWeight: '700',
+        marginLeft: 4,
+    },
 });

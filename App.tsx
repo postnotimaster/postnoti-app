@@ -29,7 +29,7 @@ import { KakaoGuideOverlay } from './src/components/common/KakaoGuideOverlay';
 const Stack = createNativeStackNavigator();
 
 function AppContent() {
-  const { isInitializing, mode, brandingCompany, expoPushToken, webPushToken, setMode } = useAppContent();
+  const { isInitializing, mode, brandingCompany, expoPushToken, webPushToken, setMode, setBrandingCompany } = useAppContent();
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
 
   // Sync 'mode' from Context to Navigation (for Deep Linking support)
@@ -68,22 +68,19 @@ function AppContent() {
       console.log('--- [App.tsx] Branding Company is missing in Wrapper! ---');
       return <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />;
     }
-    console.log('--- [App.tsx] Rendering TenantTabNavigator with company:', brandingCompany.name);
+    console.log('--- [App.tsx] Rendering TenantDashboard with company:', brandingCompany.name);
     return (
-      <TenantTabNavigator
-        route={{
-          params: {
-            companyId: brandingCompany.id,
-            companyName: brandingCompany.name,
-            pushToken: expoPushToken,
-            webPushToken: webPushToken,
-            magicTenantId: (brandingCompany as any).magicId,
-            magicProfileId: (brandingCompany as any).magicId,
-            onBack: () => {
-              setMode('landing');
-              navigation.popToTop();
-            }
-          }
+      <TenantDashboard
+        companyId={brandingCompany.id}
+        companyName={brandingCompany.name}
+        pushToken={expoPushToken}
+        webPushToken={webPushToken}
+        magicProfileId={(brandingCompany as any).magicId}
+        magicTenantId={(brandingCompany as any).magicId}
+        onBack={() => {
+          setMode('landing');
+          setBrandingCompany(null);
+          navigation.popToTop();
         }}
       />
     );
