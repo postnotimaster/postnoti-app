@@ -114,6 +114,10 @@ function TenantDashboardWrapper(props: any) {
   const [showRetry, setShowRetry] = useState(false);
   const [localBranding, setLocalBranding] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const slugFromParam = (props.route.params as any)?.slug;
+  const magicIdFromParam = (props.route.params as any)?.p;
 
   // 5초 이상 로딩되면 재시도 버튼 노출
   useEffect(() => {
@@ -128,32 +132,43 @@ function TenantDashboardWrapper(props: any) {
     const directFetch = async () => {
       if (brandingCompany?.id) return;
 
-      const slug = (props.route.params as any)?.slug;
-      if (!slug) return;
+      if (!slugFromParam) {
+        setFetchError('Slug값이 URL에 전달되지 않았습니다.');
+        return;
+      }
 
-      console.log(`[TenantDashboardWrapper] Emergency direct fetch for slug: ${slug}`);
+      console.log(`[TenantDashboardWrapper] Emergency direct fetch for slug: ${slugFromParam}`);
       setLoading(true);
       try {
         const { data, error } = await supabase
           .from('companies')
           .select('*')
-          .ilike('slug', slug.trim())
+          .ilike('slug', slugFromParam.trim())
           .single();
+
+        if (error) {
+          console.error('[TenantDashboardWrapper] Query Error:', error);
+          setFetchError(`데이터베이스 오류: ${error.message}`);
+          return;
+        }
 
         if (data) {
           console.log(`[TenantDashboardWrapper] Found via direct fetch: ${data.name}`);
           setLocalBranding(data);
           // 전역 상태도 업데이트 시도
-          setBrandingCompany({ ...data, magicId: (props.route.params as any)?.p } as any);
+          setBrandingCompany({ ...data, magicId: magicIdFromParam } as any);
+        } else {
+          setFetchError('존재하지 않는 지점 주소(Slug)입니다.');
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error('[TenantDashboardWrapper] Direct fetch error:', e);
+        setFetchError(`네트워크/예외 오류: ${e.message}`);
       } finally {
         setLoading(false);
       }
     };
     directFetch();
-  }, [props.route.params]);
+  }, [slugFromParam]);
 
   const company = brandingCompany || localBranding || (props.route.params as any);
 
@@ -165,6 +180,16 @@ function TenantDashboardWrapper(props: any) {
         <Text style={{ marginTop: 8, color: '#94A3B8', fontSize: 13, textAlign: 'center' }}>
           지점 정보를 서버에서 확인하고 있습니다.{"\n"}잠시만 기다려주세요.
         </Text>
+
+        {/* 디버그 정보 표시 (해결을 위해) */}
+        <View style={{ marginTop: 20, padding: 10, backgroundColor: '#f8fafc', borderRadius: 8, width: '100%' }}>
+          <Text style={{ fontSize: 10, color: '#64748b' }}>[시스템 분석 정보]</Text>
+          <Text style={{ fontSize: 11, color: '#475569' }}>- 요청 Slug: {slugFromParam || '없음'}</Text>
+          <Text style={{ fontSize: 11, color: '#475569' }}>- Magic ID: {magicIdFromParam || '없음'}</Text>
+          <Text style={{ fontSize: 11, color: fetchError ? '#ef4444' : '#475569', fontWeight: fetchError ? 'bold' : 'normal' }}>
+            - 오류 상태: {fetchError || '오류 없음 (로딩 중이거나 데이터 확인 중)'}
+          </Text>
+        </View>
 
         {showRetry && (
           <View style={{ marginTop: 30, alignItems: 'center' }}>
@@ -178,7 +203,7 @@ function TenantDashboardWrapper(props: any) {
               }}
               style={{ paddingHorizontal: 20, paddingVertical: 10, backgroundColor: '#F1F5F9', borderRadius: 10 }}
             >
-              <Text style={{ color: '#475569', fontWeight: '700' }}>처음으로 돌아가기</Text>
+              <Text style={{ color: '#475569', fontWeight: '700' }}>처음으로 돌아가기 (홈 화면)</Text>
             </Pressable>
           </View>
         )}
@@ -193,8 +218,8 @@ function TenantDashboardWrapper(props: any) {
       companyName={company.name}
       pushToken={expoPushToken}
       webPushToken={webPushToken}
-      magicProfileId={company.magicId || (props.route.params as any)?.p}
-      magicTenantId={company.magicId || (props.route.params as any)?.p}
+      magicProfileId={company.magicId || magicIdFromParam}
+      magicTenantId={company.magicId || magicIdFromParam}
       onBack={() => {
         setMode('landing');
         setBrandingCompany(null);
@@ -218,6 +243,16 @@ function NavigationBridge() {
         index: 0,
         routes: [{ name: 'TenantDashboard' }],
       });
+    } else if (mode === 'landing') {
+      // If we are forced to landing, ensure we actually navigate there
+      const state = navigation.getState();
+      const currentRoute = state?.routes[state?.index]?.name;
+      if (currentRoute !== 'Landing') {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Landing' }],
+        });
+      }
     }
   }, [mode, brandingCompany, navigation]);
 
