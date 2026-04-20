@@ -207,7 +207,10 @@ export const TenantDashboard = ({
                             <Text style={{ fontSize: 10, color: '#64748B', fontWeight: '700', marginBottom: 4 }}>DEBUG: 인증 진단 정보</Text>
                             <Text style={{ fontSize: 10, color: '#94A3B8' }}>• CompanyID: {companyId || '없음'}</Text>
                             <Text style={{ fontSize: 10, color: '#94A3B8' }}>• MagicLinkID: {magicTenantId || magicProfileId || '없음 (일반 접속)'}</Text>
-                            <Text style={{ fontSize: 10, color: '#94A3B8' }}>• AuthStatus: {identifying ? '검증 중...' : (myProfile ? '인증됨' : '미인증')}</Text>
+                            <Text style={{ fontSize: 10, color: '#94A3B8' }}>• 현재상태: {identifying ? '🔍 ID 검증 시도 중...' : (myProfile ? '✅ 인증 성공 (우편함 진입)' : '⚠️ 인증 실패 (로그인 필요)')}</Text>
+                            {!myProfile && !identifying && (magicTenantId || magicProfileId) && (
+                                <Text style={{ fontSize: 9, color: '#EF4444', marginTop: 4 }}>* 입력된 ID가 DB의 tenants 또는 profiles 테이블에 존재하지 않습니다.</Text>
+                            )}
                         </View>
 
                         <View style={styles.secureBadge}>

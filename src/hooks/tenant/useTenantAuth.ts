@@ -43,35 +43,38 @@ export const useTenantAuth = ({
             }
 
             const targetMagicId = magicTenantId || magicProfileId;
-            console.log(`[useTenantAuth] Checking AutoLogin. MagicId: ${targetMagicId}, Company: ${companyId}`);
+            console.log(`[useTenantAuth] Starting AutoLogin Check. MagicId: ${targetMagicId}`);
 
             if (targetMagicId) {
                 try {
                     setIdentifying(true);
-                    if (magicTenantId) {
-                        console.log(`[useTenantAuth] Fetching tenant by ID: ${magicTenantId}`);
-                        const tenant = await tenantsService.getTenantById(magicTenantId);
-                        if (tenant) {
-                            console.log(`[useTenantAuth] Magic tenant found: ${tenant.name}`);
-                            setMyTenant(tenant);
-                            setMyProfile(tenant);
-                            setTenantProfile(tenant); // [중요] 전역 상태 업데이트
-                            return;
-                        } else {
-                            console.warn(`[useTenantAuth] No tenant found for magicId: ${magicTenantId}`);
-                        }
-                    } else if (magicProfileId) {
-                        console.log(`[useTenantAuth] Fetching profile by ID: ${magicProfileId}`);
-                        const profile = await profilesService.getProfileById(magicProfileId);
-                        if (profile) {
-                            console.log(`[useTenantAuth] Magic profile found: ${profile.name}`);
-                            setMyProfile(profile);
-                            setTenantProfile(profile); // [중요] 전역 상태 업데이트
-                            return;
-                        }
+
+                    // 1. First attempt: search in tenants table (ID based magic link)
+                    console.log(`[useTenantAuth] Attempt 1: Fetching from tenants table (ID: ${targetMagicId})`);
+                    let tenantResult = await tenantsService.getTenantById(targetMagicId);
+
+                    if (tenantResult) {
+                        console.log(`[useTenantAuth] SUCCESS: Found in tenants table: ${tenantResult.name}`);
+                        setMyTenant(tenantResult);
+                        setMyProfile(tenantResult);
+                        setTenantProfile(tenantResult);
+                        return;
                     }
+
+                    // 2. Second attempt: search in profiles table (Legacy/Alternative magic link)
+                    console.log(`[useTenantAuth] Attempt 2: Fetching from profiles table (ID: ${targetMagicId})`);
+                    let profileResult = await profilesService.getProfileById(targetMagicId);
+
+                    if (profileResult) {
+                        console.log(`[useTenantAuth] SUCCESS: Found in profiles table: ${profileResult.name}`);
+                        setMyProfile(profileResult);
+                        setTenantProfile(profileResult);
+                        return;
+                    }
+
+                    console.warn(`[useTenantAuth] FAILED: ID ${targetMagicId} not found in neither tenants nor profiles`);
                 } catch (e) {
-                    console.error('[useTenantAuth] Magic login failed', e);
+                    console.error('[useTenantAuth] Magic login exception:', e);
                 } finally {
                     setIdentifying(false);
                 }
