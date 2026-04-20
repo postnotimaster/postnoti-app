@@ -19,6 +19,7 @@ import { AdminSettingsScreen } from './src/screens/AdminSettingsScreen';
 import { AdminMenuScreen } from './src/screens/AdminMenuScreen';
 import { AdminSendersScreen } from './src/screens/AdminSendersScreen';
 import { AdminTabNavigator } from './src/navigation/AdminTabNavigator';
+import { TenantTabNavigator } from './src/navigation/TenantTabNavigator';
 import { TenantDashboard } from './src/components/tenant/TenantDashboard';
 import { KakaoGuideOverlay } from './src/components/common/KakaoGuideOverlay';
 // Note: TenantDashboard is still in components, can be moved later. 
@@ -67,18 +68,22 @@ function AppContent() {
       console.log('--- [App.tsx] Branding Company is missing in Wrapper! ---');
       return <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />;
     }
-    console.log('--- [App.tsx] Rendering TenantDashboard with company:', brandingCompany.name);
+    console.log('--- [App.tsx] Rendering TenantTabNavigator with company:', brandingCompany.name);
     return (
-      <TenantDashboard
-        companyId={brandingCompany.id}
-        companyName={brandingCompany.name}
-        pushToken={expoPushToken}
-        webPushToken={webPushToken}
-        magicTenantId={(brandingCompany as any).magicId}
-        magicProfileId={(brandingCompany as any).magicId}
-        onBack={() => {
-          setMode('landing');
-          navigation.popToTop();
+      <TenantTabNavigator
+        route={{
+          params: {
+            companyId: brandingCompany.id,
+            companyName: brandingCompany.name,
+            pushToken: expoPushToken,
+            webPushToken: webPushToken,
+            magicTenantId: (brandingCompany as any).magicId,
+            magicProfileId: (brandingCompany as any).magicId,
+            onBack: () => {
+              setMode('landing');
+              navigation.popToTop();
+            }
+          }
         }}
       />
     );

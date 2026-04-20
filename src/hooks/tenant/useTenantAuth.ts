@@ -3,6 +3,7 @@ import { Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { profilesService } from '../../services/profilesService';
 import { tenantsService, Tenant } from '../../services/tenantsService';
+import { useAppContent } from '../../contexts/AppContext';
 
 interface UseTenantAuthProps {
     companyId: string;
@@ -21,15 +22,23 @@ export const useTenantAuth = ({
     webPushToken,
     showToast
 }: UseTenantAuthProps) => {
+    const { tenantProfile, setTenantProfile } = useAppContent();
     const [name, setName] = useState('');
     const [phoneSuffix, setPhoneSuffix] = useState('');
-    const [myProfile, setMyProfile] = useState<any | null>(null);
+    const [myProfile, setMyProfile] = useState<any | null>(tenantProfile);
     const [myTenant, setMyTenant] = useState<Tenant | null>(null);
     const [identifying, setIdentifying] = useState(false);
+
+    // Sync local state when global state changes
+    useEffect(() => {
+        setMyProfile(tenantProfile);
+    }, [tenantProfile]);
 
     // 자동 로그인 및 매직 링크 처리
     useEffect(() => {
         const checkAutoLogin = async () => {
+            if (tenantProfile) return; // 이미 로그인됨
+
             const targetMagicId = magicTenantId || magicProfileId;
             if (targetMagicId) {
                 try {

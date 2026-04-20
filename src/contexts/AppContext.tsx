@@ -77,6 +77,10 @@ interface AppContextType {
 
 
 
+    // Tenant Data
+    tenantProfile: any | null;
+    setTenantProfile: (p: any | null) => void;
+
     // Actions
     loadData: () => Promise<void>;
     runOCR: (uri: string) => Promise<void>;
@@ -107,6 +111,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const [officeInfo, setOfficeInfo] = useState<Company | null>(null);
     const [profiles, setProfiles] = useState<Tenant[]>([]);
     const [masterSenders, setMasterSenders] = useState<string[]>([]);
+    const [tenantProfile, setTenantProfile] = useState<any | null>(null);
 
     // UI Visibility
     const [isAdminMgmtVisible, setIsAdminMgmtVisible] = useState(false);
@@ -340,6 +345,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 expoPushToken,
                 webPushToken,
                 brandingCompany, setBrandingCompany,
+                tenantProfile, setTenantProfile,
                 officeInfo, setOfficeInfo,
                 profiles, setProfiles,
                 masterSenders, setMasterSenders,

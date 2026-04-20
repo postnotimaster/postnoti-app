@@ -2,15 +2,14 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AdminDashboardScreen } from '../screens/AdminDashboardScreen';
-import { AdminTenantsScreen } from '../screens/AdminTenantsScreen';
-import { AdminMenuScreen } from '../screens/AdminMenuScreen';
-import { AdminNoticeScreen } from '../screens/admin/AdminNoticeScreen';
+import { TenantDashboard } from '../components/tenant/TenantDashboard';
+import { NoticeListScreen } from '../screens/tenant/NoticeListScreen';
 
 const Tab = createBottomTabNavigator();
 
-export const AdminTabNavigator = () => {
+export const TenantTabNavigator = ({ route }: any) => {
     const insets = useSafeAreaInsets();
+    const { companyId, companyName, pushToken, webPushToken, magicProfileId, magicTenantId, onBack } = route.params;
 
     return (
         <Tab.Navigator
@@ -18,14 +17,10 @@ export const AdminTabNavigator = () => {
                 tabBarIcon: ({ focused, color, size }) => {
                     let iconName: any;
 
-                    if (route.name === 'Dashboard') {
-                        iconName = focused ? 'mail-open' : 'mail-outline';
-                    } else if (route.name === 'Tenants') {
-                        iconName = focused ? 'business' : 'business-outline';
-                    } else if (route.name === 'Announcements') {
+                    if (route.name === 'Mailbox') {
+                        iconName = focused ? 'mail' : 'mail-outline';
+                    } else if (route.name === 'Notice') {
                         iconName = focused ? 'megaphone' : 'megaphone-outline';
-                    } else if (route.name === 'Settings') {
-                        iconName = focused ? 'settings' : 'settings-outline';
                     }
 
                     return <Ionicons name={iconName} size={size} color={color} />;
@@ -50,28 +45,30 @@ export const AdminTabNavigator = () => {
                     fontWeight: '700',
                     marginTop: -4,
                 },
-                headerShown: false, // Each screen will handle its own header if needed
+                headerShown: false,
             })}
         >
             <Tab.Screen
-                name="Dashboard"
-                component={AdminDashboardScreen}
+                name="Mailbox"
                 options={{ tabBarLabel: '우편함' }}
-            />
+            >
+                {(props) => (
+                    <TenantDashboard
+                        {...props}
+                        companyId={companyId}
+                        companyName={companyName}
+                        pushToken={pushToken}
+                        webPushToken={webPushToken}
+                        magicProfileId={magicProfileId}
+                        magicTenantId={magicTenantId}
+                        onBack={onBack}
+                    />
+                )}
+            </Tab.Screen>
             <Tab.Screen
-                name="Tenants"
-                component={AdminTenantsScreen}
-                options={{ tabBarLabel: '입주사' }}
-            />
-            <Tab.Screen
-                name="Announcements"
-                component={AdminNoticeScreen}
+                name="Notice"
+                component={NoticeListScreen}
                 options={{ tabBarLabel: '공지사항' }}
-            />
-            <Tab.Screen
-                name="Settings"
-                component={AdminMenuScreen}
-                options={{ tabBarLabel: '관리' }}
             />
         </Tab.Navigator>
     );

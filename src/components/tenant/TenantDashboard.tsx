@@ -17,6 +17,7 @@ import { useTenantAuth } from '../../hooks/tenant/useTenantAuth';
 import { useMailLogs } from '../../hooks/tenant/useMailLogs';
 import { usePWAInstall } from '../../hooks/tenant/usePWAInstall';
 import { useNotificationSync } from '../../hooks/tenant/useNotificationSync';
+import { useAnnouncements } from '../../hooks/tenant/useAnnouncements';
 
 type Props = {
     companyId: string;
@@ -92,6 +93,12 @@ export const TenantDashboard = ({
         webPushToken,
         showToast,
         setLoading
+    });
+
+    // 5. 공지사항 관리
+    const { announcements } = useAnnouncements({
+        companyId,
+        tenantId: myProfile?.tenant_id || myProfile?.id
     });
 
     // 설정 로드 및 동기화
@@ -207,9 +214,13 @@ export const TenantDashboard = ({
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <Text style={styles.title}>{myProfile.name}님</Text>
+                <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <Text style={styles.title} numberOfLines={1}>
+                            {(myProfile.company_name || myProfile.name) === myProfile.name
+                                ? `${myProfile.name}님`
+                                : `${myProfile.company_name} ${myProfile.name}님`}
+                        </Text>
                         {unreadCount > 0 && (
                             <View style={styles.unreadBadge}>
                                 <Text style={styles.unreadBadgeText}>+{unreadCount}</Text>
@@ -219,12 +230,32 @@ export const TenantDashboard = ({
                             <Ionicons name="settings-outline" size={20} color="#64748B" />
                         </Pressable>
                     </View>
-                    <Text style={styles.subtitle}>{companyName} 우편함</Text>
+                    <Text style={styles.subtitle}>{companyName} 스마트 우편함</Text>
                 </View>
-                <Pressable onPress={handleLogout}>
+                <Pressable onPress={handleLogout} style={{ marginLeft: 10 }}>
                     <Text style={{ color: '#EF4444', fontWeight: '600', fontSize: 13 }}>로그아웃</Text>
                 </Pressable>
             </View>
+
+            {/* 공지사항 퀵 배너 */}
+            {announcements.length > 0 && (
+                <View style={styles.noticeContainer}>
+                    <View style={styles.noticeHeader}>
+                        <Text style={styles.noticeLabel}>📢 공지사항</Text>
+                        {announcements.length > 5 && (
+                            <Text style={styles.noticeMore}>전체보기</Text>
+                        )}
+                    </View>
+                    <View style={styles.noticeList}>
+                        {announcements.slice(0, 5).map((notice) => (
+                            <View key={notice.id} style={styles.noticeItem}>
+                                <View style={styles.noticeDot} />
+                                <Text style={styles.noticeText} numberOfLines={1}>{notice.title}</Text>
+                            </View>
+                        ))}
+                    </View>
+                </View>
+            )}
 
             {/* 알림 배너 */}
             {Platform.OS === 'web' && typeof Notification !== 'undefined' && Notification.permission !== 'granted' && !myProfile.web_push_token && (
@@ -383,4 +414,27 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     installButtonText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+
+    // 공지사항 스타일
+    noticeContainer: {
+        backgroundColor: '#fff',
+        marginHorizontal: 16,
+        marginTop: 12,
+        padding: 16,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    noticeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+    noticeLabel: { fontSize: 14, fontWeight: '800', color: '#1E293B' },
+    noticeMore: { fontSize: 12, color: '#6366F1', fontWeight: '600' },
+    noticeList: { gap: 8 },
+    noticeItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    noticeDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#94A3B8' },
+    noticeText: { fontSize: 13, color: '#475569', flex: 1 },
 });
