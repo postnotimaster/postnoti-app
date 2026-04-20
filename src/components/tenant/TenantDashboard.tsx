@@ -194,12 +194,20 @@ export const TenantDashboard = ({
                             </View>
 
                             <PrimaryButton
-                                label="우편물 조회 시작"
+                                label={identifying ? '확인 중...' : '우편물 조회 시작'}
                                 onPress={() => handleIdentify()}
                                 loading={identifying}
                                 style={styles.premiumButton}
                                 textStyle={{ fontSize: 16, fontWeight: '700' }}
                             />
+                        </View>
+
+                        {/* 인증 디버그 패널 (문제가 해결될 때까지 임시 표시) */}
+                        <View style={{ marginTop: 30, padding: 12, backgroundColor: '#F1F5F9', borderRadius: 12, borderStyle: 'dashed', borderWidth: 1, borderColor: '#CBD5E1' }}>
+                            <Text style={{ fontSize: 10, color: '#64748B', fontWeight: '700', marginBottom: 4 }}>DEBUG: 인증 진단 정보</Text>
+                            <Text style={{ fontSize: 10, color: '#94A3B8' }}>• CompanyID: {companyId || '없음'}</Text>
+                            <Text style={{ fontSize: 10, color: '#94A3B8' }}>• MagicLinkID: {magicTenantId || magicProfileId || '없음 (일반 접속)'}</Text>
+                            <Text style={{ fontSize: 10, color: '#94A3B8' }}>• AuthStatus: {identifying ? '검증 중...' : (myProfile ? '인증됨' : '미인증')}</Text>
                         </View>
 
                         <View style={styles.secureBadge}>

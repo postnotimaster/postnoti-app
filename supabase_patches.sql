@@ -83,3 +83,34 @@ CREATE TRIGGER update_announcements_updated_at
     BEFORE UPDATE ON announcements
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
+
+
+-- ==========================================
+-- 4. 🔒 보안 강화형 조회 함수 (RPC)
+-- 입주자 앱에서 RLS를 우회하여 특정 정보를 조회할 때 사용 (SECURITY DEFINER)
+-- ==========================================
+
+-- 4-1. ID 기반 입주사 조회 (매직링크용)
+CREATE OR REPLACE FUNCTION get_tenant_by_id_secure(p_tenant_id UUID)
+RETURNS SETOF tenants
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY SELECT * FROM tenants WHERE id = p_tenant_id;
+END;
+$$;
+
+-- 4-2. 이름/전화번호 기반 입주사 조회 (인증용)
+CREATE OR REPLACE FUNCTION find_tenant_by_name_and_phone_secure(p_company_id UUID, p_name TEXT, p_phone_suffix TEXT)
+RETURNS SETOF tenants
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY SELECT * FROM tenants 
+  WHERE company_id = p_company_id 
+    AND name = p_name 
+    AND phone LIKE '%' || p_phone_suffix;
+END;
+$$;
