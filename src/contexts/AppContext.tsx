@@ -246,6 +246,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 if (url.includes('/branch/')) slug = url.split('/branch/')[1].split('/')[0].split('?')[0];
             }
 
+            // --- 후속 처리: ID가 URL 전체인 경우 방지 (Sanitization) ---
+            if (magicId && magicId.includes('://')) {
+                console.log('[AppContext] MagicId was whole URL, recursive re-parsing...');
+                const subMatch = magicId.match(/[?&]p=([^&]+)/);
+                if (subMatch) magicId = subMatch[1];
+                else magicId = ''; // 정보를 찾지 못하면 비움
+            }
+
             // Web 전용 패스 추출 보강
             if (!slug && Platform.OS === 'web' && typeof window !== 'undefined') {
                 const path = window.location.pathname;

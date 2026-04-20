@@ -125,9 +125,13 @@ function TenantDashboardWrapper(props: any) {
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   const slugFromParam = (props.route.params as any)?.slug;
-  const paramP = (props.route.params as any)?.p;
+  const rawParamP = (props.route.params as any)?.p;
 
-  // AppContext에서 이미 정보를 찾아두었으므로, 있으면 바로 띄우고 없으면 잠시 대기
+  // URL 전체가 p로 들어오는 케이스 방어
+  const paramP = (rawParamP && rawParamP.includes('://'))
+    ? rawParamP.match(/[?&]p=([^&]+)/)?.[1] || ''
+    : rawParamP;
+
   const company = brandingCompany;
   const resolvedMagicId = paramP || (company as any)?.magicId || '';
 
