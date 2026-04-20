@@ -244,52 +244,49 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 }
             }
 
-            if (slug) {
-                let magicId = '';
+            // 3. 매직 ID 파싱 (p 파라미터)
+            let magicId = '';
+            try {
+                const urlObj = new URL(url);
+                magicId = urlObj.searchParams.get('p') || '';
+            } catch (e) {
+                if (url.includes('p=')) {
+                    magicId = url.split('p=')[1].split('&')[0];
+                }
+            }
+            if (!magicId && Platform.OS === 'web' && typeof window !== 'undefined') {
                 try {
-                    const urlObj = new URL(url);
-                    magicId = urlObj.searchParams.get('p') || '';
-                } catch (e) {
-                    if (url.includes('p=')) {
-                        magicId = url.split('p=')[1].split('&')[0];
-                    }
-                }
+                    const params = new URLSearchParams(window.location.search);
+                    magicId = params.get('p') || '';
+                } catch (e) { }
+            }
 
-                if (!magicId && Platform.OS === 'web' && typeof window !== 'undefined') {
-                    try {
-                        const params = new URLSearchParams(window.location.search);
-                        magicId = params.get('p') || '';
-                    } catch (e) { }
-                }
-
-                console.log(`[AppContext] DeepLink Hit - Slug: ${slug}, MagicId: ${magicId}`);
+            // [핵심] 지점 개념 제거 대응: 슬러그가 없더라도 매직ID가 있다면 입주자 모드로 진입
+            if (slug || magicId) {
+                console.log(`[AppContext] DeepLink Hit - Slug: ${slug || '(없음)'}, MagicId: ${magicId || '(없음)'}`);
                 setMode('tenant_login');
 
-                try {
-                    const { data, error: companyError } = await supabase
-                        .from('companies')
-                        .select('*')
-                        .ilike('slug', slug.trim())
-                        .single();
+                if (slug) {
+                    try {
+                        const { data, error: companyError } = await supabase
+                            .from('companies')
+                            .select('*')
+                            .ilike('slug', slug.trim())
+                            .single();
 
-                    if (companyError) {
-                        console.error('[AppContext] Company Query Error:', companyError);
-                        setMode('landing');
-                        setBrandingCompany(null);
-                        return;
+                        if (!companyError && data) {
+                            console.log(`[AppContext] Company loaded via slug: ${data.name}`);
+                            setBrandingCompany({ ...data, magicId } as any);
+                        } else {
+                            // 슬러그가 틀렸어도 매직ID가 있으면 진행하도록 허용 (Wrapper에서 해결)
+                            if (magicId) setBrandingCompany({ magicId } as any);
+                        }
+                    } catch (e) {
+                        if (magicId) setBrandingCompany({ magicId } as any);
                     }
-
-                    if (data) {
-                        console.log(`[AppContext] Company loaded: ${data.name} (${data.id})`);
-                        setBrandingCompany({ ...data, magicId } as any);
-                    } else {
-                        console.warn('[AppContext] Company not found for slug:', slug);
-                        setMode('landing');
-                        setBrandingCompany(null);
-                    }
-                } catch (e) {
-                    console.error('[AppContext] Unexpected deep link error:', e);
-                    setMode('landing');
+                } else if (magicId) {
+                    // 슬러그가 아예 없는 경우 매직ID로만 구성
+                    setBrandingCompany({ magicId } as any);
                 }
             }
         };

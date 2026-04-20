@@ -144,18 +144,7 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                                         <Pressable
                                             style={[styles.resendBtn, { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }]}
                                             onPress={async () => {
-                                                // Fetch company slug
-                                                let companySlug = '';
-                                                try {
-                                                    const { data: compData } = await supabase
-                                                        .from('companies')
-                                                        .select('slug')
-                                                        .eq('id', tenant.company_id)
-                                                        .single();
-                                                    companySlug = compData?.slug || '';
-                                                } catch (e) { }
-
-                                                const link = `https://postnoti-app-two.vercel.app/branch/${companySlug}/view`;
+                                                const link = `https://postnoti-app-two.vercel.app/view?p=${tenant.id}`;
 
                                                 if (!tenant.profile_id) {
                                                     Alert.alert('회원 미연동', '이 입주사는 앱 계정이 연결되어 있지 않습니다. 아래 전용 링크를 문자로 보내시겠습니까?', [

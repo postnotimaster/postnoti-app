@@ -23,6 +23,7 @@ import { AdminTabNavigator } from './src/navigation/AdminTabNavigator';
 import { TenantTabNavigator } from './src/navigation/TenantTabNavigator';
 import { TenantDashboard } from './src/components/tenant/TenantDashboard';
 import { KakaoGuideOverlay } from './src/components/common/KakaoGuideOverlay';
+import { tenantsService } from './src/services/tenantsService'; // 추가
 // Note: TenantDashboard is still in components, can be moved later. 
 // We will wrap it in a Screen component if needed or use directly if it accepts navigation props, 
 // but existing TenantDashboard uses 'onBack'. We should adapt it.
@@ -73,11 +74,12 @@ function AppContent() {
       screens: {
         Landing: 'Landing',
         TenantDashboard: {
-          // /branch/:slug/view?p=TENANT_ID 형식의 URL을 파싱
-          path: 'branch/:slug/view',
+          // 1) /branch/:slug/view?p=ID (Legacy)
+          // 2) /view?p=ID (New / Slug-less)
+          path: ':slug?/view', // slug를 선택적(optional)으로 변경
           parse: {
-            slug: (slug: string) => slug,
-            p: (p: string) => p,  // [핵심] ?p= 쿼리파라미터를 route.params.p로 매핑
+            slug: (slug: string) => slug || '',
+            p: (p: string) => p || '',
           },
         },
         AdminDashboard: 'admin',
@@ -189,25 +191,48 @@ function TenantDashboardWrapper(props: any) {
       setLoading(true);
       setFetchError(null);
 
-      try {
-        const { data, error } = await supabase
-          .from('companies')
-          .select('*')
-          .ilike('slug', effectiveSlug.trim())
-          .single();
+      console.log(`[TenantDashboardWrapper] Initiating context fetch. Slug: ${slugFromParam}, MagicId: ${resolvedMagicId}`);
+      setLoading(true);
+      setFetchError(null);
 
-        if (error) {
-          console.error('[TenantDashboardWrapper] DB Query Error:', error);
-          setFetchError(`서버 오류: ${error.message} (${error.code || 'CODE_NONE'})`);
-          return;
+      try {
+        let companyData = null;
+
+        // 1. 슬러그가 있다면 슬러그로 먼저 찾음
+        if (slugFromParam && slugFromParam !== 'branch') {
+          const { data, error } = await supabase
+            .from('companies')
+            .select('*')
+            .ilike('slug', slugFromParam.trim())
+            .single();
+          if (!error && data) companyData = data;
         }
 
-        if (data) {
-          console.log(`[TenantDashboardWrapper] Found: ${data.name} (ID: ${data.id})`);
-          setLocalBranding(data);
-          setBrandingCompany({ ...data, magicId: resolvedMagicId } as any);
+        // 2. [핵심] 슬러그가 없거나 못 찾았는데 매직ID가 있다면, ID로 지점 추적 (지점 지우기 대응)
+        if (!companyData && resolvedMagicId) {
+          console.log(`[TenantDashboardWrapper] No slug, attempting reverse lookup via MagicId: ${resolvedMagicId}`);
+          // useTenantAuth에서 쓰는 것과 동일한 로직으로 입주자 먼저 찾기
+          const tenant = await tenantsService.getTenantById(resolvedMagicId);
+          if (tenant && tenant.company_id) {
+            const { data, error } = await supabase
+              .from('companies')
+              .select('*')
+              .eq('id', tenant.company_id)
+              .single();
+            if (!error && data) {
+              console.log(`[TenantDashboardWrapper] Reverse lookup success! Found company: ${data.name}`);
+              companyData = data;
+            }
+          }
+        }
+
+        if (companyData) {
+          setLocalBranding(companyData);
+          setBrandingCompany({ ...companyData, magicId: resolvedMagicId } as any);
         } else {
-          setFetchError('해당 주소(Slug)로 등록된 지점을 찾을 수 없습니다.');
+          setFetchError(resolvedMagicId
+            ? '유효한 입주자 정보 또는 지점 정보를 찾을 수 없습니다.'
+            : '접속 주소가 올바르지 않습니다.');
         }
       } catch (e: any) {
         console.error('[TenantDashboardWrapper] Exception:', e);

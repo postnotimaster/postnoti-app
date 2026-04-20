@@ -46,7 +46,7 @@ export const notificationService = {
                         sound: 'default',
                         title,
                         body,
-                        data: { url: `postnoti://branch/${company.slug}` }
+                        data: { url: `postnoti://view` }
                     })
                 });
                 if (response.ok) {
@@ -69,7 +69,7 @@ export const notificationService = {
                         body,
                         data: {
                             company_id: company.id,
-                            url: `https://postnoti-app-two.vercel.app/branch/${company.slug}`
+                            url: `https://postnoti-app-two.vercel.app/view`
                         }
                     })
                 });
@@ -137,7 +137,7 @@ export const notificationService = {
                             sound: 'default',
                             title: pushTitle,
                             body: pushBody,
-                            data: { url: `postnoti://branch/${company.slug}` }
+                            data: { url: `postnoti://view` }
                         })
                     }).catch(e => console.warn('Notice push error (native)', e));
                 }
@@ -153,7 +153,7 @@ export const notificationService = {
                             body: pushBody,
                             data: {
                                 company_id: company.id,
-                                url: `https://postnoti-app-two.vercel.app/branch/${company.slug}`
+                                url: `https://postnoti-app-two.vercel.app/view`
                             }
                         })
                     }).catch(e => console.warn('Notice push error (web)', e));
@@ -168,8 +168,9 @@ export const notificationService = {
      * Generates a link for a tenant to view their mailbox.
      */
     generateShareLink(tenant: Tenant, company: Company): string {
-        // 앱 미설치 고객을 위해 다시 표준 https:// 주소로 복구하여 웹 브라우저 접속을 지원
-        return `https://postnoti-app-two.vercel.app/branch/${company.slug}/view?p=${tenant.id}`;
+        // [중요] 지점 개념 제거: URL에서 슬러그를 없애고 단순 /view?p= ID 형식을 사용합니다.
+        // App.tsx에서 이 ID를 통해 역방향으로 지점 정보를 찾아냅니다.
+        return `https://postnoti-app-two.vercel.app/view?p=${tenant.id}`;
     },
 
     /**

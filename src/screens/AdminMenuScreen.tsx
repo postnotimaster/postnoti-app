@@ -38,9 +38,9 @@ export const AdminMenuScreen = () => {
     };
 
     const copyLink = async () => {
-        const url = `https://postnoti-app.vercel.app/branch/${officeInfo?.slug}`;
+        const url = `https://postnoti-app-two.vercel.app/view`;
         await Clipboard.setStringAsync(url);
-        Alert.alert('복사 완료', `입주자 전용 링크가 복사되었습니다.\n${url}`);
+        Alert.alert('복사 완료', `입주자 전용 링크 주소가 복사되었습니다.\n${url}`);
     };
 
     return (
@@ -87,7 +87,7 @@ export const AdminMenuScreen = () => {
                         <View style={appStyles.menuBtnTextGroup}>
                             <Text style={[appStyles.menuBtnLabel, { color: '#4F46E5', fontSize: 14 }]}>입주자 전용 링크</Text>
                             <Text style={appStyles.menuBtnDesc} numberOfLines={1}>
-                                branch/{officeInfo?.slug}
+                                postnoti-app-two.vercel.app/view
                             </Text>
                         </View>
                         <Pressable
