@@ -76,11 +76,10 @@ function AppContent() {
       screens: {
         Landing: 'Landing',
         TenantDashboard: {
-          // 1) /branch/:slug/view?p=ID (Legacy)
-          // 2) /view?p=ID (New / Slug-less)
-          path: ':slug?/view', // slug를 선택적(optional)으로 변경
+          // 1) /view?p=ID (Slug-less / New)
+          // 2) /branch/:slug/view?p=ID (Legacy)
+          path: 'view',
           parse: {
-            slug: (slug: string) => slug || '',
             p: (p: string) => p || '',
           },
         },
