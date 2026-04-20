@@ -232,6 +232,9 @@ export const TenantDashboard = ({
                     </View>
                     <Text style={styles.subtitle}>{companyName} 스마트 우편함</Text>
 
+                    {/* [DEBUG] 지점 ID 확인용 (임시) */}
+                    <Text style={{ fontSize: 9, color: '#CBD5E1', marginTop: 2 }}>ID: {companyId}</Text>
+
                     {/* [NEW] 이름 아래 공지사항 텍스트 노출 */}
                     {announcements.length > 0 && (
                         <View style={styles.compactNoticeBox}>
@@ -262,47 +265,11 @@ export const TenantDashboard = ({
 
             {/* 기존 공지사항 퀵 배너 제거됨 (헤더로 통합) */}
 
-            {/* 알림 배너 */}
-            {Platform.OS === 'web' && typeof Notification !== 'undefined' && Notification.permission !== 'granted' && !myProfile.web_push_token && (
-                <View style={[styles.installBanner, { backgroundColor: '#F5F3FF', borderColor: '#DDD6FE' }]}>
-                    <View style={{ flex: 1 }}>
-                        <Text style={[styles.installBannerTitle, { color: '#6D28D9' }]}>🔔 알림이 꺼져 있습니다</Text>
-                        <Text style={[styles.installBannerDesc, { color: '#7C3AED' }]}>알림을 켜고 우편물 소식을 실시간으로 받으세요.</Text>
-                    </View>
-                    <Pressable style={[styles.installButton, { backgroundColor: '#7C3AED' }]} onPress={requestNotificationPermission}>
-                        <Text style={styles.installButtonText}>알림 켜기</Text>
-                    </Pressable>
-                </View>
-            )}
+            {/* 공지사항 통합 배너 제거됨 */}
 
-            {/* PWA 설치 배너 */}
-            {showInstallBanner && (
-                <View style={styles.installBanner}>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.installBannerTitle}>📱 홈 화면에 앱 설치</Text>
-                        <Text style={styles.installBannerDesc}>바탕화면에 앱을 만들어 더 편하게 사용하세요.</Text>
-                    </View>
-                    <Pressable style={styles.installButton} onPress={handleInstallPrompt}>
-                        <Text style={styles.installButtonText}>설치하기</Text>
-                    </Pressable>
-                    <Pressable onPress={() => setShowInstallBanner(false)} style={{ marginLeft: 10 }}>
-                        <Ionicons name="close" size={20} color="#94A3B8" />
-                    </Pressable>
-                </View>
-            )}
+            {/* 알림 배너 제거됨 */}
 
-            {/* iOS 가이드 */}
-            {Platform.OS === 'web' && /iphone|ipad|ipod/i.test(navigator?.userAgent?.toLowerCase() || '') && !(window as any).matchMedia('(display-mode: standalone)').matches && (
-                <View style={[styles.installBanner, { backgroundColor: '#FFF7ED', borderColor: '#FED7AA' }]}>
-                    <View style={{ flex: 1 }}>
-                        <Text style={[styles.installBannerTitle, { color: '#C2410C' }]}>🍏 아이폰 알림 받기</Text>
-                        <Text style={[styles.installBannerDesc, { color: '#EA580C' }]}>[공유] &gt; [홈 화면에 추가]를 눌러야 알림이 작동합니다.</Text>
-                    </View>
-                    <View style={{ backgroundColor: '#F97316', padding: 8, borderRadius: 10 }}>
-                        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>가이드</Text>
-                    </View>
-                </View>
-            )}
+            {/* iOS 가이드 제거됨 */}
 
             {/* 탭 필터 */}
             <View style={styles.tabContainer}>
