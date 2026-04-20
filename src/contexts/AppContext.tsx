@@ -317,7 +317,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             resolve(null);
         }, 3000));
 
-        const initialUrl = await Linking.getInitialURL();
+        let initialUrl = await Linking.getInitialURL();
+        if (!initialUrl && Platform.OS === 'web' && typeof window !== 'undefined') {
+            initialUrl = window.location.href;
+        }
+
         if (initialUrl) {
             await Promise.race([handleDeepLink(initialUrl), timeoutPromise]);
         }

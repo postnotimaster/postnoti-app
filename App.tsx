@@ -152,9 +152,17 @@ function TenantDashboardWrapper(props: any) {
         <Text style={{ fontSize: 14, color: '#64748B', marginTop: 8, textAlign: 'center', lineHeight: 20 }}>
           URL이 잘못되었거나 만료된 링크일 수 있습니다. 관리자에게 문의해 주세요.
         </Text>
+
+        <View style={{ marginTop: 30, padding: 16, backgroundColor: '#F8FAFC', borderRadius: 12, width: '100%', borderWidth: 1, borderColor: '#E2E8F0' }}>
+          <Text style={{ fontSize: 11, color: '#475569', fontWeight: '800', marginBottom: 8, opacity: 0.7 }}>🔍 시스템 진단 정보 (Phone)</Text>
+          <Text style={{ fontSize: 11, color: '#64748B' }}>• MagicID: <Text style={{ color: '#0F172A', fontWeight: 'bold' }}>{resolvedMagicId || '(없음)'}</Text></Text>
+          <Text style={{ fontSize: 11, color: '#64748B' }}>• Slug: <Text style={{ color: '#0F172A', fontWeight: 'bold' }}>{slugFromParam || '(없음)'}</Text></Text>
+          <Text style={{ fontSize: 11, color: '#64748B' }}>• Context: <Text style={{ color: brandingCompany ? '#10B981' : '#EF4444', fontWeight: 'bold' }}>{brandingCompany ? 'Resolved' : 'Missing'}</Text></Text>
+        </View>
+
         <Pressable
           onPress={() => { setMode('landing'); setBrandingCompany(null); props.navigation.replace('Landing'); }}
-          style={{ marginTop: 30, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: '#4F46E5', borderRadius: 10 }}
+          style={{ marginTop: 30, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: '#4F46E5', borderRadius: 10, width: '100%', alignItems: 'center' }}
         >
           <Text style={{ color: '#fff', fontWeight: '700' }}>홈으로 이동</Text>
         </Pressable>
