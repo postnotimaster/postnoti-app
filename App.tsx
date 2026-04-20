@@ -164,17 +164,9 @@ function TenantDashboardWrapper(props: any) {
 
   // 지점 정보를 찾지 못한 경우 (대기 시간이 길어지거나 진짜 없는 경우)
   if (!company || (!company.id && !company.name)) {
-    const handleReload = async () => {
+    const handleReload = () => {
       if (Platform.OS === 'web') {
-        try {
-          if ('caches' in window) {
-            const cacheNames = await caches.keys();
-            await Promise.all(cacheNames.map(name => caches.delete(name)));
-          }
-          window.location.reload();
-        } catch (e) {
-          window.location.reload();
-        }
+        window.location.reload();
       } else {
         setMode('landing');
         props.navigation.replace('Landing');
@@ -185,20 +177,13 @@ function TenantDashboardWrapper(props: any) {
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', padding: 25 }}>
         <Ionicons name="alert-circle-outline" size={50} color="#E11D48" />
         <Text style={{ fontSize: 18, fontWeight: '700', color: '#1E293B', marginTop: 16 }}>지점 정보 불일치</Text>
-        <Text style={{ fontSize: 13, color: '#64748B', marginTop: 6, textAlign: 'center' }}>만료되었거나 잘못된 링크입니다.</Text>
-
-        <View style={{ marginTop: 25, padding: 16, backgroundColor: '#F1F5F9', borderRadius: 12, width: '100%', borderWidth: 1, borderColor: '#CBD5E1' }}>
-          <Text style={{ fontSize: 10, color: '#475569', fontWeight: '800', marginBottom: 8 }}>📝 정밀 진단 (v24:05 Final)</Text>
-          <Text style={{ fontSize: 11, color: '#475569' }}>• 추출 ID: <Text style={{ color: '#0F172A', fontWeight: 'bold' }}>{resolvedMagicId || '(실패)'}</Text></Text>
-          <Text style={{ fontSize: 11, color: '#475569' }}>• 상태: <Text style={{ color: brandingCompany ? '#10B981' : '#EF4444' }}>{brandingCompany ? '정상조회' : '데이터없음'}</Text></Text>
-          <Text style={{ fontSize: 10, color: '#64748B', marginTop: 5 }}>• URI: {typeof window !== 'undefined' ? window.location.href.substring(0, 60) : 'Native'}...</Text>
-        </View>
+        <Text style={{ fontSize: 13, color: '#64748B', marginTop: 6, textAlign: 'center' }}>만료되었거나 잘못된 링크입니다. 관리자에게 문의해 주세요.</Text>
 
         <Pressable
           onPress={handleReload}
-          style={{ marginTop: 20, paddingVertical: 12, width: '100%', backgroundColor: '#4F46E5', borderRadius: 10, alignItems: 'center' }}
+          style={{ marginTop: 30, paddingVertical: 12, width: '100%', backgroundColor: '#4F46E5', borderRadius: 10, alignItems: 'center' }}
         >
-          <Text style={{ color: '#fff', fontWeight: '700' }}>강력 새로고침</Text>
+          <Text style={{ color: '#fff', fontWeight: '700' }}>새로고침</Text>
         </Pressable>
 
         <Text onPress={() => setMode('landing')} style={{ marginTop: 20, color: '#94A3B8', fontSize: 11, textDecorationLine: 'underline' }}>첫 화면으로</Text>
