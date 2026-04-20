@@ -34,6 +34,7 @@ interface AppContextType {
     webPushToken: string;
     brandingCompany: Company | null;
     setBrandingCompany: (comp: Company | null) => void;
+    magicIdResolved: boolean;
 
     // Admin Data
     officeInfo: Company | null;
@@ -106,6 +107,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [expoPushToken, setExpoPushToken] = useState('');
     const [webPushToken, setWebPushToken] = useState('');
+    const [magicIdResolved, setMagicIdResolved] = useState(false);
 
     // Admin Data
     const [officeInfo, setOfficeInfo] = useState<Company | null>(null);
@@ -244,16 +246,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 }
             }
 
-            // 3. 매직 ID 파싱 (p 파라미터)
+            // 3. 지점명(slug) 또는 매직ID(p) 파싱
             let magicId = '';
             try {
                 const urlObj = new URL(url);
                 magicId = urlObj.searchParams.get('p') || '';
             } catch (e) {
-                if (url.includes('p=')) {
-                    magicId = url.split('p=')[1].split('&')[0];
-                }
+                if (url.includes('p=')) magicId = url.split('p=')[1].split('&')[0];
             }
+
             if (!magicId && Platform.OS === 'web' && typeof window !== 'undefined') {
                 try {
                     const params = new URLSearchParams(window.location.search);
@@ -261,32 +262,53 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 } catch (e) { }
             }
 
-            // [핵심] 지점 개념 제거 대응: 슬러그가 없더라도 매직ID가 있다면 입주자 모드로 진입
             if (slug || magicId) {
                 console.log(`[AppContext] DeepLink Hit - Slug: ${slug || '(없음)'}, MagicId: ${magicId || '(없음)'}`);
-                setMode('tenant_login');
 
+                let resolvedCompany: Company | null = null;
+
+                // A) 슬러그가 있는 경우 우선 처리
                 if (slug) {
                     try {
-                        const { data, error: companyError } = await supabase
-                            .from('companies')
-                            .select('*')
-                            .ilike('slug', slug.trim())
-                            .single();
+                        const { data } = await supabase.from('companies').select('*').ilike('slug', slug.trim()).single();
+                        if (data) resolvedCompany = data as Company;
+                    } catch (e) { }
+                }
 
-                        if (!companyError && data) {
-                            console.log(`[AppContext] Company loaded via slug: ${data.name}`);
-                            setBrandingCompany({ ...data, magicId } as any);
-                        } else {
-                            // 슬러그가 틀렸어도 매직ID가 있으면 진행하도록 허용 (Wrapper에서 해결)
-                            if (magicId) setBrandingCompany({ magicId } as any);
+                // B) 슬러그가 없거나 못 찾았는데 magicId가 있는 경우 역방향 조회 (Hybrid)
+                if (!resolvedCompany && magicId) {
+                    console.log(`[AppContext] No slug/company found, attempting reverse lookup for MagicId: ${magicId}`);
+                    try {
+                        // 1. tenants 테이블 확인
+                        const tenantResult = await tenantsService.getTenantById(magicId);
+                        let targetCompanyId = tenantResult?.company_id;
+
+                        // 2. profiles 테이블 확인 (legacy)
+                        if (!targetCompanyId) {
+                            const profileResult = await profilesService.getProfileById(magicId);
+                            targetCompanyId = profileResult?.company_id;
+                        }
+
+                        if (targetCompanyId) {
+                            const { data } = await supabase.from('companies').select('*').eq('id', targetCompanyId).single();
+                            if (data) {
+                                console.log(`[AppContext] Reverse lookup success! Office: ${data.name}`);
+                                resolvedCompany = data as Company;
+                            }
                         }
                     } catch (e) {
-                        if (magicId) setBrandingCompany({ magicId } as any);
+                        console.error('[AppContext] Reverse lookup error:', e);
                     }
+                }
+
+                // C) 최종 결과 적용
+                if (resolvedCompany) {
+                    setBrandingCompany({ ...resolvedCompany, magicId } as any);
+                    setMode('tenant_login');
                 } else if (magicId) {
-                    // 슬러그가 아예 없는 경우 매직ID로만 구성
+                    // 정보를 못 찾았더라도 입주자 모드로는 보냄 (Wrapper에서 에러 처리 유도)
                     setBrandingCompany({ magicId } as any);
+                    setMode('tenant_login');
                 }
             }
         };
@@ -303,6 +325,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
 
         const subscription = Linking.addEventListener('url', (event) => handleDeepLink(event.url));
+        setMagicIdResolved(true);
         return () => subscription.remove();
     };
 
@@ -384,7 +407,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                     return res.uri;
                 },
                 handleLoginSuccess,
-                resetOCR
+                resetOCR,
+                magicIdResolved
             }}
         >
             {children}

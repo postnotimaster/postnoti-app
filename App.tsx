@@ -10,6 +10,7 @@ import { AppProvider, useAppContent } from './src/contexts/AppContext';
 import { ToastProvider } from './src/contexts/ToastContext';
 import { StatusBar } from 'expo-status-bar';
 import { supabase } from './src/lib/supabase';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 // Screens
 import { LandingScreen } from './src/screens/LandingScreen';
@@ -120,190 +121,48 @@ function AppContent() {
  * TenantDashboard 전용 래퍼 (정적 컴포넌트로 선언하여 리마운트 방지)
  */
 function TenantDashboardWrapper(props: any) {
-  const { brandingCompany, setBrandingCompany, expoPushToken, webPushToken, setMode } = useAppContent();
-  const [showRetry, setShowRetry] = useState(false);
-  const [localBranding, setLocalBranding] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const { brandingCompany, setBrandingCompany, setMode, expoPushToken, webPushToken, magicIdResolved } = useAppContent();
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   const slugFromParam = (props.route.params as any)?.slug;
   const paramP = (props.route.params as any)?.p;
 
-  // [핵심] window.location에서 직접 magicId 추출 및 세션 저장소 보관 (리다이렉트 대비)
-  const [magicIdDirect, setMagicIdDirect] = useState<string>('');
-  const [magicIdResolved, setMagicIdResolved] = useState(false);
-  useEffect(() => {
-    let resolved = '';
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      try {
-        const params = new URLSearchParams(window.location.search);
-        resolved = params.get('p') || '';
+  // AppContext에서 이미 정보를 찾아두었으므로, 있으면 바로 띄우고 없으면 잠시 대기
+  const company = brandingCompany;
+  const resolvedMagicId = paramP || (company as any)?.magicId || '';
 
-        // URL에 값이 있으면 세션에 저장, 없으면 세션에서 복구
-        if (resolved) {
-          sessionStorage.setItem('postnoti_magic_p', resolved);
-          console.log(`[TenantDashboardWrapper] Saved magicId to session: ${resolved}`);
-        } else {
-          resolved = sessionStorage.getItem('postnoti_magic_p') || '';
-          if (resolved) console.log(`[TenantDashboardWrapper] Restored magicId from session: ${resolved}`);
-        }
-      } catch (e) {
-        console.warn('[TenantDashboardWrapper] SessionStorage or Location error:', e);
-      }
-    }
-    setMagicIdDirect(resolved);
-    setMagicIdResolved(true);
-  }, []);
-
-  // 최종 magicId: window.location > route.params > brandingCompany
-  const resolvedMagicId = magicIdDirect || paramP || (brandingCompany as any)?.magicId || '';
-
-  // 10초 이상 로딩되면 재시도 버튼 강제 노출
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!brandingCompany?.id && !localBranding?.id) {
-        setShowRetry(true);
-        if (!fetchError) setFetchError('로딩 시간이 10초를 초과했습니다. 네트워크 상태를 확인해 주세요.');
-      }
-    }, 10000);
-    return () => clearTimeout(timer);
-  }, [brandingCompany?.id, localBranding?.id]);
-
-  // [긴급 복구] AppContext에서 지점 정보를 못 가져올 경우 직접 시도
-  useEffect(() => {
-    const directFetch = async () => {
-      if (brandingCompany?.id || localBranding?.id) return;
-
-      // slug 결정: params > window.location
-      let effectiveSlug = slugFromParam;
-      if (!effectiveSlug && Platform.OS === 'web' && typeof window !== 'undefined') {
-        const path = window.location.pathname;
-        if (path.includes('/branch/')) {
-          effectiveSlug = path.split('/branch/')[1].split('/')[0];
-        }
-      }
-
-      console.log(`[TenantDashboardWrapper] Initiating context fetch. Slug: ${slugFromParam}, MagicId: ${resolvedMagicId}`);
-      setLoading(true);
-      setFetchError(null);
-
-      try {
-        let companyData = null;
-
-        // 1. 슬러그가 있다면 슬러그로 먼저 찾음
-        if (slugFromParam && slugFromParam !== 'branch') {
-          const { data, error } = await supabase
-            .from('companies')
-            .select('*')
-            .ilike('slug', slugFromParam.trim())
-            .single();
-          if (!error && data) companyData = data;
-        }
-
-        // 2. [핵심] 슬러그가 없거나 못 찾았는데 매직ID가 있다면, ID로 지점 추적 (지점 지우기 대응)
-        if (!companyData && resolvedMagicId) {
-          console.log(`[TenantDashboardWrapper] No slug, attempting reverse lookup via MagicId: ${resolvedMagicId}`);
-
-          let targetCompanyId = '';
-
-          // A) tenants 테이블 먼저 확인
-          const tenant = await tenantsService.getTenantById(resolvedMagicId);
-          if (tenant?.company_id) {
-            targetCompanyId = tenant.company_id;
-          } else {
-            // B) 없을 경우 profiles 테이블 확인 (Hybrid Lookup)
-            console.log(`[TenantDashboardWrapper] Not found in tenants, checking profiles...`);
-            const profile = await profilesService.getProfileById(resolvedMagicId);
-            if (profile?.company_id) targetCompanyId = profile.company_id;
-          }
-
-          if (targetCompanyId) {
-            const { data, error } = await supabase
-              .from('companies')
-              .select('*')
-              .eq('id', targetCompanyId)
-              .single();
-            if (!error && data) {
-              console.log(`[TenantDashboardWrapper] Reverse lookup success! Found company: ${data.name}`);
-              companyData = data;
-            }
-          }
-        }
-
-        if (companyData) {
-          setLocalBranding(companyData);
-          setBrandingCompany({ ...companyData, magicId: resolvedMagicId } as any);
-        } else {
-          setFetchError(resolvedMagicId
-            ? '유효한 입주자 정보 또는 지점 정보를 찾을 수 없습니다.'
-            : '접속 주소가 올바르지 않습니다.');
-        }
-      } catch (e: any) {
-        console.error('[TenantDashboardWrapper] Exception:', e);
-        setFetchError(`예기치 못한 에러: ${e.message || String(e)}`);
-      } finally {
-        setLoading(false);
-      }
-    };
-    directFetch();
-  }, [slugFromParam]);
-
-  const company = brandingCompany || localBranding;
-
-  if (!company?.id) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', padding: 25 }}>
-        <ActivityIndicator size="large" color="#4F46E5" />
-        <Text style={{ marginTop: 24, color: '#1E293B', fontSize: 18, fontWeight: '800' }}>우편함데이터가져오는 중...</Text>
-        <Text style={{ marginTop: 10, color: '#64748B', fontSize: 14, textAlign: 'center', lineHeight: 20 }}>
-          지점 정보를 확인하고 있습니다.{"\n"}잠시만 기다려주세요.
-        </Text>
-
-        <View style={{ marginTop: 40, padding: 16, backgroundColor: '#F8FAFC', borderRadius: 16, width: '100%', borderWidth: 1, borderColor: '#E2E8F0' }}>
-          <Text style={{ fontSize: 12, color: '#475569', fontWeight: '800', marginBottom: 12 }}>🔍 시스템 진단 정보</Text>
-          <View style={{ gap: 6 }}>
-            <Text style={{ fontSize: 12, color: '#64748B' }}>• Slug: <Text style={{ color: '#0F172A', fontWeight: '600' }}>{slugFromParam || '(없음)'}</Text></Text>
-            <Text style={{ fontSize: 12, color: '#64748B' }}>• MagicID: <Text style={{ color: '#0F172A', fontWeight: '600' }}>{resolvedMagicId || '(없음)'}</Text></Text>
-            <Text style={{ fontSize: 12, color: '#64748B' }}>• 상태: <Text style={{ color: loading ? '#6366F1' : '#10B981', fontWeight: '600' }}>{loading ? '조회 중...' : '대기/오류'}</Text></Text>
-            {fetchError && (
-              <View style={{ marginTop: 10, padding: 10, backgroundColor: '#FEF2F2', borderRadius: 8 }}>
-                <Text style={{ fontSize: 12, color: '#EF4444', fontWeight: '700' }}>⚠️ {fetchError}</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {showRetry && (
-          <View style={{ marginTop: 40, alignItems: 'center', width: '100%' }}>
-            <Text style={{ color: '#64748B', fontSize: 13, marginBottom: 16 }}>연결이 계속되지 않나요?</Text>
-            <Pressable
-              onPress={() => {
-                setShowRetry(false);
-                setMode('landing');
-                setBrandingCompany(null);
-                props.navigation.replace('Landing');
-              }}
-              style={{ width: '100%', paddingVertical: 14, backgroundColor: '#F1F5F9', borderRadius: 12, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#1E293B', fontWeight: '700' }}>메인 화면으로 돌아가기</Text>
-            </Pressable>
-          </View>
-        )}
-      </View>
-    );
-  }
-
-  // [중요] magicId 파싱이 아직 끝나지 않았으면 잠시 대기 (web 환경)
-  if (Platform.OS === 'web' && !magicIdResolved) {
+  // [중요] 아직 딥링크/id 초기화 전이면 대기
+  if (!magicIdResolved) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
         <ActivityIndicator size="large" color="#4F46E5" />
-        <Text style={{ marginTop: 16, color: '#64748B', fontSize: 14 }}>인증 정보 확인 중...</Text>
+        <Text style={{ marginTop: 16, color: '#64748B', fontSize: 14 }}>매직링크 보호 시스템 가동 중...</Text>
       </View>
     );
   }
 
-  console.log(`[TenantDashboardWrapper] Rendering TenantDashboard. Company: ${company.name}, MagicID: ${resolvedMagicId}, paramP: ${paramP}`);
+  // 지점 정보를 찾지 못한 경우 (대기 시간이 길어지거나 진짜 없는 경우)
+  if (!company || (!company.id && !company.name)) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', padding: 30 }}>
+        <Ionicons name="alert-circle-outline" size={60} color="#E11D48" />
+        <Text style={{ fontSize: 18, fontWeight: '700', color: '#1E293B', marginTop: 16, textAlign: 'center' }}>
+          지점 정보를 찾을 수 없습니다.
+        </Text>
+        <Text style={{ fontSize: 14, color: '#64748B', marginTop: 8, textAlign: 'center', lineHeight: 20 }}>
+          URL이 잘못되었거나 만료된 링크일 수 있습니다. 관리자에게 문의해 주세요.
+        </Text>
+        <Pressable
+          onPress={() => { setMode('landing'); setBrandingCompany(null); props.navigation.replace('Landing'); }}
+          style={{ marginTop: 30, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: '#4F46E5', borderRadius: 10 }}
+        >
+          <Text style={{ color: '#fff', fontWeight: '700' }}>홈으로 이동</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  console.log(`[TenantDashboardWrapper] 렌더링 시작. 지점: ${company.name}, 매직ID: ${resolvedMagicId}`);
 
   return (
     <TenantDashboard
