@@ -23,7 +23,8 @@ import { AdminTabNavigator } from './src/navigation/AdminTabNavigator';
 import { TenantTabNavigator } from './src/navigation/TenantTabNavigator';
 import { TenantDashboard } from './src/components/tenant/TenantDashboard';
 import { KakaoGuideOverlay } from './src/components/common/KakaoGuideOverlay';
-import { tenantsService } from './src/services/tenantsService'; // 추가
+import { tenantsService } from './src/services/tenantsService';
+import { profilesService } from './src/services/profilesService'; // 추가
 // Note: TenantDashboard is still in components, can be moved later. 
 // We will wrap it in a Screen component if needed or use directly if it accepts navigation props, 
 // but existing TenantDashboard uses 'onBack'. We should adapt it.
@@ -211,13 +212,25 @@ function TenantDashboardWrapper(props: any) {
         // 2. [핵심] 슬러그가 없거나 못 찾았는데 매직ID가 있다면, ID로 지점 추적 (지점 지우기 대응)
         if (!companyData && resolvedMagicId) {
           console.log(`[TenantDashboardWrapper] No slug, attempting reverse lookup via MagicId: ${resolvedMagicId}`);
-          // useTenantAuth에서 쓰는 것과 동일한 로직으로 입주자 먼저 찾기
+
+          let targetCompanyId = '';
+
+          // A) tenants 테이블 먼저 확인
           const tenant = await tenantsService.getTenantById(resolvedMagicId);
-          if (tenant && tenant.company_id) {
+          if (tenant?.company_id) {
+            targetCompanyId = tenant.company_id;
+          } else {
+            // B) 없을 경우 profiles 테이블 확인 (Hybrid Lookup)
+            console.log(`[TenantDashboardWrapper] Not found in tenants, checking profiles...`);
+            const profile = await profilesService.getProfileById(resolvedMagicId);
+            if (profile?.company_id) targetCompanyId = profile.company_id;
+          }
+
+          if (targetCompanyId) {
             const { data, error } = await supabase
               .from('companies')
               .select('*')
-              .eq('id', tenant.company_id)
+              .eq('id', targetCompanyId)
               .single();
             if (!error && data) {
               console.log(`[TenantDashboardWrapper] Reverse lookup success! Found company: ${data.name}`);
