@@ -14,6 +14,7 @@ export interface Announcement {
 
 export const noticeService = {
     async getAnnouncements(companyId: string) {
+        console.log(`[noticeService] getAnnouncements for Company: ${companyId}`);
         const { data, error } = await supabase
             .from('announcements')
             .select('*')
@@ -22,25 +23,42 @@ export const noticeService = {
             .order('priority', { ascending: false })
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
-        return data as Announcement[];
+        if (error) {
+            console.error('[noticeService] getAnnouncements error:', error);
+            throw error;
+        }
+        return (data as Announcement[]) || [];
     },
 
     async getAnnouncementsForTenant(companyId: string, tenantId: string) {
-        // target_tenant_ids가 NULL이거나 tenantId를 포함하는 것만 조회
-        // Supabase에서 array contains를 쓰거나 rpc를 쓰는 것이 편함.
-        // 여기선 간단히 전체 조회 후 필터링하거나, .or()를 사용
-        const { data, error } = await supabase
-            .from('announcements')
-            .select('*')
-            .eq('company_id', companyId)
-            .eq('is_active', true)
-            .or(`target_tenant_ids.is.null,target_tenant_ids.cs.{${tenantId}}`)
-            .order('priority', { ascending: false })
-            .order('created_at', { ascending: false });
+        console.log(`[noticeService] getAnnouncementsForTenant for Company: ${companyId}, Tenant: ${tenantId}`);
 
-        if (error) throw error;
-        return data as Announcement[];
+        if (!tenantId) {
+            return this.getAnnouncements(companyId);
+        }
+
+        try {
+            // target_tenant_ids가 NULL이거나 tenantId를 포함하는 것만 조회
+            const { data, error } = await supabase
+                .from('announcements')
+                .select('*')
+                .eq('company_id', companyId)
+                .eq('is_active', true)
+                .or(`target_tenant_ids.is.null,target_tenant_ids.cs.{${tenantId}}`)
+                .order('priority', { ascending: false })
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('[noticeService] getAnnouncementsForTenant error:', error);
+                // Fallback: 쿼리 오류 시 전체 공지만이라도 반환
+                const all = await this.getAnnouncements(companyId);
+                return all.filter(a => !a.target_tenant_ids || a.target_tenant_ids.length === 0);
+            }
+            return (data as Announcement[]) || [];
+        } catch (err) {
+            console.error('[noticeService] getAnnouncementsForTenant exception:', err);
+            return [];
+        }
     },
 
     async getAllAnnouncements(companyId: string) {
@@ -51,7 +69,7 @@ export const noticeService = {
             .order('created_at', { ascending: false });
 
         if (error) throw error;
-        return data as Announcement[];
+        return (data as Announcement[]) || [];
     },
 
     async createAnnouncement(notice: Partial<Announcement>) {
