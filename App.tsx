@@ -117,7 +117,25 @@ function TenantDashboardWrapper(props: any) {
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   const slugFromParam = (props.route.params as any)?.slug;
-  const magicIdFromParam = (props.route.params as any)?.p;
+  const paramP = (props.route.params as any)?.p;
+
+  // [핵심] window.location에서 직접 magicId 추출 (가장 신뢰할 수 있는 소스)
+  const [magicIdDirect, setMagicIdDirect] = useState<string>('');
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const pVal = params.get('p') || '';
+        console.log(`[TenantDashboardWrapper] window.location.search p= : ${pVal}`);
+        if (pVal) setMagicIdDirect(pVal);
+      } catch (e) {
+        console.warn('[TenantDashboardWrapper] Failed to parse window.location', e);
+      }
+    }
+  }, []);
+
+  // 최종 magicId: window.location > route.params > brandingCompany
+  const resolvedMagicId = magicIdDirect || paramP || (brandingCompany as any)?.magicId || '';
 
   // 10초 이상 로딩되면 재시도 버튼 강제 노출
   useEffect(() => {
@@ -133,29 +151,31 @@ function TenantDashboardWrapper(props: any) {
   // [긴급 복구] AppContext에서 지점 정보를 못 가져올 경우 직접 시도
   useEffect(() => {
     const directFetch = async () => {
-      // 이미 정보가 있으면 스킵
       if (brandingCompany?.id || localBranding?.id) return;
 
-      if (!slugFromParam) {
-        console.warn('[TenantDashboardWrapper] No slug found in params');
+      // slug 결정: params > window.location
+      let effectiveSlug = slugFromParam;
+      if (!effectiveSlug && Platform.OS === 'web' && typeof window !== 'undefined') {
+        const path = window.location.pathname;
+        if (path.includes('/branch/')) {
+          effectiveSlug = path.split('/branch/')[1].split('/')[0];
+        }
+      }
+
+      if (!effectiveSlug) {
+        console.warn('[TenantDashboardWrapper] No slug found');
         return;
       }
 
-      console.log(`[TenantDashboardWrapper] Direct fetch attempt for: ${slugFromParam}`);
+      console.log(`[TenantDashboardWrapper] Direct fetch for: ${effectiveSlug}`);
       setLoading(true);
       setFetchError(null);
 
       try {
-        // [DEBUG] Supabase 클라이언트 상태 확인
-        if (!supabase) {
-          setFetchError('Supabase 클라이언트가 초기화되지 않았습니다.');
-          return;
-        }
-
         const { data, error } = await supabase
           .from('companies')
           .select('*')
-          .ilike('slug', slugFromParam.trim())
+          .ilike('slug', effectiveSlug.trim())
           .single();
 
         if (error) {
@@ -167,8 +187,7 @@ function TenantDashboardWrapper(props: any) {
         if (data) {
           console.log(`[TenantDashboardWrapper] Found: ${data.name} (ID: ${data.id})`);
           setLocalBranding(data);
-          // 전역 상태에 반영 시도 (동기화)
-          setBrandingCompany({ ...data, magicId: magicIdFromParam } as any);
+          setBrandingCompany({ ...data, magicId: resolvedMagicId } as any);
         } else {
           setFetchError('해당 주소(Slug)로 등록된 지점을 찾을 수 없습니다.');
         }
@@ -193,19 +212,15 @@ function TenantDashboardWrapper(props: any) {
           지점 정보를 확인하고 있습니다.{"\n"}잠시만 기다려주세요.
         </Text>
 
-        {/* [중요] 문제 해결을 위한 시스템 로그 대시보드 */}
         <View style={{ marginTop: 40, padding: 16, backgroundColor: '#F8FAFC', borderRadius: 16, width: '100%', borderWidth: 1, borderColor: '#E2E8F0' }}>
           <Text style={{ fontSize: 12, color: '#475569', fontWeight: '800', marginBottom: 12 }}>🔍 시스템 진단 정보</Text>
-
           <View style={{ gap: 6 }}>
-            <Text style={{ fontSize: 12, color: '#64748B' }}>• 대상 ID (Slug): <Text style={{ color: '#0F172A', fontWeight: '600' }}>{slugFromParam || '(없음)'}</Text></Text>
-            <Text style={{ fontSize: 12, color: '#64748B' }}>• 매직 링크 ID: <Text style={{ color: '#0F172A', fontWeight: '600' }}>{magicIdFromParam || '(없음)'}</Text></Text>
-            <Text style={{ fontSize: 12, color: '#64748B' }}>• 데이터 상태: <Text style={{ color: loading ? '#6366F1' : '#10B981', fontWeight: '600' }}>{loading ? '조회 중...' : (company?.id ? '성공' : '대기/오류')}</Text></Text>
-
+            <Text style={{ fontSize: 12, color: '#64748B' }}>• Slug: <Text style={{ color: '#0F172A', fontWeight: '600' }}>{slugFromParam || '(없음)'}</Text></Text>
+            <Text style={{ fontSize: 12, color: '#64748B' }}>• MagicID: <Text style={{ color: '#0F172A', fontWeight: '600' }}>{resolvedMagicId || '(없음)'}</Text></Text>
+            <Text style={{ fontSize: 12, color: '#64748B' }}>• 상태: <Text style={{ color: loading ? '#6366F1' : '#10B981', fontWeight: '600' }}>{loading ? '조회 중...' : '대기/오류'}</Text></Text>
             {fetchError && (
               <View style={{ marginTop: 10, padding: 10, backgroundColor: '#FEF2F2', borderRadius: 8 }}>
-                <Text style={{ fontSize: 12, color: '#EF4444', fontWeight: '700' }}>⚠️ 발견된 문제:</Text>
-                <Text style={{ fontSize: 12, color: '#B91C1C', marginTop: 2 }}>{fetchError}</Text>
+                <Text style={{ fontSize: 12, color: '#EF4444', fontWeight: '700' }}>⚠️ {fetchError}</Text>
               </View>
             )}
           </View>
@@ -231,6 +246,8 @@ function TenantDashboardWrapper(props: any) {
     );
   }
 
+  console.log(`[TenantDashboardWrapper] Rendering TenantDashboard. Company: ${company.name}, MagicID: ${resolvedMagicId}`);
+
   return (
     <TenantDashboard
       {...props}
@@ -238,8 +255,8 @@ function TenantDashboardWrapper(props: any) {
       companyName={company.name}
       pushToken={expoPushToken}
       webPushToken={webPushToken}
-      magicProfileId={company.magicId || magicIdFromParam}
-      magicTenantId={company.magicId || magicIdFromParam}
+      magicProfileId={resolvedMagicId}
+      magicTenantId={resolvedMagicId}
       onBack={() => {
         setMode('landing');
         setBrandingCompany(null);
