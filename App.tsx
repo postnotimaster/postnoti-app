@@ -126,22 +126,30 @@ function TenantDashboardWrapper(props: any) {
   const slugFromParam = (props.route.params as any)?.slug;
   const paramP = (props.route.params as any)?.p;
 
-  // [핵심] window.location에서 직접 magicId 추출 (가장 신뢰할 수 있는 소스)
+  // [핵심] window.location에서 직접 magicId 추출 및 세션 저장소 보관 (리다이렉트 대비)
   const [magicIdDirect, setMagicIdDirect] = useState<string>('');
-  const [magicIdResolved, setMagicIdResolved] = useState(false); // magicId 파싱이 완료되었는지
+  const [magicIdResolved, setMagicIdResolved] = useState(false);
   useEffect(() => {
     let resolved = '';
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       try {
         const params = new URLSearchParams(window.location.search);
         resolved = params.get('p') || '';
-        console.log(`[TenantDashboardWrapper] window.location.search p= : "${resolved}"`);
+
+        // URL에 값이 있으면 세션에 저장, 없으면 세션에서 복구
+        if (resolved) {
+          sessionStorage.setItem('postnoti_magic_p', resolved);
+          console.log(`[TenantDashboardWrapper] Saved magicId to session: ${resolved}`);
+        } else {
+          resolved = sessionStorage.getItem('postnoti_magic_p') || '';
+          if (resolved) console.log(`[TenantDashboardWrapper] Restored magicId from session: ${resolved}`);
+        }
       } catch (e) {
-        console.warn('[TenantDashboardWrapper] Failed to parse window.location', e);
+        console.warn('[TenantDashboardWrapper] SessionStorage or Location error:', e);
       }
     }
     setMagicIdDirect(resolved);
-    setMagicIdResolved(true); // 파싱 완료 플래그
+    setMagicIdResolved(true);
   }, []);
 
   // 최종 magicId: window.location > route.params > brandingCompany
