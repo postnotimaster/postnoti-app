@@ -61,31 +61,6 @@ function AppContent() {
     );
   }
 
-  // Tenant Dashboard Wrapper to adapt 'onBack'
-  const TenantDashboardWrapper = ({ navigation }: any) => {
-    // If brandingCompany not set, go back to Landing
-    if (!brandingCompany) {
-      console.log('--- [App.tsx] Branding Company is missing in Wrapper! ---');
-      return <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />;
-    }
-    console.log('--- [App.tsx] Rendering TenantDashboard with company:', brandingCompany.name);
-    return (
-      <TenantDashboard
-        companyId={brandingCompany.id}
-        companyName={brandingCompany.name}
-        pushToken={expoPushToken}
-        webPushToken={webPushToken}
-        magicProfileId={(brandingCompany as any).magicId}
-        magicTenantId={(brandingCompany as any).magicId}
-        onBack={() => {
-          setMode('landing');
-          setBrandingCompany(null);
-          navigation.popToTop();
-        }}
-      />
-    );
-  };
-
   // --- React Navigation 공식 딥링크 설정 (웹/모바일 호환) ---
   const linking = {
     prefixes: [
@@ -118,35 +93,49 @@ function AppContent() {
         <Stack.Screen name="AdminSenders" component={AdminSendersScreen} />
 
         {/* 입주자 다이렉트 뷰 */}
-        <Stack.Screen name="TenantDashboard">
-          {(props) => {
-            const company = brandingCompany || (props.route.params as any);
-            return (
-              <TenantDashboard
-                {...props}
-                companyId={company?.id || ''}
-                companyName={company?.name || ''}
-                pushToken={expoPushToken}
-                webPushToken={webPushToken}
-                magicProfileId={company?.magicId}
-                magicTenantId={company?.magicId}
-                onBack={() => {
-                  setMode('landing');
-                  setBrandingCompany(null);
-                  props.navigation.navigate('Landing');
-                }}
-              />
-            );
-          }}
-        </Stack.Screen>
+        <Stack.Screen
+          name="TenantDashboard"
+          component={TenantDashboardWrapper}
+        />
       </Stack.Navigator>
 
-      {/* Bridge Component to handle Context-driven navigation (Deep Links) */}
       <NavigationBridge />
-
-      {/* KakaoTalk 외부 브라우저 유도 오버레이 */}
       <KakaoGuideOverlay />
     </NavigationContainer>
+  );
+}
+
+/**
+ * TenantDashboard 전용 래퍼 (정적 컴포넌트로 선언하여 리마운트 방지)
+ */
+function TenantDashboardWrapper(props: any) {
+  const { brandingCompany, expoPushToken, webPushToken, setMode, setBrandingCompany } = useAppContent();
+  const company = brandingCompany || (props.route.params as any);
+
+  if (!company?.id) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+        <ActivityIndicator size="large" color="#4F46E5" />
+        <Text style={{ marginTop: 16, color: '#64748B' }}>우편함데이터가져오는 중...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <TenantDashboard
+      {...props}
+      companyId={company.id}
+      companyName={company.name}
+      pushToken={expoPushToken}
+      webPushToken={webPushToken}
+      magicProfileId={company.magicId}
+      magicTenantId={company.magicId}
+      onBack={() => {
+        setMode('landing');
+        setBrandingCompany(null);
+        props.navigation.navigate('Landing');
+      }}
+    />
   );
 }
 
