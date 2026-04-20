@@ -119,27 +119,39 @@ function TenantDashboardWrapper(props: any) {
   const slugFromParam = (props.route.params as any)?.slug;
   const magicIdFromParam = (props.route.params as any)?.p;
 
-  // 5초 이상 로딩되면 재시도 버튼 노출
+  // 10초 이상 로딩되면 재시도 버튼 강제 노출
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!brandingCompany?.id && !localBranding?.id) setShowRetry(true);
-    }, 5000);
+      if (!brandingCompany?.id && !localBranding?.id) {
+        setShowRetry(true);
+        if (!fetchError) setFetchError('로딩 시간이 10초를 초과했습니다. 네트워크 상태를 확인해 주세요.');
+      }
+    }, 10000);
     return () => clearTimeout(timer);
   }, [brandingCompany?.id, localBranding?.id]);
 
   // [긴급 복구] AppContext에서 지점 정보를 못 가져올 경우 직접 시도
   useEffect(() => {
     const directFetch = async () => {
-      if (brandingCompany?.id) return;
+      // 이미 정보가 있으면 스킵
+      if (brandingCompany?.id || localBranding?.id) return;
 
       if (!slugFromParam) {
-        setFetchError('Slug값이 URL에 전달되지 않았습니다.');
+        console.warn('[TenantDashboardWrapper] No slug found in params');
         return;
       }
 
-      console.log(`[TenantDashboardWrapper] Emergency direct fetch for slug: ${slugFromParam}`);
+      console.log(`[TenantDashboardWrapper] Direct fetch attempt for: ${slugFromParam}`);
       setLoading(true);
+      setFetchError(null);
+
       try {
+        // [DEBUG] Supabase 클라이언트 상태 확인
+        if (!supabase) {
+          setFetchError('Supabase 클라이언트가 초기화되지 않았습니다.');
+          return;
+        }
+
         const { data, error } = await supabase
           .from('companies')
           .select('*')
@@ -147,22 +159,22 @@ function TenantDashboardWrapper(props: any) {
           .single();
 
         if (error) {
-          console.error('[TenantDashboardWrapper] Query Error:', error);
-          setFetchError(`데이터베이스 오류: ${error.message}`);
+          console.error('[TenantDashboardWrapper] DB Query Error:', error);
+          setFetchError(`서버 오류: ${error.message} (${error.code || 'CODE_NONE'})`);
           return;
         }
 
         if (data) {
-          console.log(`[TenantDashboardWrapper] Found via direct fetch: ${data.name}`);
+          console.log(`[TenantDashboardWrapper] Found: ${data.name} (ID: ${data.id})`);
           setLocalBranding(data);
-          // 전역 상태도 업데이트 시도
+          // 전역 상태에 반영 시도 (동기화)
           setBrandingCompany({ ...data, magicId: magicIdFromParam } as any);
         } else {
-          setFetchError('존재하지 않는 지점 주소(Slug)입니다.');
+          setFetchError('해당 주소(Slug)로 등록된 지점을 찾을 수 없습니다.');
         }
       } catch (e: any) {
-        console.error('[TenantDashboardWrapper] Direct fetch error:', e);
-        setFetchError(`네트워크/예외 오류: ${e.message}`);
+        console.error('[TenantDashboardWrapper] Exception:', e);
+        setFetchError(`예기치 못한 에러: ${e.message || String(e)}`);
       } finally {
         setLoading(false);
       }
@@ -170,30 +182,38 @@ function TenantDashboardWrapper(props: any) {
     directFetch();
   }, [slugFromParam]);
 
-  const company = brandingCompany || localBranding || (props.route.params as any);
+  const company = brandingCompany || localBranding;
 
   if (!company?.id) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', padding: 20 }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', padding: 25 }}>
         <ActivityIndicator size="large" color="#4F46E5" />
-        <Text style={{ marginTop: 16, color: '#1E293B', fontSize: 16, fontWeight: '700' }}>우편함데이터가져오는 중...</Text>
-        <Text style={{ marginTop: 8, color: '#94A3B8', fontSize: 13, textAlign: 'center' }}>
-          지점 정보를 서버에서 확인하고 있습니다.{"\n"}잠시만 기다려주세요.
+        <Text style={{ marginTop: 24, color: '#1E293B', fontSize: 18, fontWeight: '800' }}>우편함데이터가져오는 중...</Text>
+        <Text style={{ marginTop: 10, color: '#64748B', fontSize: 14, textAlign: 'center', lineHeight: 20 }}>
+          지점 정보를 확인하고 있습니다.{"\n"}잠시만 기다려주세요.
         </Text>
 
-        {/* 디버그 정보 표시 (해결을 위해) */}
-        <View style={{ marginTop: 20, padding: 10, backgroundColor: '#f8fafc', borderRadius: 8, width: '100%' }}>
-          <Text style={{ fontSize: 10, color: '#64748b' }}>[시스템 분석 정보]</Text>
-          <Text style={{ fontSize: 11, color: '#475569' }}>- 요청 Slug: {slugFromParam || '없음'}</Text>
-          <Text style={{ fontSize: 11, color: '#475569' }}>- Magic ID: {magicIdFromParam || '없음'}</Text>
-          <Text style={{ fontSize: 11, color: fetchError ? '#ef4444' : '#475569', fontWeight: fetchError ? 'bold' : 'normal' }}>
-            - 오류 상태: {fetchError || '오류 없음 (로딩 중이거나 데이터 확인 중)'}
-          </Text>
+        {/* [중요] 문제 해결을 위한 시스템 로그 대시보드 */}
+        <View style={{ marginTop: 40, padding: 16, backgroundColor: '#F8FAFC', borderRadius: 16, width: '100%', borderWidth: 1, borderColor: '#E2E8F0' }}>
+          <Text style={{ fontSize: 12, color: '#475569', fontWeight: '800', marginBottom: 12 }}>🔍 시스템 진단 정보</Text>
+
+          <View style={{ gap: 6 }}>
+            <Text style={{ fontSize: 12, color: '#64748B' }}>• 대상 ID (Slug): <Text style={{ color: '#0F172A', fontWeight: '600' }}>{slugFromParam || '(없음)'}</Text></Text>
+            <Text style={{ fontSize: 12, color: '#64748B' }}>• 매직 링크 ID: <Text style={{ color: '#0F172A', fontWeight: '600' }}>{magicIdFromParam || '(없음)'}</Text></Text>
+            <Text style={{ fontSize: 12, color: '#64748B' }}>• 데이터 상태: <Text style={{ color: loading ? '#6366F1' : '#10B981', fontWeight: '600' }}>{loading ? '조회 중...' : (company?.id ? '성공' : '대기/오류')}</Text></Text>
+
+            {fetchError && (
+              <View style={{ marginTop: 10, padding: 10, backgroundColor: '#FEF2F2', borderRadius: 8 }}>
+                <Text style={{ fontSize: 12, color: '#EF4444', fontWeight: '700' }}>⚠️ 발견된 문제:</Text>
+                <Text style={{ fontSize: 12, color: '#B91C1C', marginTop: 2 }}>{fetchError}</Text>
+              </View>
+            )}
+          </View>
         </View>
 
         {showRetry && (
-          <View style={{ marginTop: 30, alignItems: 'center' }}>
-            <Text style={{ color: '#EF4444', fontSize: 13, marginBottom: 12 }}>연결이 원활하지 않나요?</Text>
+          <View style={{ marginTop: 40, alignItems: 'center', width: '100%' }}>
+            <Text style={{ color: '#64748B', fontSize: 13, marginBottom: 16 }}>연결이 계속되지 않나요?</Text>
             <Pressable
               onPress={() => {
                 setShowRetry(false);
@@ -201,9 +221,9 @@ function TenantDashboardWrapper(props: any) {
                 setBrandingCompany(null);
                 props.navigation.replace('Landing');
               }}
-              style={{ paddingHorizontal: 20, paddingVertical: 10, backgroundColor: '#F1F5F9', borderRadius: 10 }}
+              style={{ width: '100%', paddingVertical: 14, backgroundColor: '#F1F5F9', borderRadius: 12, alignItems: 'center' }}
             >
-              <Text style={{ color: '#475569', fontWeight: '700' }}>처음으로 돌아가기 (홈 화면)</Text>
+              <Text style={{ color: '#1E293B', fontWeight: '700' }}>메인 화면으로 돌아가기</Text>
             </Pressable>
           </View>
         )}

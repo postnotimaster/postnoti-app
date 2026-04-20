@@ -214,10 +214,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const setupDeepLinking = async () => {
         const handleDeepLink = async (url: string | null) => {
+            // ... (existing handleDeepLink logic - I will replace the whole function for clarity)
             if (!url) return;
 
             let slug = '';
-            // 1. 웹 브라우저 직접 접속인 경우 (Landing bypass를 위해 window.location 우선 확인)
+            // 1. 웹 브라우저 직접 접속인 경우
             if (Platform.OS === 'web' && typeof window !== 'undefined') {
                 const path = window.location.pathname;
                 if (path.includes('/branch/')) {
@@ -225,7 +226,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 }
             }
 
-            // 2. Linking API를 통한 유입 (기존 및 보강 로직)
+            // 2. Linking API를 통한 유입
             if (!slug) {
                 if (url.includes('postnoti://')) {
                     const parts = url.replace('postnoti://', '').split('/');
@@ -244,7 +245,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             }
 
             if (slug) {
-                // 3. magicId 추출 보강
                 let magicId = '';
                 try {
                     const urlObj = new URL(url);
@@ -262,15 +262,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                     } catch (e) { }
                 }
 
-                // [DEBUG] 추출된 정보 확인
                 console.log(`[AppContext] DeepLink Hit - Slug: ${slug}, MagicId: ${magicId}`);
-
-                // 즉시 모드 전환 (화면 깜빡임 방지 및 내비게이션 동기화)
                 setMode('tenant_login');
 
-                // 비동기로 상세 정보 로드
                 try {
-                    console.log(`[AppContext] Fetching company data for slug: ${slug}`);
                     const { data, error: companyError } = await supabase
                         .from('companies')
                         .select('*')
@@ -279,7 +274,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
                     if (companyError) {
                         console.error('[AppContext] Company Query Error:', companyError);
-                        // 에러가 나면 랜딩으로 복귀
                         setMode('landing');
                         setBrandingCompany(null);
                         return;
@@ -300,8 +294,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             }
         };
 
+        // 타임아웃 적용 (최대 3초만 대기하고 다음 단계로)
+        const timeoutPromise = new Promise(resolve => setTimeout(() => {
+            console.log('[AppContext] DeepLink Init Timeout - Proceeding anyway');
+            resolve(null);
+        }, 3000));
+
         const initialUrl = await Linking.getInitialURL();
-        if (initialUrl) await handleDeepLink(initialUrl);
+        if (initialUrl) {
+            await Promise.race([handleDeepLink(initialUrl), timeoutPromise]);
+        }
 
         const subscription = Linking.addEventListener('url', (event) => handleDeepLink(event.url));
         return () => subscription.remove();
@@ -315,12 +317,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                     redirectToExternalBrowser();
                 }
 
-                // 1. 딥링크 분석 (가장 먼저 수행, 비로그인 입주사 대응)
+                // 1. 딥링크 분석 (타임아웃 적용됨)
                 await setupDeepLinking();
 
-                // 2. 초기 데이터 및 알림 설정 (백그라운드 병행)
+                // 2. 초기 데이터 로드 (비차단)
                 loadInitialData();
-                setupNotifications(); // await 제거 (블로킹 방지)
+                setupNotifications();
             } catch (error) {
                 console.error('Initialization error:', error);
             } finally {
