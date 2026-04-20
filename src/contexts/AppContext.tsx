@@ -263,14 +263,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 }
 
                 // [DEBUG] 추출된 정보 확인
-                console.log(`[AppContext] Detected DeepLink - Slug: ${slug}, MagicId: ${magicId}`);
+                console.log(`[AppContext] DeepLink Hit - Slug: ${slug}, MagicId: ${magicId}`);
 
-                // 즉시 모드 전환 시도 (화면 깜빡임 방지)
+                // 즉시 모드 전환 (화면 깜빡임 방지 및 내비게이션 동기화)
                 setMode('tenant_login');
 
                 // 비동기로 상세 정보 로드
                 try {
-                    console.log(`[AppContext] SB Query start for slug: ${slug}`);
+                    console.log(`[AppContext] Fetching company data for slug: ${slug}`);
                     const { data, error: companyError } = await supabase
                         .from('companies')
                         .select('*')
@@ -278,21 +278,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                         .single();
 
                     if (companyError) {
-                        console.error('[AppContext] SB Query Error:', companyError);
+                        console.error('[AppContext] Company Query Error:', companyError);
+                        // 에러가 나면 랜딩으로 복귀
                         setMode('landing');
+                        setBrandingCompany(null);
                         return;
                     }
 
                     if (data) {
-                        console.log(`[AppContext] Company verified: ${data.name} (ID: ${data.id})`);
+                        console.log(`[AppContext] Company loaded: ${data.name} (${data.id})`);
                         setBrandingCompany({ ...data, magicId } as any);
                     } else {
-                        console.log(`[AppContext] No company found for slug: ${slug}`);
+                        console.warn('[AppContext] Company not found for slug:', slug);
                         setMode('landing');
                         setBrandingCompany(null);
                     }
                 } catch (e) {
-                    console.error('[AppContext] Unexpected error in handleDeepLink:', e);
+                    console.error('[AppContext] Unexpected deep link error:', e);
                     setMode('landing');
                 }
             }

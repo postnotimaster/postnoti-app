@@ -3,7 +3,7 @@
  * Version: 2.0.0 (Unified Account Migration & 1:1 Office Model)
  */
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, ActivityIndicator, Platform, Pressable } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AppProvider, useAppContent } from './src/contexts/AppContext';
@@ -110,13 +110,43 @@ function AppContent() {
  */
 function TenantDashboardWrapper(props: any) {
   const { brandingCompany, expoPushToken, webPushToken, setMode, setBrandingCompany } = useAppContent();
+  const [showRetry, setShowRetry] = useState(false);
+
+  // 5초 이상 로딩되면 재시도 버튼 노출
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!brandingCompany?.id) setShowRetry(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [brandingCompany?.id]);
+
   const company = brandingCompany || (props.route.params as any);
 
   if (!company?.id) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', padding: 20 }}>
         <ActivityIndicator size="large" color="#4F46E5" />
-        <Text style={{ marginTop: 16, color: '#64748B' }}>우편함데이터가져오는 중...</Text>
+        <Text style={{ marginTop: 16, color: '#1E293B', fontSize: 16, fontWeight: '700' }}>우편함데이터가져오는 중...</Text>
+        <Text style={{ marginTop: 8, color: '#94A3B8', fontSize: 13, textAlign: 'center' }}>
+          지점 정보를 서버에서 확인하고 있습니다.{"\n"}잠시만 기다려주세요.
+        </Text>
+
+        {showRetry && (
+          <View style={{ marginTop: 30, alignItems: 'center' }}>
+            <Text style={{ color: '#EF4444', fontSize: 13, marginBottom: 12 }}>연결이 원활하지 않나요?</Text>
+            <Pressable
+              onPress={() => {
+                setShowRetry(false);
+                setMode('landing');
+                setBrandingCompany(null);
+                props.navigation.replace('Landing');
+              }}
+              style={{ paddingHorizontal: 20, paddingVertical: 10, backgroundColor: '#F1F5F9', borderRadius: 10 }}
+            >
+              <Text style={{ color: '#475569', fontWeight: '700' }}>처음으로 돌아가기</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
     );
   }
