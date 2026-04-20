@@ -126,17 +126,18 @@ function TenantDashboardWrapper(props: any) {
   const slugFromParam = (props.route.params as any)?.slug;
   const rawParamP = (props.route.params as any)?.p;
 
-  // [3차 보강] URL 전체가 p로 들어오는 케이스 및 인코딩 케이스 방어
+  // [3차 보강] UUID 패턴 강제 추출 방식 (정규식/인코딩 상관없이 36자리 UUID만 포착)
   const paramP = React.useMemo(() => {
     if (!rawParamP) return '';
-    if (!rawParamP.includes('://') && !rawParamP.includes('%3F')) return rawParamP;
-
-    // A) 정규식 시도
     const decoded = decodeURIComponent(rawParamP);
+    const uuidMatch = decoded.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    if (uuidMatch) return uuidMatch[0];
+
+    // Fallback: 기존 정규식
     const match = decoded.match(/(?:\?|&|%3F|%26)p=([^&/?#]+)/i);
     if (match) return match[1];
 
-    // B) Brute-force Split (최후의 수단: 무조건 p= 뒤를 뽑음)
+    // Fallback: Brute-force Split
     if (decoded.includes('p=')) {
       return decoded.split('p=')[1].split('&')[0].split('/')[0];
     }
@@ -189,7 +190,7 @@ function TenantDashboardWrapper(props: any) {
         </Text>
 
         <View style={{ marginTop: 30, padding: 16, backgroundColor: '#F8FAFC', borderRadius: 12, width: '100%', borderWidth: 1, borderColor: '#E2E8F0' }}>
-          <Text style={{ fontSize: 11, color: '#475569', fontWeight: '800', marginBottom: 8, opacity: 0.7 }}>🔍 시스템 진단 정보 (v23:45)</Text>
+          <Text style={{ fontSize: 11, color: '#475569', fontWeight: '800', marginBottom: 8, opacity: 0.7 }}>🔍 시스템 진단 정보 (v23:55 Deep)</Text>
           <Text style={{ fontSize: 11, color: '#64748B' }}>• MagicID: <Text style={{ color: '#0F172A', fontWeight: 'bold' }}>{resolvedMagicId || '(없음)'}</Text></Text>
           <Text style={{ fontSize: 11, color: '#64748B' }}>• Context: <Text style={{ color: brandingCompany ? '#10B981' : '#EF4444', fontWeight: 'bold' }}>{brandingCompany ? 'Resolved' : 'Missing'}</Text></Text>
           <Text style={{ fontSize: 11, color: '#64748B', marginTop: 4 }}>• Raw: <Text style={{ color: '#94A3B8', fontSize: 9 }}>{rawParamP?.substring(0, 50)}...</Text></Text>

@@ -222,16 +222,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             let slug = '';
             let magicId = '';
 
-            // 1. 고도화된 URL 파싱 (Native Safe Regex & Expo Linking Parser)
+            // 1. 고도화된 URL 파싱 (UUID 패턴 강제 추출 방식 도입)
             try {
-                // A) URL 디코딩 처리 (인코딩된 %3Fp= 등의 케이스 대응)
+                // A) URL 디코딩 처리
                 const decodedUrl = decodeURIComponent(url);
 
-                // B) Regex 추출 (Native에서 가장 안전함 - 인코딩된 문자열도 고려)
-                // [?&] 뿐만 아니라 인코딩된 %3F 등도 포함할 수 있도록 유연한 매칭
-                const pMatch = decodedUrl.match(/(?:\?|&|%3F|%26)p=([^&/?#]+)/i) || url.match(/(?:\?|&|%3F|%26)p=([^&/?#]+)/i);
-                if (pMatch) magicId = pMatch[1];
+                // B) UUID 패턴 강제 매칭 (가장 강력함 - 어떤 위치에 있든 36자리 UUID만 추출)
+                const uuidMatch = decodedUrl.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+                if (uuidMatch) {
+                    magicId = uuidMatch[0];
+                    console.log('[AppContext] UUID Pattern Match Success:', magicId);
+                }
 
+                // C) 기존 방식들 (Fallback)
+                if (!magicId) {
+                    const pMatch = decodedUrl.match(/(?:\?|&|%3F|%26)p=([^&/?#]+)/i);
+                    if (pMatch) magicId = pMatch[1];
+                }
+
+                // 슬러그 추출
                 const slugMatch = decodedUrl.match(/\/branch\/([^/?#]+)/i);
                 if (slugMatch) slug = slugMatch[1];
 
