@@ -183,15 +183,6 @@ function TenantDashboardWrapper(props: any) {
         }
       }
 
-      if (!effectiveSlug) {
-        console.warn('[TenantDashboardWrapper] No slug found');
-        return;
-      }
-
-      console.log(`[TenantDashboardWrapper] Direct fetch for: ${effectiveSlug}`);
-      setLoading(true);
-      setFetchError(null);
-
       console.log(`[TenantDashboardWrapper] Initiating context fetch. Slug: ${slugFromParam}, MagicId: ${resolvedMagicId}`);
       setLoading(true);
       setFetchError(null);
@@ -339,23 +330,33 @@ function NavigationBridge() {
   const navigation = useNavigation<any>();
 
   useEffect(() => {
-    // If mode changes to 'tenant_login' and we have branding, navigate to TenantDashboard
+    // [중요] 무한 리셋 루프 방지를 위해 현재 내비게이션 상태 확인
+    const state = navigation.getState();
+    const currentRoute = state?.routes[state?.index]?.name;
+    const currentParams = state?.routes[state?.index]?.params as any;
+
     if (mode === 'tenant_login' && brandingCompany) {
-      console.log(`[NavigationBridge] Resetting to TenantDashboard for: ${brandingCompany.slug} (MagicId: ${brandingCompany.magicId})`);
+      // 이미 해당 화면에 있고 파라미터가 같다면 중복 리셋 방지
+      const targetSlug = brandingCompany.slug;
+      const targetP = (brandingCompany as any).magicId;
+
+      if (currentRoute === 'TenantDashboard' && currentParams?.p === targetP) {
+        // 이미 렌더링 중이므로 루프 차단
+        return;
+      }
+
+      console.log(`[NavigationBridge] Navigating to TenantDashboard. Slug: ${targetSlug}, MagicId: ${targetP}`);
       navigation.reset({
         index: 0,
         routes: [{
           name: 'TenantDashboard',
           params: {
-            slug: brandingCompany.slug,
-            p: (brandingCompany as any).magicId // [중요] 매직 링크 ID 유지를 위해 파라미터 전달
+            slug: targetSlug,
+            p: targetP
           }
         }],
       });
     } else if (mode === 'landing') {
-      // If we are forced to landing, ensure we actually navigate there
-      const state = navigation.getState();
-      const currentRoute = state?.routes[state?.index]?.name;
       if (currentRoute !== 'Landing') {
         navigation.reset({
           index: 0,
