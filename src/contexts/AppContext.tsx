@@ -224,16 +224,32 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
             // 1. 고도화된 URL 파싱 (Native Safe Regex & Expo Linking Parser)
             try {
-                // A) Regex 추출 (Native에서 가장 안전함)
-                const pMatch = url.match(/[?&]p=([^&]+)/);
+                // A) URL 디코딩 처리 (인코딩된 %3Fp= 등의 케이스 대응)
+                const decodedUrl = decodeURIComponent(url);
+
+                // B) Regex 추출 (Native에서 가장 안전함 - 인코딩된 문자열도 고려)
+                // [?&] 뿐만 아니라 인코딩된 %3F 등도 포함할 수 있도록 유연한 매칭
+                const pMatch = decodedUrl.match(/(?:\?|&|%3F|%26)p=([^&/?#]+)/i) || url.match(/(?:\?|&|%3F|%26)p=([^&/?#]+)/i);
                 if (pMatch) magicId = pMatch[1];
 
-                const slugMatch = url.match(/\/branch\/([^/?#]+)/);
+                const slugMatch = decodedUrl.match(/\/branch\/([^/?#]+)/i);
                 if (slugMatch) slug = slugMatch[1];
 
-                // B) Expo Linking API 파서 활용
+                // C) Expo Linking API 파서 활용
                 const parsed = Linking.parse(url);
                 if (!magicId && parsed.queryParams?.p) magicId = parsed.queryParams.p as string;
+
+                // D) URLSearchParams 2차 시도 (Web/Safe Native)
+                if (!magicId) {
+                    try {
+                        const searchPart = url.includes('?') ? url.split('?')[1] : (url.includes('%3F') ? url.split('%3F')[1] : '');
+                        if (searchPart) {
+                            const params = new URLSearchParams(searchPart);
+                            magicId = params.get('p') || '';
+                        }
+                    } catch (e) { }
+                }
+
                 if (!slug) {
                     if (parsed.hostname === 'branch') slug = parsed.path || '';
                     else if (parsed.path?.includes('branch/')) {
@@ -242,16 +258,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 }
             } catch (e) {
                 console.warn('[AppContext] Parsing error, falling back to manual split:', e);
-                if (url.includes('p=')) magicId = url.split('p=')[1].split('&')[0];
-                if (url.includes('/branch/')) slug = url.split('/branch/')[1].split('/')[0].split('?')[0];
+                const cleanUrl = decodeURIComponent(url);
+                if (cleanUrl.includes('p=')) magicId = cleanUrl.split('p=')[1].split('&')[0];
+                if (cleanUrl.includes('/branch/')) slug = cleanUrl.split('/branch/')[1].split('/')[0].split('?')[0];
             }
 
             // --- 후속 처리: ID가 URL 전체인 경우 방지 (Sanitization) ---
-            if (magicId && magicId.includes('://')) {
-                console.log('[AppContext] MagicId was whole URL, recursive re-parsing...');
-                const subMatch = magicId.match(/[?&]p=([^&]+)/);
+            if (magicId && (magicId.includes('://') || magicId.length > 100)) {
+                console.log('[AppContext] MagicId looks like a URL, cleaning again...');
+                const subMatch = magicId.match(/(?:\?|&|%3F|%26)p=([^&/?#]+)/i);
                 if (subMatch) magicId = subMatch[1];
-                else magicId = ''; // 정보를 찾지 못하면 비움
+                else magicId = '';
             }
 
             // Web 전용 패스 추출 보강

@@ -127,9 +127,9 @@ function TenantDashboardWrapper(props: any) {
   const slugFromParam = (props.route.params as any)?.slug;
   const rawParamP = (props.route.params as any)?.p;
 
-  // URL 전체가 p로 들어오는 케이스 방어
-  const paramP = (rawParamP && rawParamP.includes('://'))
-    ? rawParamP.match(/[?&]p=([^&]+)/)?.[1] || ''
+  // URL 전체가 p로 들어오는 케이스 및 인코딩 케이스 방어
+  const paramP = (rawParamP && (rawParamP.includes('://') || rawParamP.includes('%3F')))
+    ? (decodeURIComponent(rawParamP).match(/(?:\?|&|%3F|%26)p=([^&/?#]+)/i)?.[1] || rawParamP)
     : rawParamP;
 
   const company = brandingCompany;
