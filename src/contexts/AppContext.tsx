@@ -321,13 +321,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                     }
                 }
 
-                // C) 최종 결과 적용
-                if (resolvedCompany) {
-                    setBrandingCompany({ ...resolvedCompany, magicId } as any);
+                // C) [FAST-TRACK] 과거 정상 작동 버전의 핵심 로직 복원
+                // 매직 ID가 있다면 데이터베이스 조회가 끝나기 전이라도 입주자 모드로 미리 전환하여 Landing 노출 차단
+                if (magicId) {
+                    console.log(`[AppContext] Fast-tracking to tenant_login with MagicId: ${magicId}`);
                     setMode('tenant_login');
-                } else if (magicId) {
-                    // 정보를 못 찾았더라도 입주자 모드로는 보냄 (Wrapper에서 에러 처리 유도)
-                    setBrandingCompany({ magicId } as any);
+                    // 최소 정보만 담아 우선 세팅 (Wrapper에서 대기 유도)
+                    setBrandingCompany({ magicId, slug } as any);
+                }
+
+                // D) 최종 결과 조회 및 적용
+                if (resolvedCompany) {
+                    console.log(`[AppContext] Applying resolved company: ${resolvedCompany.name}`);
+                    setBrandingCompany({ ...resolvedCompany, magicId } as any);
                     setMode('tenant_login');
                 }
             }
