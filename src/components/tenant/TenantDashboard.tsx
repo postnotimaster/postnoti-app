@@ -144,11 +144,11 @@ export const TenantDashboard = ({
     // -----------------------------------------------------
 
     // 로딩 화면
-    if (identifying && !name) {
+    if (identifying || !companyId) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#4F46E5" />
-                <Text style={styles.loadingText}>자동 로그인 중...</Text>
+                <Text style={styles.loadingText}>{!companyId ? '지점 정보 로드 중...' : '자동 로그인 중...'}</Text>
             </View>
         );
     }

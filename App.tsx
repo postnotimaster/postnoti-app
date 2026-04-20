@@ -117,8 +117,28 @@ function AppContent() {
         <Stack.Screen name="AdminMenu" component={AdminMenuScreen} />
         <Stack.Screen name="AdminSenders" component={AdminSendersScreen} />
 
-        {/* Special Case: Tenant Dashboard */}
-        <Stack.Screen name="TenantDashboard" component={TenantDashboardWrapper} />
+        {/* 입주자 다이렉트 뷰 */}
+        <Stack.Screen name="TenantDashboard">
+          {(props) => {
+            const company = brandingCompany || (props.route.params as any);
+            return (
+              <TenantDashboard
+                {...props}
+                companyId={company?.id || ''}
+                companyName={company?.name || ''}
+                pushToken={expoPushToken}
+                webPushToken={webPushToken}
+                magicProfileId={company?.magicId}
+                magicTenantId={company?.magicId}
+                onBack={() => {
+                  setMode('landing');
+                  setBrandingCompany(null);
+                  props.navigation.navigate('Landing');
+                }}
+              />
+            );
+          }}
+        </Stack.Screen>
       </Stack.Navigator>
 
       {/* Bridge Component to handle Context-driven navigation (Deep Links) */}

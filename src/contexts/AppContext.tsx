@@ -265,12 +265,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 // [FAST TRACK] 데이터베이스 조회 전에 일단 입주사 모드로 전환하여 LandingScreen 노출을 차단
                 if (magicId) {
                     setMode('tenant_login');
-                    // brandingCompany 정보가 완벽하지 않더라도 magicId는 미리 주입 (Wrapper가 사용)
-                    setBrandingCompany({ slug, magicId } as any);
+                    console.log(`[AppContext] Fast-track mode enabled for slug: ${slug}, magicId: ${magicId}`);
                 }
 
                 // 이후 비동기로 지점 상세 정보 로드
                 try {
+                    console.log(`[AppContext] Fetching full company info for slug: ${slug}`);
                     const { data, error: companyError } = await supabase
                         .from('companies')
                         .select('*')
@@ -278,10 +278,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                         .single();
 
                     if (data) {
+                        console.log(`[AppContext] Successfully loaded company: ${data.name} (ID: ${data.id})`);
                         setBrandingCompany({ ...data, magicId } as any);
+                    } else {
+                        console.error('[AppContext] Company NOT FOUND for slug:', slug);
+                        // [CRITICAL] 만약 지점을 못 찾는다면 다시 랜딩으로
+                        setMode('landing');
                     }
                 } catch (e) {
-                    console.error('Fast-track company load failed:', e);
+                    console.error('[AppContext] Fast-track company load failed:', e);
                 }
             }
         };
