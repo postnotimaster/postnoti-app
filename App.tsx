@@ -259,9 +259,16 @@ function NavigationBridge() {
   useEffect(() => {
     // If mode changes to 'tenant_login' and we have branding, navigate to TenantDashboard
     if (mode === 'tenant_login' && brandingCompany) {
+      console.log(`[NavigationBridge] Resetting to TenantDashboard for: ${brandingCompany.slug} (MagicId: ${brandingCompany.magicId})`);
       navigation.reset({
         index: 0,
-        routes: [{ name: 'TenantDashboard' }],
+        routes: [{
+          name: 'TenantDashboard',
+          params: {
+            slug: brandingCompany.slug,
+            p: (brandingCompany as any).magicId // [중요] 매직 링크 ID 유지를 위해 파라미터 전달
+          }
+        }],
       });
     } else if (mode === 'landing') {
       // If we are forced to landing, ensure we actually navigate there
