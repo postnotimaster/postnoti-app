@@ -37,28 +37,41 @@ export const useTenantAuth = ({
     // 자동 로그인 및 매직 링크 처리
     useEffect(() => {
         const checkAutoLogin = async () => {
-            if (tenantProfile) return; // 이미 로그인됨
+            if (tenantProfile) {
+                console.log('[useTenantAuth] Already logged in via context');
+                return;
+            }
 
             const targetMagicId = magicTenantId || magicProfileId;
+            console.log(`[useTenantAuth] Checking AutoLogin. MagicId: ${targetMagicId}, Company: ${companyId}`);
+
             if (targetMagicId) {
                 try {
                     setIdentifying(true);
                     if (magicTenantId) {
+                        console.log(`[useTenantAuth] Fetching tenant by ID: ${magicTenantId}`);
                         const tenant = await tenantsService.getTenantById(magicTenantId);
                         if (tenant) {
+                            console.log(`[useTenantAuth] Magic tenant found: ${tenant.name}`);
                             setMyTenant(tenant);
                             setMyProfile(tenant);
+                            setTenantProfile(tenant); // [중요] 전역 상태 업데이트
                             return;
+                        } else {
+                            console.warn(`[useTenantAuth] No tenant found for magicId: ${magicTenantId}`);
                         }
                     } else if (magicProfileId) {
+                        console.log(`[useTenantAuth] Fetching profile by ID: ${magicProfileId}`);
                         const profile = await profilesService.getProfileById(magicProfileId);
                         if (profile) {
+                            console.log(`[useTenantAuth] Magic profile found: ${profile.name}`);
                             setMyProfile(profile);
+                            setTenantProfile(profile); // [중요] 전역 상태 업데이트
                             return;
                         }
                     }
                 } catch (e) {
-                    console.log('Magic login failed', e);
+                    console.error('[useTenantAuth] Magic login failed', e);
                 } finally {
                     setIdentifying(false);
                 }
@@ -115,10 +128,14 @@ export const useTenantAuth = ({
             await AsyncStorage.setItem(`tenant_name_${companyId}`, targetName.trim());
             await AsyncStorage.setItem(`tenant_phone_${companyId}`, targetPhone);
 
-            setMyProfile(profile);
+            const finalProfile = profile;
+            console.log(`[useTenantAuth] Identification success for ${targetName}`);
+            setMyProfile(finalProfile);
+            setTenantProfile(finalProfile); // [중요] 전역 상태 업데이트
             setMyTenant(null);
-            return profile;
+            return finalProfile;
         } catch (err) {
+            console.error('[useTenantAuth] Identification error:', err);
             showToast({ message: '조회 중 문제가 발생했습니다.', type: 'error' });
         } finally {
             setIdentifying(false);
