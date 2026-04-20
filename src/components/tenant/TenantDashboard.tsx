@@ -143,12 +143,14 @@ export const TenantDashboard = ({
     // 렌더링 시작
     // -----------------------------------------------------
 
-    // 로딩 화면
+    // 로딩 화면 (지점 정보가 없거나 인증 중일 때)
     if (identifying || !companyId) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#4F46E5" />
-                <Text style={styles.loadingText}>{!companyId ? '지점 정보 로드 중...' : '자동 로그인 중...'}</Text>
+                <Text style={styles.loadingText}>우편함데이터가져오는 중...</Text>
+                {/* [DEBUG] 로딩 중 상태 표시 */}
+                {!companyId && <Text style={{ fontSize: 10, color: '#94A3B8', marginTop: 10 }}>지점 데이터를 확인하고 있습니다...</Text>}
             </View>
         );
     }
