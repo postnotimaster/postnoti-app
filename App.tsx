@@ -127,10 +127,23 @@ function TenantDashboardWrapper(props: any) {
   const slugFromParam = (props.route.params as any)?.slug;
   const rawParamP = (props.route.params as any)?.p;
 
-  // URL 전체가 p로 들어오는 케이스 및 인코딩 케이스 방어
-  const paramP = (rawParamP && (rawParamP.includes('://') || rawParamP.includes('%3F')))
-    ? (decodeURIComponent(rawParamP).match(/(?:\?|&|%3F|%26)p=([^&/?#]+)/i)?.[1] || rawParamP)
-    : rawParamP;
+  // [3차 보강] URL 전체가 p로 들어오는 케이스 및 인코딩 케이스 방어
+  const paramP = React.useMemo(() => {
+    if (!rawParamP) return '';
+    if (!rawParamP.includes('://') && !rawParamP.includes('%3F')) return rawParamP;
+
+    // A) 정규식 시도
+    const decoded = decodeURIComponent(rawParamP);
+    const match = decoded.match(/(?:\?|&|%3F|%26)p=([^&/?#]+)/i);
+    if (match) return match[1];
+
+    // B) Brute-force Split (최후의 수단: 무조건 p= 뒤를 뽑음)
+    if (decoded.includes('p=')) {
+      return decoded.split('p=')[1].split('&')[0].split('/')[0];
+    }
+
+    return rawParamP;
+  }, [rawParamP]);
 
   const company = brandingCompany;
   const resolvedMagicId = paramP || (company as any)?.magicId || '';
@@ -147,6 +160,15 @@ function TenantDashboardWrapper(props: any) {
 
   // 지점 정보를 찾지 못한 경우 (대기 시간이 길어지거나 진짜 없는 경우)
   if (!company || (!company.id && !company.name)) {
+    const handleReload = () => {
+      if (Platform.OS === 'web') {
+        window.location.reload();
+      } else {
+        setMode('landing');
+        props.navigation.replace('Landing');
+      }
+    };
+
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', padding: 30 }}>
         <Ionicons name="alert-circle-outline" size={60} color="#E11D48" />
@@ -158,17 +180,24 @@ function TenantDashboardWrapper(props: any) {
         </Text>
 
         <View style={{ marginTop: 30, padding: 16, backgroundColor: '#F8FAFC', borderRadius: 12, width: '100%', borderWidth: 1, borderColor: '#E2E8F0' }}>
-          <Text style={{ fontSize: 11, color: '#475569', fontWeight: '800', marginBottom: 8, opacity: 0.7 }}>🔍 시스템 진단 정보 (Phone)</Text>
+          <Text style={{ fontSize: 11, color: '#475569', fontWeight: '800', marginBottom: 8, opacity: 0.7 }}>🔍 시스템 진단 정보 (Debug v3)</Text>
           <Text style={{ fontSize: 11, color: '#64748B' }}>• MagicID: <Text style={{ color: '#0F172A', fontWeight: 'bold' }}>{resolvedMagicId || '(없음)'}</Text></Text>
-          <Text style={{ fontSize: 11, color: '#64748B' }}>• Slug: <Text style={{ color: '#0F172A', fontWeight: 'bold' }}>{slugFromParam || '(없음)'}</Text></Text>
           <Text style={{ fontSize: 11, color: '#64748B' }}>• Context: <Text style={{ color: brandingCompany ? '#10B981' : '#EF4444', fontWeight: 'bold' }}>{brandingCompany ? 'Resolved' : 'Missing'}</Text></Text>
+          <Text style={{ fontSize: 11, color: '#64748B', marginTop: 4 }}>• Raw: <Text style={{ color: '#94A3B8', fontSize: 9 }}>{rawParamP?.substring(0, 50)}...</Text></Text>
         </View>
 
         <Pressable
-          onPress={() => { setMode('landing'); setBrandingCompany(null); props.navigation.replace('Landing'); }}
-          style={{ marginTop: 30, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: '#4F46E5', borderRadius: 10, width: '100%', alignItems: 'center' }}
+          onPress={handleReload}
+          style={{ marginTop: 20, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: '#4F46E5', borderRadius: 10, width: '100%', alignItems: 'center' }}
         >
-          <Text style={{ color: '#fff', fontWeight: '700' }}>홈으로 이동</Text>
+          <Text style={{ color: '#fff', fontWeight: '700' }}>새로고침 및 다시 시도</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => { setMode('landing'); setBrandingCompany(null); props.navigation.replace('Landing'); }}
+          style={{ marginTop: 12, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: '#F1F5F9', borderRadius: 10, width: '100%', alignItems: 'center' }}
+        >
+          <Text style={{ color: '#475569', fontWeight: '700' }}>홈으로 이동</Text>
         </Pressable>
       </View>
     );

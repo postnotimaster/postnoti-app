@@ -239,15 +239,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 const parsed = Linking.parse(url);
                 if (!magicId && parsed.queryParams?.p) magicId = parsed.queryParams.p as string;
 
-                // D) URLSearchParams 2차 시도 (Web/Safe Native)
+                // D) Brute-force Split (최후의 수단: 무조건 p= 뒤를 뽑음)
                 if (!magicId) {
-                    try {
-                        const searchPart = url.includes('?') ? url.split('?')[1] : (url.includes('%3F') ? url.split('%3F')[1] : '');
-                        if (searchPart) {
-                            const params = new URLSearchParams(searchPart);
-                            magicId = params.get('p') || '';
-                        }
-                    } catch (e) { }
+                    const decoded = decodeURIComponent(url);
+                    if (decoded.includes('p=')) {
+                        magicId = decoded.split('p=')[1].split('&')[0].split('/')[0];
+                    }
                 }
 
                 if (!slug) {
