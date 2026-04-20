@@ -313,6 +313,7 @@ export const AdminDashboardScreen = ({ route }: any) => {
                             {selectedProfileForHistory && (
                                 <TenantMailHistory
                                     tenant={selectedProfileForHistory}
+                                    officeInfo={officeInfo}
                                     onClose={() => setIsHistoryVisible(false)}
                                 />
                             )}

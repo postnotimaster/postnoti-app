@@ -60,19 +60,8 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
         loadTenants();
     }, []);
 
-    useEffect(() => {
-        const backAction = () => {
-            if (isEditing) {
-                console.log('BackHandler: set isEditing to false');
-                setIsEditing(false);
-                return true; // Prevent default (closing modal)
-            }
-            return false; // Exit modal
-        };
-        // Add a small delay to ensure this takes priority within the Modal
-        const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-        return () => backHandler.remove();
-    }, [isEditing]);
+    // BackHandler 로직은 Parent 컴포넌트에서 useImperativeHandle(ref)를 통해
+    // handleBack 함수를 직접 호출하도록 이관됨 (리스너 중복/충돌 방지)
 
     const loadTenants = async () => {
         try {
@@ -352,7 +341,7 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                     <Text style={styles.title}>{'\uc785\uc8fc\uc0ac \uad00\ub9ac'}</Text>
                     <Text style={styles.countText}>{'\uc785\uc8fc'} {activeCount} / {'\uc804\uccb4'} {tenants.length}</Text>
                 </View>
-                <Pressable onPress={() => { setEditingTenant({ company_id: companyId, is_active: true, is_premium: false }); setIsEditing(true); }} style={styles.addBtn}>
+                <Pressable onPress={() => { setEditingTenant({ company_id: companyId, is_active: true, is_premium: false, status: '입주', retention_days: 14 }); setIsEditing(true); }} style={styles.addBtn}>
                     <Text style={styles.addBtnText}>+ {'\uc785\uc8fc\uc0ac \ub4f1\ub85d'}</Text>
                 </Pressable>
             </View>
@@ -405,32 +394,47 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                         return (
                             <Pressable key={t.id} style={styles.tenantCard} onPress={() => { setEditingTenant(t); setIsEditing(true); }}>
                                 <View style={styles.tenantInfo}>
-                                    <View style={[styles.nameRow, { marginBottom: 6 }]}>
-                                        <View style={[styles.badge, { backgroundColor: t.is_active ? '#F0FDF4' : '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, marginRight: 2 }]}>
-                                            <Text style={[styles.badgeText, { color: t.is_active ? '#166534' : '#475569', fontSize: 10 }]}>
-                                                {t.status || (t.is_active ? '입주' : '퇴거')}
+                                    {/* 상단 행: 호수와 회사명 */}
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                                        <View style={{ width: 50, marginRight: 12 }}>
+                                            <Text style={[styles.roomNumber, { width: '100%', textAlign: 'center', paddingHorizontal: 0, fontSize: 13, paddingVertical: 4 }]}>
+                                                {t.room_number || '-'}
                                             </Text>
                                         </View>
-                                        {t.room_number ? <Text style={styles.roomNumber}>{t.room_number}</Text> : null}
-                                        <Text style={[styles.companyName, { fontSize: 15, flexShrink: 1 }]} numberOfLines={1}>
-                                            {t.company_name || '(\ubbf8\ub4f1\ub85d)'}
-                                        </Text>
-                                        <Text style={styles.tenantName} numberOfLines={1}>{t.name}</Text>
-                                    </View>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                                        <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '600' }}>
-                                            보관기간 <Text style={{ color: '#4F46E5' }}>{t.retention_days === 0 ? '영구' : `${(t.retention_days || 14) / 7}주`}</Text>
-                                        </Text>
-                                        <Text style={{ fontSize: 10, color: '#CBD5E1' }}>|</Text>
-                                        <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '600' }}>
-                                            개봉횟수 <Text style={{ color: '#059669' }}>{total > 0 ? `${read}/${total}` : '-'}</Text>
-                                        </Text>
-                                        <Text style={{ fontSize: 10, color: '#CBD5E1' }}>|</Text>
-                                        <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '600' }}>
-                                            최근 발송 <Text style={{ color: '#334155' }}>
-                                                {stat?.lastSentAt ? new Date(stat.lastSentAt).toLocaleDateString('ko-KR', { year: '2-digit', month: 'numeric', day: 'numeric' }).replace(/\./g, '/').replace(/ /g, '').replace(/\/$/, '') : '-'}
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={[styles.companyName, { fontSize: 16 }]} numberOfLines={1}>
+                                                {t.company_name || '(\ubbf8\ub4f1\ub85d)'}
                                             </Text>
-                                        </Text>
+                                        </View>
+                                    </View>
+
+                                    {/* 하단 행: 배지와 입주자 이름/연락처/통계 */}
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <View style={{ width: 50, marginRight: 12, alignItems: 'center' }}>
+                                            <View style={{ flexDirection: 'row', gap: 3 }}>
+                                                {t.is_premium && (
+                                                    <View style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4, borderWidth: 1, borderColor: '#C7D2FE', alignItems: 'center' }}>
+                                                        <Text style={{ fontSize: 9, color: '#4338CA', fontWeight: '900' }}>P</Text>
+                                                    </View>
+                                                )}
+                                                <View style={{ backgroundColor: t.is_active ? '#F0FDF4' : '#F1F5F9', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4, alignItems: 'center' }}>
+                                                    <Text style={{ color: t.is_active ? '#166534' : '#475569', fontSize: 9, fontWeight: '800' }}>
+                                                        {t.status || (t.is_active ? '입주' : '퇴거')}
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                        </View>
+                                        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                            <Text style={[styles.tenantName, { fontSize: 14, color: '#1E293B', fontWeight: '700' }]} numberOfLines={1}>{t.name}</Text>
+                                            <Text style={{ fontSize: 10, color: '#CBD5E1' }}>|</Text>
+                                            <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '600' }}>
+                                                보관 <Text style={{ color: '#4F46E5' }}>{t.retention_days === 0 ? '영구' : `${(t.retention_days || 14) / 7}주`}</Text>
+                                            </Text>
+                                            <Text style={{ fontSize: 10, color: '#CBD5E1' }}>|</Text>
+                                            <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '600' }}>
+                                                개봉 <Text style={{ color: '#059669' }}>{total > 0 ? `${read}/${total}` : '-'}</Text>
+                                            </Text>
+                                        </View>
                                     </View>
                                 </View>
                                 <View style={styles.cardActions}>
@@ -467,7 +471,7 @@ const styles = StyleSheet.create({
     sortBtnActive: { backgroundColor: '#4F46E5', borderColor: '#4F46E5' },
     sortBtnText: { color: '#64748B', fontSize: 12, fontWeight: '600' },
     sortBtnTextActive: { color: '#fff' },
-    tenantCard: { backgroundColor: '#fff', padding: 15, borderRadius: 12, marginBottom: 10, borderWidth: 1, borderColor: '#F1F5F9', flexDirection: 'row', justifyContent: 'space-between', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 },
+    tenantCard: { backgroundColor: '#fff', padding: 12, borderRadius: 12, marginBottom: 10, borderWidth: 1, borderColor: '#F1F5F9', flexDirection: 'row', justifyContent: 'space-between', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 },
     tenantInfo: { flex: 1 },
     nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
     roomNumber: { fontSize: 13, fontWeight: '800', color: '#6366F1', backgroundColor: '#EEF2FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, overflow: 'hidden' },

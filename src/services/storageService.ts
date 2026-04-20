@@ -27,21 +27,24 @@ export const storageService = {
                 const fileExt = contentType.split('/')[1] || 'jpg';
                 fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-                const binaryString = atob(base64);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                }
+                const { Buffer } = require('buffer');
+                const buffer = Buffer.from(base64, 'base64');
+                const bytes = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
                 fileData = bytes.buffer;
             } else {
-                // 일반 URI인 경우 FormData용 객체 생성 (React Native 표준 추천 방식)
+                // 일반 URI(file://)인 경우 ImageManipulator로 Base64를 추출한 뒤 ArrayBuffer로 변환
+                // React Native의 fetch(uri).blob()은 환경에 따라 Network request failed를 유발할 수 있음
+                const { manipulateAsync, SaveFormat } = require('expo-image-manipulator');
+                const result = await manipulateAsync(uri, [], { base64: true, format: SaveFormat.JPEG });
+
+                if (!result.base64) throw new Error('이미지 데이터를 읽을 수 없습니다.');
+
+                const { Buffer } = require('buffer');
+                const buffer = Buffer.from(result.base64, 'base64');
+                fileData = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+
                 const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
                 contentType = `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`;
-                fileData = {
-                    uri: uri,
-                    name: fileName,
-                    type: contentType
-                };
             }
 
             console.log(`📤 Supabase 전송 중: ${fileName}`);

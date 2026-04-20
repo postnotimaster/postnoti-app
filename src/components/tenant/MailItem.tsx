@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, Image, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Image, ScrollView, StyleSheet, Alert } from 'react-native';
 import { mailService } from '../../services/mailService';
 
 export type MailLog = {
@@ -26,8 +26,11 @@ export const MailItem = ({ item, onImagePress, onMarkRead }: Props) => {
         if (item.image_url) {
             onImagePress(item.image_url);
             if (!item.read_at) {
-                mailService.markAsRead(item.id);
                 onMarkRead(item.id);
+                mailService.markAsRead(item.id).catch((error) => {
+                    console.error('Failed to mark as read:', error);
+                    Alert.alert('통신 오류', '서버 통신 불안정으로 읽음 처리가 반영되지 않았을 수 있습니다.');
+                });
             }
         }
     };

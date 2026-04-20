@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { mailService } from '../../services/mailService';
 import { Tenant } from '../../services/tenantsService';
+import { Company } from '../../services/companiesService';
 import { supabase } from '../../lib/supabase';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -24,11 +25,12 @@ import { notificationService } from '../../services/notificationService';
 
 interface TenantMailHistoryProps {
     tenant: Tenant;
+    officeInfo?: Company;
     onClose: () => void;
     isTenantMode?: boolean;
 }
 
-export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: TenantMailHistoryProps) => {
+export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = false }: TenantMailHistoryProps) => {
     const [mails, setMails] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedFullImage, setSelectedFullImage] = useState<string | null>(null);
@@ -84,12 +86,31 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
             }
 
             const updatedExtras = [...currentExtras, publicUrl];
+            console.log('📸 Updating Extra Photos:', { mailId, currentExtras: currentExtras.length, updated: updatedExtras.length });
             const { error } = await mailService.updateMailExtraImages(mailId, updatedExtras);
 
-            if (error) throw error;
+            if (error) {
+                console.error('❌ updateMailExtraImages Error:', error);
+                throw error;
+            }
 
             // 로컬 상태 업데이트
             setMails(prev => prev.map(m => m.id === mailId ? { ...m, extra_images: updatedExtras } : m));
+
+            // 푸시 알람 발송 (지점 정보가 있을 경우에만)
+            if (officeInfo) {
+                const title = `[${officeInfo.name}] 추가 촬영 완료 📸`;
+                const body = `${tenant.company_name || tenant.name}님, 요청하신 우편물의 추가 상세 사진이 등록되었습니다.`;
+
+                notificationService.sendPushNotification(
+                    tenant,
+                    officeInfo,
+                    '시스템',
+                    '추가촬영',
+                    body
+                ).catch(e => console.warn('Extra photo push failed:', e));
+            }
+
             Alert.alert('성공', '추가 사진이 등록되었습니다.');
 
         } catch (e: any) {
@@ -179,7 +200,7 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
 
                                                             const success = await notificationService.sendPushNotification(
                                                                 tenant,
-                                                                {} as any, // officeInfo (상속받지 않음, 필요시 추가 전달 가능)
+                                                                officeInfo!,
                                                                 tenant.name,
                                                                 '일반',
                                                                 body

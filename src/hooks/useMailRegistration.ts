@@ -47,17 +47,20 @@ export const useMailRegistration = (
                 throw new Error('사진 업로드에 실패했습니다.');
             }
 
-            // 2. 추가 이미지들도 업로드
+            // 2. 추가 이미지들도 병렬 업로드
             const uploadedExtraImages: string[] = [];
             if (extraImages && extraImages.length > 0) {
-                for (const img of extraImages) {
-                    try {
-                        const url = await storageService.uploadImage(img);
-                        if (url) uploadedExtraImages.push(url);
-                    } catch (e) {
-                        console.warn('Failed to upload extra image:', e);
+                const uploadPromises = extraImages.map(img => storageService.uploadImage(img));
+                const results = await Promise.allSettled(uploadPromises);
+
+                results.forEach((result, idx) => {
+                    if (result.status === 'fulfilled' && result.value) {
+                        uploadedExtraImages.push(result.value);
+                    } else if (result.status === 'rejected') {
+                        console.warn(`Failed to upload extra image ${idx}:`, result.reason);
+                        showToast({ message: '추가 이미지 일부 업로드에 실패했습니다.', type: 'error' });
                     }
-                }
+                });
             }
 
             const { error: regError } = await mailService.registerMail(
