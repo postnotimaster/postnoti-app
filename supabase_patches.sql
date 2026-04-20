@@ -55,11 +55,13 @@ CREATE TABLE IF NOT EXISTS announcements (
 ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
 
 -- Reading Policy (Simple for now, can be restricted further)
+DROP POLICY IF EXISTS "Users can view announcements of their company" ON announcements;
 CREATE POLICY "Users can view announcements of their company" ON announcements
     FOR SELECT
     USING (true);
 
 -- Management Policy (For Admins)
+DROP POLICY IF EXISTS "Admins can manage announcements" ON announcements;
 CREATE POLICY "Admins can manage announcements" ON announcements
     FOR ALL
     USING (
