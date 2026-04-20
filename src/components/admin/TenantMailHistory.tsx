@@ -17,6 +17,10 @@ import { Tenant } from '../../services/tenantsService';
 import { supabase } from '../../lib/supabase';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as ImagePicker from 'expo-image-picker';
+import { storageService } from '../../services/storageService';
+import { useAppContent } from '../../contexts/AppContext';
+import { notificationService } from '../../services/notificationService';
 
 interface TenantMailHistoryProps {
     tenant: Tenant;
@@ -29,6 +33,8 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
     const [loading, setLoading] = useState(true);
     const [selectedFullImage, setSelectedFullImage] = useState<string | null>(null);
     const [imageRotation, setImageRotation] = useState(0);
+    const [isUploading, setIsUploading] = useState(false);
+    const { optimizeImage } = useAppContent() as any;
 
     useEffect(() => {
         loadHistory();
@@ -51,6 +57,47 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
         return `${date.getFullYear()}. ${String(date.getMonth() + 1).padStart(2, '0')}. ${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    };
+
+    const handleAddPhoto = async (mailId: string, fromCamera: boolean) => {
+        try {
+            const result = fromCamera
+                ? await ImagePicker.launchCameraAsync({ quality: 0.5 })
+                : await ImagePicker.launchImageLibraryAsync({ quality: 0.5 });
+
+            if (result.canceled) return;
+
+            setIsUploading(true);
+            const localUri = result.assets[0].uri;
+            const optimized = await optimizeImage(localUri);
+            const publicUrl = await storageService.uploadImage(optimized);
+
+            if (!publicUrl) throw new Error('파일 업로드에 실패했습니다.');
+
+            // 현재 메일의 extra_images 가져오기
+            const currentMail = mails.find(m => m.id === mailId);
+            let currentExtras: string[] = [];
+            if (Array.isArray(currentMail.extra_images)) {
+                currentExtras = currentMail.extra_images;
+            } else if (typeof currentMail.extra_images === 'string' && currentMail.extra_images) {
+                try { currentExtras = JSON.parse(currentMail.extra_images); } catch (e) { }
+            }
+
+            const updatedExtras = [...currentExtras, publicUrl];
+            const { error } = await mailService.updateMailExtraImages(mailId, updatedExtras);
+
+            if (error) throw error;
+
+            // 로컬 상태 업데이트
+            setMails(prev => prev.map(m => m.id === mailId ? { ...m, extra_images: updatedExtras } : m));
+            Alert.alert('성공', '추가 사진이 등록되었습니다.');
+
+        } catch (e: any) {
+            console.error('Failed to add photo:', e);
+            Alert.alert('오류', e.message || '사진 등록 중 오류가 발생했습니다.');
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     return (
@@ -128,14 +175,14 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                                                     {
                                                         text: '푸시 보내기',
                                                         onPress: async () => {
-                                                            const title = `[우편알림] ${tenant.company_name || tenant.name}님, 우편함 확인 🔔`;
                                                             const body = `새로운 우편물이 도착했습니다. 터치하여 확인하세요.`;
 
-                                                            const success = await mailService.sendPushNotification(
-                                                                [profile.push_token, profile.web_push_token].filter(Boolean),
-                                                                title,
-                                                                body,
-                                                                { url: link }
+                                                            const success = await notificationService.sendPushNotification(
+                                                                tenant,
+                                                                {} as any, // officeInfo (상속받지 않음, 필요시 추가 전달 가능)
+                                                                tenant.name,
+                                                                '일반',
+                                                                body
                                                             );
 
                                                             if (success) Alert.alert('성공', '알림이 재발송되었습니다.');
@@ -194,38 +241,75 @@ export const TenantMailHistory = ({ tenant, onClose, isTenantMode = false }: Ten
                                 </Text>
                             </View>
 
-                            {/* 프리미엄 추가 촬영 이미지들 */}
-                            {mail.extra_images && mail.extra_images.length > 0 && (
-                                <View style={{ padding: 15, paddingTop: 0 }}>
-                                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#6366F1', marginBottom: 8 }}>
-                                        📄 상세 페이지 ({mail.extra_images.length})
-                                    </Text>
+                            {/* 프리미엄 추가 촬영 이미지들/등록 버튼 */}
+                            {(mail.extra_images && mail.extra_images.length > 0) || (!isTenantMode && tenant.is_premium) ? (
+                                <View style={{ padding: 15, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F8FAFC' }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#6366F1' }}>
+                                            📄 상세 페이지 {mail.extra_images?.length > 0 ? `(${mail.extra_images.length})` : ''}
+                                        </Text>
+                                        {!isTenantMode && tenant.is_premium && (
+                                            <Pressable
+                                                onPress={() => {
+                                                    Alert.alert('이미지 추가', '어디서 사진을 가져올까요?', [
+                                                        { text: '📷 촬영하기', onPress: () => handleAddPhoto(mail.id, true) },
+                                                        { text: '🖼️ 앨범에서 선택', onPress: () => handleAddPhoto(mail.id, false) },
+                                                        { text: '취소', style: 'cancel' }
+                                                    ]);
+                                                }}
+                                                disabled={isUploading}
+                                                style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#C7D2FE' }}
+                                            >
+                                                {isUploading ? (
+                                                    <ActivityIndicator size="small" color="#4F46E5" />
+                                                ) : (
+                                                    <>
+                                                        <Ionicons name="add-circle-outline" size={14} color="#4F46E5" style={{ marginRight: 4 }} />
+                                                        <Text style={{ fontSize: 12, color: '#4F46E5', fontWeight: '700' }}>추가 촬영</Text>
+                                                    </>
+                                                )}
+                                            </Pressable>
+                                        )}
+                                    </View>
+
                                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                                         <View style={{ flexDirection: 'row', gap: 10 }}>
                                             {(() => {
-                                                let images: string[] = [];
-                                                if (Array.isArray(mail.extra_images)) {
-                                                    images = mail.extra_images;
-                                                } else if (typeof mail.extra_images === 'string') {
+                                                const rawExtra = mail.extra_images;
+                                                let displayImages: string[] = [];
+                                                if (Array.isArray(rawExtra)) {
+                                                    displayImages = rawExtra;
+                                                } else if (typeof rawExtra === 'string' && rawExtra) {
                                                     try {
-                                                        const parsed = JSON.parse(mail.extra_images);
-                                                        if (Array.isArray(parsed)) images = parsed;
+                                                        const parsed = JSON.parse(rawExtra);
+                                                        if (Array.isArray(parsed)) displayImages = parsed;
                                                     } catch (e) { }
                                                 }
-                                                return images.map((img: string, idx: number) => (
-                                                    <Pressable key={idx} onPress={() => { setSelectedFullImage(img); setImageRotation(0); }}>
-                                                        <Image
-                                                            source={{ uri: img }}
-                                                            style={{ width: 100, height: 130, borderRadius: 8, backgroundColor: '#F1F5F9' }}
-                                                            resizeMode="cover"
-                                                        />
-                                                    </Pressable>
-                                                ));
+
+                                                return (
+                                                    <>
+                                                        {displayImages.map((img: string, idx: number) => (
+                                                            <Pressable key={`extra-${idx}`} onPress={() => { setSelectedFullImage(img); setImageRotation(0); }}>
+                                                                <Image
+                                                                    source={{ uri: img }}
+                                                                    style={{ width: 100, height: 130, borderRadius: 8, backgroundColor: '#F1F5F9' }}
+                                                                    resizeMode="cover"
+                                                                />
+                                                            </Pressable>
+                                                        ))}
+                                                        {!isTenantMode && tenant.is_premium && displayImages.length === 0 && (
+                                                            <View style={{ width: 100, height: 130, borderRadius: 8, borderStyle: 'dotted', borderWidth: 2, borderColor: '#CBD5E1', justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
+                                                                <Text style={{ color: '#94A3B8', fontSize: 10 }}>대기중</Text>
+                                                            </View>
+                                                        )}
+                                                    </>
+                                                );
                                             })()}
                                         </View>
                                     </ScrollView>
                                 </View>
-                            )}
+                            ) : null}
+
                         </View>
                     ))}
                     {mails.length === 0 && (

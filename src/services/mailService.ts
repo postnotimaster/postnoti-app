@@ -130,5 +130,13 @@ export const mailService = {
             console.error('markAsRead RPC error:', error);
         }
         return { data, error };
+    },
+
+    async updateMailExtraImages(mailId: string, extraImages: string[]) {
+        const { data, error } = await supabase
+            .from('mail_logs')
+            .update({ extra_images: extraImages })
+            .eq('id', mailId);
+        return { data, error };
     }
 };
