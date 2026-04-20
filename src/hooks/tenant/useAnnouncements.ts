@@ -11,9 +11,13 @@ export const useAnnouncements = ({ companyId, tenantId }: UseAnnouncementsProps)
     const [loading, setLoading] = useState(false);
 
     const loadAnnouncements = async () => {
-        if (!companyId) return;
+        if (!companyId) {
+            console.log('[useAnnouncements] Missing companyId');
+            return;
+        }
         setLoading(true);
         try {
+            console.log(`[useAnnouncements] Loading for Company: ${companyId}, Tenant: ${tenantId}`);
             let data: Announcement[] = [];
             if (tenantId) {
                 // 특정 입주자 타겟팅 포함 조회
@@ -22,6 +26,7 @@ export const useAnnouncements = ({ companyId, tenantId }: UseAnnouncementsProps)
                 // 전체 공지 조회
                 data = await noticeService.getAnnouncements(companyId);
             }
+            console.log(`[useAnnouncements] Loaded ${data?.length || 0} notices`);
             setAnnouncements(data || []);
         } catch (err) {
             console.error('Load Announcements Error:', err);
