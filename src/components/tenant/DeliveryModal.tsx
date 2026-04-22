@@ -298,7 +298,7 @@ export const DeliveryModal = ({
                         <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
                             <View style={styles.guideBox}>
                                 <Ionicons name="information-circle" size={18} color="#4338CA" />
-                                <Text style={styles.guideText}>{guidelines}</Text>
+                                <Text style={styles.guideText}>우편물 전달 신청을 하시면 지정된 주소로 배송해 드립니다.</Text>
                             </View>
 
                             {errorText && (
