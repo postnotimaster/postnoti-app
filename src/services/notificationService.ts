@@ -1,3 +1,4 @@
+import { Alert } from 'react-native';
 import { Profile } from './profilesService';
 import { Company } from './companiesService';
 import { Tenant } from './tenantsService';
@@ -47,15 +48,18 @@ export const notificationService = {
                             sound: 'default',
                             title,
                             body,
+                            priority: 'high',
                             data: { ...data, url: `postnoti://view` }
                         })
                     })
                         .then(res => res.json())
                         .then(json => {
                             console.log('[NotificationService] Expo response:', json);
+                            // Alert.alert('알림 전송 결과', `서버 응답: ${json.data?.status || 'unknown'}`);
                         })
                         .catch(e => {
                             console.warn('[NotificationService] Expo fetch error:', e);
+                            Alert.alert('알림 전송 물리 오류', `주소: exp.host\n사유: ${e.message}`);
                         });
                 }
 
