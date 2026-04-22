@@ -32,6 +32,7 @@ export const DeliveryModal = ({
     const [activeTab, setActiveTab] = useState<'request' | 'list'>('request');
     const [step, setStep] = useState<'form' | 'postcode' | 'success'>('form');
     const [loading, setLoading] = useState(false);
+    const [guidelines, setGuidelines] = useState('');
     const [paymentInfo, setPaymentInfo] = useState<{ amount: string, bank: string, account: string, holder: string } | null>(null);
     const [requests, setRequests] = useState<MailDeliveryRequest[]>([]);
     const [recentAddresses, setRecentAddresses] = useState<MailDeliveryRequest[]>([]);
@@ -58,11 +59,15 @@ export const DeliveryModal = ({
             const guideStr = guide || '';
             try {
                 if (guideStr.startsWith('{')) {
-                    setPaymentInfo(JSON.parse(guideStr));
+                    const parsed = JSON.parse(guideStr);
+                    setPaymentInfo(parsed);
+                    setGuidelines(parsed.text || '우편물 전달 신청을 하시면 지정된 주소로 배송해 드립니다.');
                 } else {
+                    setGuidelines(guideStr || '우편물 전달 신청을 하시면 지정된 주소로 배송해 드립니다.');
                     setPaymentInfo(null);
                 }
             } catch (e) {
+                setGuidelines(guideStr || '우편물 전달 신청을 하시면 지정된 주소로 배송해 드립니다.');
                 setPaymentInfo(null);
             }
             setRequests(hist || []);
@@ -298,7 +303,7 @@ export const DeliveryModal = ({
                         <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
                             <View style={styles.guideBox}>
                                 <Ionicons name="information-circle" size={18} color="#4338CA" />
-                                <Text style={styles.guideText}>우편물 전달 신청을 하시면 지정된 주소로 배송해 드립니다.</Text>
+                                <Text style={styles.guideText}>{guidelines}</Text>
                             </View>
 
                             {errorText && (

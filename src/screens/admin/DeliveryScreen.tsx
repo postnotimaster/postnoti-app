@@ -14,6 +14,7 @@ export const DeliveryScreen = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [requests, setRequests] = useState<MailDeliveryRequest[]>([]);
+    const [guidelinesText, setGuidelinesText] = useState('');
     const [amount, setAmount] = useState('');
     const [bank, setBank] = useState('');
     const [account, setAccount] = useState('');
@@ -62,7 +63,7 @@ export const DeliveryScreen = () => {
         if (!officeInfo?.id) return;
         try {
             setSavingGuidelines(true);
-            const guideObj = JSON.stringify({ amount, bank, account, holder });
+            const guideObj = JSON.stringify({ text: guidelinesText, amount, bank, account, holder });
             await mailDeliveryService.updateDeliveryGuidelines(officeInfo.id, guideObj);
             Alert.alert('성공', '안내 가이드가 수정되었습니다.');
         } catch (e) {
@@ -143,7 +144,7 @@ export const DeliveryScreen = () => {
                 ListHeaderComponent={
                     <View style={styles.guidelineSection}>
                         <View style={styles.sectionTitleRow}>
-                            <Text style={styles.sectionTitle}>우편물 정산 계좌 설정</Text>
+                            <Text style={styles.sectionTitle}>안내 가이드 및 정산 계좌 설정</Text>
                             <Pressable
                                 style={[styles.saveButton, savingGuidelines && { opacity: 0.7 }]}
                                 onPress={handleUpdateGuidelines}
@@ -152,6 +153,17 @@ export const DeliveryScreen = () => {
                                 {savingGuidelines ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveButtonText}>저장</Text>}
                             </Pressable>
                         </View>
+
+                        <Text style={styles.inputLabel}>전달 안내 가이드 (입주사 노출)</Text>
+                        <TextInput
+                            style={[styles.guidelineInput, { marginBottom: 16 }]}
+                            multiline
+                            value={guidelinesText}
+                            onChangeText={setGuidelinesText}
+                            placeholder="입주사에게 보여줄 우편물 전달 안내 사항을 입력하세요."
+                            placeholderTextColor="#94A3B8"
+                        />
+
 
                         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
                             <View style={{ flex: 1 }}>
@@ -300,6 +312,7 @@ const styles = StyleSheet.create({
     saveButton: { backgroundColor: '#4F46E5', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 8 },
     saveButtonText: { color: '#fff', fontWeight: '700', fontSize: 13 },
     inputLabel: { fontSize: 13, fontWeight: '700', color: '#64748B', marginBottom: 4, paddingLeft: 4 },
+    guidelineInput: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, padding: 12, minHeight: 120, fontSize: 14, color: '#1E293B', textAlignVertical: 'top' },
     formInput: { backgroundColor: '#F8FAFC', borderRadius: 10, padding: 12, fontSize: 14, color: '#1E293B', borderWidth: 1, borderColor: '#E2E8F0' },
     divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 20 },
     requestCard: { backgroundColor: '#fff', padding: 16, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: '#F1F5F9', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 },
