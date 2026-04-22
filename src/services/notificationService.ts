@@ -47,7 +47,7 @@ export const notificationService = {
                 // Native Push
                 if (profile.push_token) {
                     try {
-                        const response = await fetch('https://exp.host/--/api/v2/push/send', {
+                        const response = await fetch('https://postnoti-app-two.vercel.app/api/send-expo', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -117,7 +117,7 @@ export const notificationService = {
         // 1. Native Push (Expo)
         if (profile?.push_token) {
             try {
-                const response = await fetch('https://exp.host/--/api/v2/push/send', {
+                const response = await fetch('https://postnoti-app-two.vercel.app/api/send-expo', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
