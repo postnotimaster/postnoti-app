@@ -42,11 +42,10 @@ export const mailDeliveryService = {
 
         // --- 관리자 알림 발송 ---
         try {
-            const targetCompanyId = data.company_id || request.company_id;
+            // [지점 개념 제거] 지점 구분 없이 모든 관리자에게 알림 발송
             const { data: admins } = await supabase
                 .from('profiles')
                 .select('id, push_token, web_push_token')
-                .eq('company_id', targetCompanyId)
                 .eq('role', 'admin');
 
             if (admins && admins.length > 0) {
@@ -59,7 +58,7 @@ export const mailDeliveryService = {
                         adminIdsWithTokens,
                         '새로운 우편물 전달 신청',
                         `${data.recipient_name}님의 우편물 전달 신청이 접수되었습니다.`,
-                        { type: 'mail_delivery', id: request.id }
+                        { type: 'mail_delivery', id: (request as any).id }
                     );
                 }
             }

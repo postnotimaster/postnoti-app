@@ -19,6 +19,7 @@
     },
     "android": {
       "package": "com.postnoti.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -34,7 +35,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "a78cf50e-37ca-4d89-86f5-87cf1fdff7f2"
+        "projectId": "b970de52-12b9-46d4-b6b6-563385365c00"
       }
     }
   }

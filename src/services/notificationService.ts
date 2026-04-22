@@ -24,16 +24,21 @@ export const notificationService = {
         if (!profileIds || profileIds.length === 0) return;
 
         try {
+            console.log('[NotificationService] Fetching profiles for IDs:', profileIds);
             const { data: profiles } = await supabase
                 .from('profiles')
                 .select('push_token, web_push_token')
                 .in('id', profileIds);
 
-            if (!profiles || profiles.length === 0) return;
+            if (!profiles || profiles.length === 0) {
+                console.log('[NotificationService] No profiles found for the given IDs');
+                return;
+            }
 
             for (const profile of profiles) {
                 // Native Push
                 if (profile.push_token) {
+                    console.log('[NotificationService] Attempting native push to token:', profile.push_token.substring(0, 15) + '...');
                     fetch('https://exp.host/--/api/v2/push/send', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -44,11 +49,19 @@ export const notificationService = {
                             body,
                             data: { ...data, url: `postnoti://view` }
                         })
-                    }).catch(e => console.warn('Push error (native)', e));
+                    })
+                        .then(res => res.json())
+                        .then(json => {
+                            console.log('[NotificationService] Expo response:', json);
+                        })
+                        .catch(e => {
+                            console.warn('[NotificationService] Expo fetch error:', e);
+                        });
                 }
 
                 // Web Push
                 if (profile.web_push_token) {
+                    console.log('[NotificationService] Attempting web push to token:', profile.web_push_token.substring(0, 15) + '...');
                     fetch('https://postnoti-app-two.vercel.app/api/send-push', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -58,11 +71,14 @@ export const notificationService = {
                             body,
                             data: { ...data, url: `https://postnoti-app-two.vercel.app/view` }
                         })
-                    }).catch(e => console.warn('Push error (web)', e));
+                    })
+                        .then(res => res.json())
+                        .then(json => console.log('[NotificationService] Web push response:', json))
+                        .catch(e => console.warn('[NotificationService] Web push error:', e));
                 }
             }
         } catch (err) {
-            console.error('sendPushNotification error:', err);
+            console.error('[NotificationService] sendPushNotification overall error:', err);
         }
     },
 
@@ -81,7 +97,6 @@ export const notificationService = {
         const body = customMessage || `${companyLabel}님, ${sender ? `${sender}에서 보낸 ` : ''}${type} 우편물이 도착했습니다.`;
         const shareLink = this.generateShareLink(tenant, company);
 
-        // 프로필 정보(푸시 토큰) 확인
         let profile: Profile | null = null;
         if (tenant.profile_id) {
             const { data } = await supabase.from('profiles').select('*').eq('id', tenant.profile_id).single();
@@ -102,9 +117,7 @@ export const notificationService = {
                         data: { url: `postnoti://view` }
                     })
                 });
-                if (response.ok) {
-                    return { success: true, method: 'native', shareLink };
-                }
+                if (response.ok) return { success: true, method: 'native', shareLink };
             } catch (e) {
                 console.warn('Expo push failed', e);
             }
@@ -120,26 +133,16 @@ export const notificationService = {
                         token: profile.web_push_token,
                         title,
                         body,
-                        data: {
-                            company_id: company.id,
-                            url: `https://postnoti-app-two.vercel.app/view`
-                        }
+                        data: { company_id: company.id, url: `https://postnoti-app-two.vercel.app/view` }
                     })
                 });
-                if (response.ok) {
-                    return { success: true, method: 'pwa', shareLink };
-                }
+                if (response.ok) return { success: true, method: 'pwa', shareLink };
             } catch (e) {
                 console.warn('Web push failed', e);
             }
         }
 
-        return {
-            success: false,
-            method: 'none',
-            targetPhone: tenant.phone,
-            shareLink
-        };
+        return { success: false, method: 'none', targetPhone: tenant.phone, shareLink };
     },
 
     /**

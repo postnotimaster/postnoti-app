@@ -203,6 +203,24 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 tenantsService.getTenantsByCompany(myOffice.id),
             ]);
             setProfiles(p);
+
+            // 로그인 성공 시 푸시 토큰 저장
+            if (expoPushToken) {
+                try {
+                    await profilesService.updateProfile(profile.id, { push_token: expoPushToken });
+                    console.log('[AppContext] Push token saved on login:', expoPushToken);
+                } catch (e) {
+                    console.error('[AppContext] Failed to save push token on login', e);
+                }
+            } else if (webPushToken) {
+                try {
+                    await profilesService.updateProfile(profile.id, { web_push_token: webPushToken });
+                    console.log('[AppContext] Web push token saved on login');
+                } catch (e) {
+                    console.error('[AppContext] Failed to save web push token on login', e);
+                }
+            }
+
             setMode('admin_dashboard');
         }
     };
@@ -239,6 +257,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const setupNotifications = async () => {
+        let tokenToSave = '';
+        let isWeb = false;
+
         if (Platform.OS === 'web') {
             if (messaging && typeof Notification !== 'undefined') {
                 try {
@@ -248,7 +269,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
                     if (permission === 'granted') {
                         const token = await getToken(messaging, { vapidKey: VAPID_KEY });
-                        if (token) setWebPushToken(token);
+                        if (token) {
+                            setWebPushToken(token);
+                            tokenToSave = token;
+                            isWeb = true;
+                        }
                     }
                 } catch (e) {
                     console.error("Web push registration failed", e);
@@ -256,7 +281,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             }
         } else {
             const token = await registerForPushNotificationsAsync();
-            if (token) setExpoPushToken(token);
+            if (token) {
+                setExpoPushToken(token);
+                tokenToSave = token;
+            }
+        }
+
+        // 세션이 있는 경우 즉시 토큰 저장 시도
+        if (tokenToSave) {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session?.user?.id) {
+                    const profile = await profilesService.updateProfile(session.user.id, {
+                        [isWeb ? 'web_push_token' : 'push_token']: tokenToSave
+                    });
+                    console.log(`[AppContext] ${isWeb ? 'Web ' : ''}Push token auto-saved`);
+                } else {
+                    // Alert.alert('알림 정보 획득', '로그인 후에 기기가 정식 등록됩니다.');
+                }
+            } catch (e) {
+                console.error('[AppContext] Push token auto-save failed', e);
+            }
+        } else {
+            console.warn('[AppContext] No push token generated');
+            // Alert.alert('알림 설정 실패', '기기에서 알림 토큰을 생성할 수 없습니다. 권한 설정을 확인해 주세요.');
         }
     };
 

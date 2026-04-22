@@ -12,6 +12,19 @@ import { StatusBar } from 'expo-status-bar';
 import { supabase } from './src/lib/supabase';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
+import * as Notifications from 'expo-notifications';
+
+// 알림이 포어그라운드(앱이 켜져 있을 때)에서도 상단에 뜨도록 설정
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
 // Screens
 import { LandingScreen } from './src/screens/LandingScreen';
 import { AdminDashboardScreen } from './src/screens/AdminDashboardScreen';
