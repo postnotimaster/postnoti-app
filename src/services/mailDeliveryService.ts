@@ -30,7 +30,14 @@ export const mailDeliveryService = {
             .insert([request])
             .select()
             .single();
-        if (error) throw error;
+
+        if (error) {
+            console.error('createRequest Error:', error);
+            if (error.code === '42P01') {
+                throw new Error('우편물 신청 테이블이 존재하지 않습니다. 관리자에게 문의하거나 SQL을 실행해주세요.');
+            }
+            throw error;
+        }
         return data as MailDeliveryRequest;
     },
 

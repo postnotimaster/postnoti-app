@@ -289,10 +289,9 @@ export const TenantDashboard = ({
 
                 <Pressable
                     onPress={() => refreshAnnouncements()}
-                    style={styles.refreshButton}
+                    style={styles.iconRefreshButton}
                 >
-                    <Ionicons name="refresh" size={16} color="#4F46E5" />
-                    <Text style={styles.refreshButtonText}>새로고침</Text>
+                    <Ionicons name="refresh" size={20} color="#4F46E5" />
                 </Pressable>
             </View>
 
@@ -481,11 +480,13 @@ const styles = StyleSheet.create({
     // 탭 바 컨테이너 통합
     tabBarContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
         paddingVertical: 12,
-        backgroundColor: '#F8FAFC',
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#F1F5F9',
+        gap: 12
     },
     tabButtons: {
         flexDirection: 'row',
@@ -497,5 +498,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 12,
         marginLeft: 4,
+    },
+    iconRefreshButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#EEF2FF',
+        justifyContent: 'center',
+        alignItems: 'center'
     },
 });

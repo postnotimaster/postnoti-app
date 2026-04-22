@@ -96,8 +96,9 @@ export const DeliveryModal = ({
             Alert.alert('신청 완료', '우편물 전달 신청이 정상적으로 접수되었습니다.', [
                 { text: '확인', onPress: onClose }
             ]);
-        } catch (e) {
-            Alert.alert('오류', '신청에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+        } catch (e: any) {
+            console.error('Mail delivery submission error:', e);
+            Alert.alert('오류', `신청에 실패했습니다. (${e.message || '잠시 후 다시 시도해 주세요.'})`);
         } finally {
             setLoading(false);
         }
@@ -160,13 +161,18 @@ export const DeliveryModal = ({
                             renderError={(errorName) => <View style={styles.centered}><Text>주소 검색 서비스를 불러올 수 없습니다. ({errorName})</Text></View>}
                         />
                     ) : (
-                        <View style={styles.centered}>
-                            <Text style={{ textAlign: 'center', padding: 20 }}>
-                                웹 환경에서는 주소 검색이 지원되지 않습니다.{"\n"}
+                        <View style={[styles.centered, { padding: 40 }]}>
+                            <Ionicons name="wifi-outline" size={48} color="#CBD5E1" style={{ marginBottom: 20 }} />
+                            <Text style={{ textAlign: 'center', fontSize: 16, color: '#475569', lineHeight: 24, marginBottom: 30 }}>
+                                웹 환경 또는 에뮬레이터에서는{"\n"}
+                                주소 검색이 지원되지 않습니다.{"\n"}
                                 직접 입력하시거나 모바일 앱을 이용해 주세요.
                             </Text>
-                            <Pressable onPress={() => setStep('form')} style={styles.cancelBtn}>
-                                <Text>돌아가기</Text>
+                            <Pressable
+                                onPress={() => setStep('form')}
+                                style={[styles.cancelBtn, { width: '80%', paddingVertical: 14 }]}
+                            >
+                                <Text style={styles.cancelBtnText}>돌아가기</Text>
                             </Pressable>
                         </View>
                     )}
