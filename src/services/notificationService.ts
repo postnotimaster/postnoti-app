@@ -24,63 +24,72 @@ export const notificationService = {
     ): Promise<void> {
         if (!profileIds || profileIds.length === 0) return;
 
+        const showAlert = (title: string, msg: string) => {
+            if (typeof window !== 'undefined' && window.alert) {
+                window.alert(`[${title}]\n${msg}`);
+            } else if (Alert && Alert.alert) {
+                Alert.alert(title, msg);
+            }
+        };
+
         try {
-            console.log('[NotificationService] Fetching profiles for IDs:', profileIds);
             const { data: profiles } = await supabase
                 .from('profiles')
                 .select('push_token, web_push_token')
                 .in('id', profileIds);
 
             if (!profiles || profiles.length === 0) {
-                console.log('[NotificationService] No profiles found for the given IDs');
+                showAlert('푸시 전송 결과', '해당 아이디의 프로필을 불러오지 못했습니다.');
                 return;
             }
 
             for (const profile of profiles) {
                 // Native Push
                 if (profile.push_token) {
-                    console.log('[NotificationService] Attempting native push to token:', profile.push_token.substring(0, 15) + '...');
-                    fetch('https://exp.host/--/api/v2/push/send', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            to: profile.push_token,
-                            sound: 'default',
-                            title,
-                            body,
-                            priority: 'high',
-                            data: { ...data, url: `postnoti://view` }
-                        })
-                    })
-                        .then(res => res.json())
-                        .then(json => {
-                            console.log('[NotificationService] Expo response:', json);
-                        })
-                        .catch(e => {
-                            console.warn('[NotificationService] Expo fetch error:', e);
+                    try {
+                        const response = await fetch('https://exp.host/--/api/v2/push/send', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                to: profile.push_token,
+                                sound: 'default',
+                                title,
+                                body,
+                                priority: 'high',
+                                data: { ...data, url: `postnoti://view` }
+                            })
                         });
+
+                        const json = await response.json();
+                        showAlert('엑스포 푸시 응답', `상태: ${response.status}\n데이터: ${JSON.stringify(json.data)}`);
+                    } catch (e: any) {
+                        showAlert('엑스포 푸시 에러', e.message);
+                    }
                 }
 
                 // Web Push
                 if (profile.web_push_token) {
-                    console.log('[NotificationService] Attempting web push to token:', profile.web_push_token.substring(0, 15) + '...');
-                    fetch('https://postnoti-app-two.vercel.app/api/send-push', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            token: profile.web_push_token,
-                            title,
-                            body,
-                            data: { ...data, url: `https://postnoti-app-two.vercel.app/view` }
-                        })
-                    })
-                        .then(res => res.json())
-                        .then(json => console.log('[NotificationService] Web push response:', json))
-                        .catch(e => console.warn('[NotificationService] Web push error:', e));
+                    try {
+                        const response = await fetch('https://postnoti-app-two.vercel.app/api/send-push', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                token: profile.web_push_token,
+                                title,
+                                body,
+                                data: { ...data, url: `https://postnoti-app-two.vercel.app/view` }
+                            })
+                        });
+                        if (!response.ok) {
+                            showAlert('웹 푸시 에러', `서버 응답: ${response.status}`);
+                        }
+                    } catch (e: any) {
+                        // ignore web push errors for now
+                    }
                 }
             }
-        } catch (err) {
-            console.error('[NotificationService] sendPushNotification overall error:', err);
+        } catch (err: any) {
+            showAlert('푸시 전체 발생 에러', err.message);
         }
     },
 
