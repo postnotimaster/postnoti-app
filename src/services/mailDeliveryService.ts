@@ -41,13 +41,29 @@ export const mailDeliveryService = {
             throw error;
         }
 
+        // 2. 알림 발송 전 상황 알림 (진단용)
+        const showAlert = (title: string, msg: string) => {
+            if (typeof window !== 'undefined' && window.alert) {
+                window.alert(`[${title}]\n${msg}`);
+            } else if (Alert && Alert.alert) {
+                Alert.alert(title, msg);
+            }
+        };
+
         // --- 관리자 알림 발송 ---
         try {
+            showAlert('진단 1단계', '관리자를 검색합니다.');
+
             // [지점 개념 제거] 지점 구분 없이 모든 관리자에게 알림 발송
-            const { data: admins } = await supabase
+            const { data: admins, error: adminError } = await supabase
                 .from('profiles')
                 .select('id, push_token, web_push_token')
                 .eq('role', 'admin');
+
+            if (adminError) {
+                console.error('[MailDeliveryService] Admin lookup error:', adminError);
+                showAlert('관리자 조회 오류', `RLS 문제일 수 있습니다: ${adminError.message}`);
+            }
 
             if (admins && admins.length > 0) {
                 const adminIdsWithTokens = admins
@@ -55,16 +71,22 @@ export const mailDeliveryService = {
                     .map(a => a.id);
 
                 if (adminIdsWithTokens.length > 0) {
+                    showAlert('진단 2단계', `알림 전송을 시작합니다. 대상: ${adminIdsWithTokens.length}명`);
                     await notificationService.sendPushNotification(
                         adminIdsWithTokens,
                         '새로운 우편물 전달 신청',
                         `${data.recipient_name}님의 우편물 전달 신청이 접수되었습니다.`,
                         { type: 'mail_delivery', id: (request as any).id }
                     );
+                } else {
+                    showAlert('진단 실패', '관리자는 찾았지만, 관리자에게 푸시 토큰이 없습니다.');
                 }
+            } else {
+                showAlert('진단 실패', '시스템에 등록된 관리자를 한 명도 찾지 못했습니다.');
             }
-        } catch (pushError) {
+        } catch (pushError: any) {
             console.warn('Failed to send push notification to admins:', pushError);
+            showAlert('알림 전송 물리 오류', pushError.message);
         }
 
         return request;
