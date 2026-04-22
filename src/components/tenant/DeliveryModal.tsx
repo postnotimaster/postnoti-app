@@ -32,7 +32,7 @@ export const DeliveryModal = ({
     const [activeTab, setActiveTab] = useState<'request' | 'list'>('request');
     const [step, setStep] = useState<'form' | 'postcode' | 'success'>('form');
     const [loading, setLoading] = useState(false);
-    const [guidelines, setGuidelines] = useState('');
+    const [paymentInfo, setPaymentInfo] = useState<{ amount: string, bank: string, account: string, holder: string } | null>(null);
     const [requests, setRequests] = useState<MailDeliveryRequest[]>([]);
     const [recentAddresses, setRecentAddresses] = useState<MailDeliveryRequest[]>([]);
     const [savedAddress, setSavedAddress] = useState<{ address: string, address_detail: string, postcode: string } | null>(null);
@@ -55,7 +55,16 @@ export const DeliveryModal = ({
                 profilesService.getProfileById(profileId).catch(() => null)
             ]);
 
-            setGuidelines(guide || '우편물 전달 신청을 하시면 지정된 주소로 배송해 드립니다.');
+            const guideStr = guide || '';
+            try {
+                if (guideStr.startsWith('{')) {
+                    setPaymentInfo(JSON.parse(guideStr));
+                } else {
+                    setPaymentInfo(null);
+                }
+            } catch (e) {
+                setPaymentInfo(null);
+            }
             setRequests(hist || []);
 
             if (profile?.address) {
@@ -369,7 +378,15 @@ export const DeliveryModal = ({
                                         <Text style={styles.cardAddress} numberOfLines={1}>{item.address} {item.address_detail}</Text>
                                         {item.status === 'received' && (
                                             <View style={styles.infoNote}>
-                                                <Text style={styles.infoNoteText}>관리자가 확인했습니다. 안내받으신 계좌로 입금해 주세요.</Text>
+                                                {paymentInfo ? (
+                                                    <View>
+                                                        <Text style={styles.infoNoteText}>금액: {paymentInfo.amount}</Text>
+                                                        <Text style={styles.infoNoteText}>입금계좌: {paymentInfo.bank} {paymentInfo.account}</Text>
+                                                        <Text style={styles.infoNoteText}>예금주: {paymentInfo.holder}</Text>
+                                                    </View>
+                                                ) : (
+                                                    <Text style={styles.infoNoteText}>결제 정보가 아직 설정되지 않았습니다.</Text>
+                                                )}
                                             </View>
                                         )}
                                     </View>
