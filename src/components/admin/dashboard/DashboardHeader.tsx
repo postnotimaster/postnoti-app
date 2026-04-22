@@ -3,6 +3,7 @@ import { View, Text, Pressable, Platform } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import { appStyles } from '../../../styles/appStyles';
+import { useAppContent } from '../../../contexts/AppContext';
 
 interface DashboardHeaderProps {
     officeInfo: any;
@@ -19,6 +20,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     setIsManualSearchVisible,
     onLayout
 }) => {
+    const { pendingDeliveryCount } = useAppContent() as any;
+
     return (
         <View
             onLayout={onLayout}
@@ -31,6 +34,34 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 </View>
 
                 <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
+                    {pendingDeliveryCount > 0 && (
+                        <Pressable
+                            style={{
+                                backgroundColor: '#FEF2F2',
+                                padding: 16,
+                                borderRadius: 12,
+                                marginBottom: 16,
+                                borderWidth: 1,
+                                borderColor: '#FCA5A5',
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'space-between'
+                            }}
+                            onPress={() => navigation.navigate('MailDelivery')}
+                        >
+                            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
+                                    <Ionicons name="mail-unread" size={20} color="#DC2626" />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 16, fontWeight: '800', color: '#991B1B', marginBottom: 2 }}>우편물 전달 신청 도착!</Text>
+                                    <Text style={{ fontSize: 13, color: '#B91C1C' }}>{pendingDeliveryCount}건의 처리 대기 중인 신청이 있습니다.</Text>
+                                </View>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color="#DC2626" />
+                        </Pressable>
+                    )}
+
                     <View style={[appStyles.premiumInfoCard, { padding: 20 }]}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                             <Text style={appStyles.premiumInfoLabel}>이번 달 알림 사용량</Text>

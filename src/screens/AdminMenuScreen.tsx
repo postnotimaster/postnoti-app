@@ -44,26 +44,6 @@ export const AdminMenuScreen = () => {
         Alert.alert('복사 완료', `입주자 전용 링크 주소가 복사되었습니다.\n${url}`);
     };
 
-    const handleTestPush = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) {
-            Alert.alert('오류', '세션 정보가 없습니다.');
-            return;
-        }
-
-        try {
-            await notificationService.sendPushNotification(
-                [session.user.id],
-                '테스트 알림 🔔',
-                '포스트노티 알림 서버가 정상적으로 연결되었습니다!',
-                { type: 'test' }
-            );
-            Alert.alert('전송 요청 완료', '알림 서버에 전송을 요청했습니다. 잠시 후 스마트폰으로 알림이 오는지 확인해 주세요.');
-        } catch (e) {
-            Alert.alert('전송 실패', '알림 전송 중 에러가 발생했습니다.');
-        }
-    };
-
     return (
         <SafeAreaView style={appStyles.safeArea} edges={['top', 'left', 'right']}>
             <AppHeader title="관리 메뉴" onBack={() => navigation.goBack()} />
@@ -118,18 +98,6 @@ export const AdminMenuScreen = () => {
                             <Text style={{ fontSize: 11, fontWeight: '700', color: '#64748B' }}>복사</Text>
                         </Pressable>
                     </View>
-
-                    <Pressable
-                        onPress={handleTestPush}
-                        style={[appStyles.premiumMenuBtn, { padding: 15, backgroundColor: '#ECFDF5', borderColor: '#10B981' }]}
-                    >
-                        <Ionicons name="notifications-outline" size={24} color="#059669" style={{ marginRight: 16 }} />
-                        <View style={appStyles.menuBtnTextGroup}>
-                            <Text style={[appStyles.menuBtnLabel, { color: '#059669' }]}>알림 테스트</Text>
-                            <Text style={appStyles.menuBtnDesc}>자신의 기기로 테스트 알림을 즉시 보냅니다</Text>
-                        </View>
-                        <Ionicons name="chevron-forward-outline" size={20} color="#059669" />
-                    </Pressable>
 
                     <View style={appStyles.menuSeparator} />
 

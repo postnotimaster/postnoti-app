@@ -24,14 +24,6 @@ export const notificationService = {
     ): Promise<void> {
         if (!profileIds || profileIds.length === 0) return;
 
-        const showAlert = (title: string, msg: string) => {
-            if (typeof window !== 'undefined' && window.alert) {
-                window.alert(`[${title}]\n${msg}`);
-            } else if (Alert && Alert.alert) {
-                Alert.alert(title, msg);
-            }
-        };
-
         try {
             const { data: profiles } = await supabase
                 .from('profiles')
@@ -39,7 +31,6 @@ export const notificationService = {
                 .in('id', profileIds);
 
             if (!profiles || profiles.length === 0) {
-                showAlert('푸시 전송 결과', '해당 아이디의 프로필을 불러오지 못했습니다.');
                 return;
             }
 
@@ -47,7 +38,7 @@ export const notificationService = {
                 // Native Push
                 if (profile.push_token) {
                     try {
-                        const response = await fetch('https://postnoti-app-two.vercel.app/api/send-expo', {
+                        await fetch('https://postnoti-app-two.vercel.app/api/send-expo', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -59,11 +50,8 @@ export const notificationService = {
                                 data: { ...data, url: `postnoti://view` }
                             })
                         });
-
-                        const json = await response.json();
-                        showAlert('엑스포 푸시 응답', `상태: ${response.status}\n데이터: ${JSON.stringify(json.data)}`);
                     } catch (e: any) {
-                        showAlert('엑스포 푸시 에러', e.message);
+                        console.warn('[NotificationService] Expo fetch error:', e);
                     }
                 }
 
@@ -81,7 +69,7 @@ export const notificationService = {
                             })
                         });
                         if (!response.ok) {
-                            showAlert('웹 푸시 에러', `서버 응답: ${response.status}`);
+                            console.warn('Web push error', response.status);
                         }
                     } catch (e: any) {
                         // ignore web push errors for now
@@ -89,7 +77,7 @@ export const notificationService = {
                 }
             }
         } catch (err: any) {
-            showAlert('푸시 전체 발생 에러', err.message);
+            console.error('sendPushNotification error:', err);
         }
     },
 
