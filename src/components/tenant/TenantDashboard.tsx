@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, SectionList, Image,
     ActivityIndicator, TextInput, Alert, Pressable, Modal,
-    BackHandler, Platform, Dimensions
+    BackHandler, Platform, Dimensions, ScrollView
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PrimaryButton } from '../common/PrimaryButton';
@@ -269,7 +269,11 @@ export const TenantDashboard = ({
 
             {/* 탭 필터 + 새로고침 버튼 통합 */}
             <View style={styles.tabBarContainer}>
-                <View style={[styles.tabButtons, { flex: 1 }]}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.tabButtons}
+                >
                     <Pressable style={[styles.tabButton, filter === 'all' && styles.activeTab]} onPress={() => setFilter('all')}>
                         <Text style={[styles.tabText, filter === 'all' && styles.activeTabText]}>전체</Text>
                     </Pressable>
@@ -277,21 +281,20 @@ export const TenantDashboard = ({
                         <Text style={[styles.tabText, filter === 'unread' && styles.activeTabText]}>안읽음</Text>
                     </Pressable>
 
-                    {/* [NEW] 우편물 전달 버튼 - 차별화된 디자인 */}
                     <Pressable
                         style={[styles.tabButton, styles.deliveryTabButton]}
                         onPress={() => setIsMailDeliveryVisible(true)}
                     >
                         <Ionicons name="paper-plane" size={14} color="#fff" />
-                        <Text style={[styles.tabText, { color: '#fff', marginLeft: 4 }]}>우편물 전달</Text>
+                        <Text style={[styles.tabText, { color: '#fff', marginLeft: 4 }]}>전달신청</Text>
                     </Pressable>
-                </View>
+                </ScrollView>
 
                 <Pressable
                     onPress={() => refreshAnnouncements()}
                     style={styles.iconRefreshButton}
                 >
-                    <Ionicons name="refresh" size={20} color="#4F46E5" />
+                    <Ionicons name="refresh" size={18} color="#4F46E5" />
                 </Pressable>
             </View>
 

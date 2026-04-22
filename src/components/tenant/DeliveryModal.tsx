@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View, Text, StyleSheet, Modal, Pressable, TextInput,
-    ScrollView, ActivityIndicator, Alert, Platform
+    ScrollView, ActivityIndicator, Alert, Platform, FlatList
 } from 'react-native';
-// import { WebView } from 'react-native-webview'; // 네이티브 빌전 전 크래시 방지를 위해 일시 주석 처리
+// import { WebView } from 'react-native-webview';
 const WebView = View as any;
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PrimaryButton } from '../common/PrimaryButton';
-import { mailDeliveryService, MailDeliveryRequest } from '../../services/mailDeliveryService';
+import { mailDeliveryService, MailDeliveryRequest, MailDeliveryStatus } from '../../services/mailDeliveryService';
+import { supabase } from '../../lib/supabase';
 
 type Props = {
     visible: boolean;
@@ -27,10 +28,12 @@ export const DeliveryModal = ({
     initialName,
     initialPhone
 }: Props) => {
+    const [activeTab, setActiveTab] = useState<'request' | 'list'>('request');
     const [step, setStep] = useState<'form' | 'postcode' | 'success'>('form');
     const [loading, setLoading] = useState(false);
     const [guidelines, setGuidelines] = useState('');
-    const [history, setHistory] = useState<MailDeliveryRequest[]>([]);
+    const [requests, setRequests] = useState<MailDeliveryRequest[]>([]);
+    const [recentAddresses, setRecentAddresses] = useState<MailDeliveryRequest[]>([]);
 
     // Form States
     const [name, setName] = useState(initialName || '');
@@ -40,35 +43,60 @@ export const DeliveryModal = ({
     const [addressDetail, setAddressDetail] = useState('');
     const [errorText, setErrorText] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (visible) {
-            loadGuidelinesAndHistory();
-            setName(initialName || '');
-            setPhone(initialPhone || '');
-            setErrorText(null);
-            setStep('form');
-        }
-    }, [visible, initialName, initialPhone]);
-
-    const loadGuidelinesAndHistory = async () => {
+    const loadData = useCallback(async () => {
         try {
             const [guide, hist] = await Promise.all([
                 mailDeliveryService.getDeliveryGuidelines(companyId),
                 mailDeliveryService.getMyRequests(profileId)
             ]);
             setGuidelines(guide || '우편물 전달 신청을 하시면 지정된 주소로 배송해 드립니다.');
+            setRequests(hist || []);
 
-            const uniqueHistory = (hist || []).reduce((acc: MailDeliveryRequest[], current) => {
-                const x = acc.find(item => item.address === current.address && item.address_detail === current.address_detail);
-                if (!x) return acc.concat([current]);
-                else return acc;
+            // 최근 주소 (중복 제거)
+            const unique = (hist || []).reduce((acc: MailDeliveryRequest[], cur) => {
+                const exists = acc.find(a => a.address === cur.address);
+                if (!exists) acc.push(cur);
+                return acc;
             }, []).slice(0, 3);
-
-            setHistory(uniqueHistory);
-        } catch (e: any) {
-            console.error('loadGuidelinesAndHistory error:', e);
+            setRecentAddresses(unique);
+        } catch (e) {
+            console.error('loadData error:', e);
         }
-    };
+    }, [companyId, profileId]);
+
+    useEffect(() => {
+        if (visible) {
+            loadData();
+            setActiveTab('request');
+            setStep('form');
+            setErrorText(null);
+        }
+    }, [visible, loadData]);
+
+    // 실시간 구독
+    useEffect(() => {
+        if (!visible || !profileId) return;
+
+        const channel = supabase
+            .channel(`mail_delivery_${profileId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'mail_delivery_requests',
+                    filter: `profile_id=eq.${profileId}`
+                },
+                (payload) => {
+                    setRequests(prev => prev.map(r => r.id === payload.new.id ? { ...r, ...payload.new } : r));
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [visible, profileId]);
 
     const handleSelectHistory = (item: MailDeliveryRequest) => {
         setPostcode(item.postcode);
@@ -101,43 +129,36 @@ export const DeliveryModal = ({
         try {
             setLoading(true);
             setErrorText(null);
-            console.log('Submitting delivery request:', requestData);
-
             await mailDeliveryService.createRequest(requestData);
             setStep('success');
-
-            if (Platform.OS !== 'web') {
-                Alert.alert('신청 완료', '우편물 전달 신청이 정상적으로 접수되었습니다.');
-            }
+            loadData(); // 내역 갱신
         } catch (e: any) {
-            console.error('Mail delivery submission error:', e);
-
-            // 외래키 제약 조건 위반 (무효한 profile_id)인 경우, profile_id 없이 재시도
+            console.error('Submit error:', e);
+            // 비인증 사용자 대응
             if (e.code === '23503' && e.message?.includes('profile_id')) {
                 try {
-                    console.log('Retrying without profile_id due to FK violation');
-                    const fallbackData = { ...requestData, profile_id: null };
-                    await mailDeliveryService.createRequest(fallbackData as any);
+                    await mailDeliveryService.createRequest({ ...requestData, profile_id: null as any });
                     setStep('success');
-                    if (Platform.OS !== 'web') Alert.alert('신청 완료', '우편물 전달 신청이 정상적으로 접수되었습니다.');
                     return;
-                } catch (retryError) {
-                    console.error('Retry failed:', retryError);
-                }
+                } catch (retryError) { }
             }
-
-            setErrorText(e.message || '신청 중 오류가 발생했습니다.');
-            if (Platform.OS === 'web') {
-                window.alert(`오류: ${e.message || '신청에 실패했습니다.'}`);
-            } else {
-                Alert.alert('오류', `신청에 실패했습니다. (${e.message || '잠시 후 다시 시도해 주세요.'})`);
-            }
+            setErrorText(e.message || '신청에 실패했습니다.');
         } finally {
             setLoading(false);
         }
     };
 
-    // --- Steps Rendering ---
+    const getStatusInfo = (status: MailDeliveryStatus) => {
+        switch (status) {
+            case 'pending': return { label: '접수대기', color: '#D97706', bg: '#FEF3C7', icon: 'time-outline' };
+            case 'received': return { label: '입금대기', color: '#2563EB', bg: '#DBEAFE', icon: 'wallet-outline' };
+            case 'paid': return { label: '발송준비', color: '#4338CA', bg: '#E0E7FF', icon: 'cube-outline' };
+            case 'shipped': return { label: '발송완료', color: '#059669', bg: '#D1FAE5', icon: 'checkmark-circle-outline' };
+            default: return { label: status, color: '#64748B', bg: '#F1F5F9', icon: 'help-circle-outline' };
+        }
+    };
+
+    // --- Steps ---
 
     if (step === 'postcode') {
         return (
@@ -145,49 +166,22 @@ export const DeliveryModal = ({
                 <SafeAreaView style={styles.postcodeSafe}>
                     <View style={styles.postcodeHeader}>
                         <Pressable onPress={() => setStep('form')} style={styles.backButton}>
-                            <Ionicons name="arrow-back" size={24} color="#1E293B" />
+                            <Ionicons name="chevron-back" size={28} color="#1E293B" />
                         </Pressable>
                         <Text style={styles.postcodeTitle}>주소 검색</Text>
                     </View>
-                    {Platform.OS !== 'web' ? (
+                    <View style={{ flex: 1 }}>
                         <WebView
                             source={{ uri: 'https://postnoti-app-two.vercel.app/postcode.html' }}
                             onMessage={(event: any) => {
                                 try {
                                     const data = JSON.parse(event.nativeEvent.data);
                                     handlePostcodeSelected(data);
-                                } catch (e) {
-                                    console.error('Postcode message error:', e);
-                                }
+                                } catch (e) { }
                             }}
                             style={{ flex: 1 }}
-                            originWhitelist={['*']}
-                            javaScriptEnabled={true}
-                            domStorageEnabled={true}
-                            startInLoadingState={true}
-                            renderLoading={() => <View style={styles.centered}><ActivityIndicator size="large" color="#4F46E5" /></View>}
-                            onHttpError={(syntheticEvent: any) => {
-                                const { nativeEvent } = syntheticEvent;
-                                console.warn('WebView HTTP error: ', nativeEvent);
-                            }}
-                            renderError={(errorName: string) => <View style={styles.centered}><Text>주소 검색 서비스를 불러올 수 없습니다. ({errorName})</Text></View>}
                         />
-                    ) : (
-                        <View style={[styles.centered, { padding: 40 }]}>
-                            <Ionicons name="wifi-outline" size={48} color="#CBD5E1" style={{ marginBottom: 20 }} />
-                            <Text style={{ textAlign: 'center', fontSize: 16, color: '#475569', lineHeight: 24, marginBottom: 30 }}>
-                                웹 환경 또는 에뮬레이터에서는{"\n"}
-                                주소 검색이 지원되지 않습니다.{"\n"}
-                                직접 입력하시거나 모바일 앱을 이용해 주세요.
-                            </Text>
-                            <Pressable
-                                onPress={() => setStep('form')}
-                                style={[styles.cancelBtn, { width: '80%', paddingVertical: 14 }]}
-                            >
-                                <Text style={styles.cancelBtnText}>돌아가기</Text>
-                            </Pressable>
-                        </View>
-                    )}
+                    </View>
                 </SafeAreaView>
             </Modal>
         );
@@ -203,12 +197,14 @@ export const DeliveryModal = ({
                         </View>
                         <Text style={[styles.title, { marginTop: 20, marginBottom: 10 }]}>신청 완료!</Text>
                         <Text style={{ textAlign: 'center', color: '#64748B', lineHeight: 22, marginBottom: 30 }}>
-                            우편물 전달 신청이{"\n"}
-                            정상적으로 접수되었습니다.
+                            우편물 전달 신청이{"\n"}정상적으로 접수되었습니다.
                         </Text>
                         <PrimaryButton
-                            label="확인"
-                            onPress={onClose}
+                            label="내역 확인하기"
+                            onPress={() => {
+                                setStep('form');
+                                setActiveTab('list');
+                            }}
                             style={{ width: '100%', borderRadius: 12 }}
                         />
                     </View>
@@ -222,95 +218,96 @@ export const DeliveryModal = ({
             <View style={styles.overlay}>
                 <View style={styles.content}>
                     <View style={styles.header}>
-                        <Text style={styles.title}>우편물 전달 신청</Text>
-                        <Pressable onPress={onClose}>
+                        <View style={styles.tabs}>
+                            <Pressable onPress={() => setActiveTab('request')} style={[styles.tab, activeTab === 'request' && styles.activeTab]}>
+                                <Text style={[styles.tabText, activeTab === 'request' && styles.activeTabText]}>신청하기</Text>
+                            </Pressable>
+                            <Pressable onPress={() => setActiveTab('list')} style={[styles.tab, activeTab === 'list' && styles.activeTab]}>
+                                <Text style={[styles.tabText, activeTab === 'list' && styles.activeTabText]}>신청현황</Text>
+                            </Pressable>
+                        </View>
+                        <Pressable onPress={onClose} style={styles.closeBtn}>
                             <Ionicons name="close" size={24} color="#64748B" />
                         </Pressable>
                     </View>
 
-                    <ScrollView style={styles.body} 维护 showsVerticalScrollIndicator={false}>
-                        <View style={styles.guideBox}>
-                            <Text style={styles.guideText}>{guidelines}</Text>
-                        </View>
-
-                        {errorText && (
-                            <View style={styles.errorBox}>
-                                <Ionicons name="alert-circle" size={16} color="#EF4444" />
-                                <Text style={styles.errorTextItem}>{errorText}</Text>
-                            </View>
-                        )}
-
-                        <View style={styles.form}>
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.label}>수령인 이름</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    value={name}
-                                    onChangeText={setName}
-                                    placeholder="받으실 분의 성함을 입력하세요"
-                                />
+                    {activeTab === 'request' ? (
+                        <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
+                            <View style={styles.guideBox}>
+                                <Ionicons name="information-circle" size={18} color="#4338CA" />
+                                <Text style={styles.guideText}>{guidelines}</Text>
                             </View>
 
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.label}>수령인 연락처</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    value={phone}
-                                    onChangeText={setPhone}
-                                    placeholder="010-0000-0000"
-                                    keyboardType="phone-pad"
-                                />
-                            </View>
-
-                            <View style={styles.inputGroup}>
-                                <View style={styles.labelRow}>
-                                    <Text style={styles.label}>배송 주소</Text>
-                                    <Pressable onPress={() => setStep('postcode')} style={styles.searchBtn}>
-                                        <Text style={styles.searchBtnText}>주소 찾기</Text>
-                                    </Pressable>
+                            <View style={styles.form}>
+                                <View style={styles.inputGroup}>
+                                    <Text style={styles.label}>수령인 정보</Text>
+                                    <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="성함" />
+                                    <TextInput style={[styles.input, { marginTop: 8 }]} value={phone} onChangeText={setPhone} placeholder="연락처" keyboardType="phone-pad" />
                                 </View>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: '#F8FAFC' }]}
-                                    value={address}
-                                    onChangeText={setAddress}
-                                    placeholder="주소를 입력하세요 (검색은 빌드 후 가능)"
-                                />
-                                <TextInput
-                                    style={[styles.input, { marginTop: 8 }]}
-                                    value={addressDetail}
-                                    onChangeText={setAddressDetail}
-                                    placeholder="상세 주소를 입력하세요"
-                                />
-                            </View>
 
-                            {history.length > 0 && (
-                                <View style={styles.historySection}>
-                                    <Text style={styles.historyTitle}>최근 배송지</Text>
-                                    {history.map((item, idx) => (
-                                        <Pressable key={idx} style={styles.historyItem} onPress={() => handleSelectHistory(item)}>
-                                            <Ionicons name="time-outline" size={16} color="#94A3B8" />
-                                            <Text style={styles.historyText} numberOfLines={1}>
-                                                {item.address} {item.address_detail}
-                                            </Text>
+                                <View style={styles.inputGroup}>
+                                    <View style={styles.labelRow}>
+                                        <Text style={styles.label}>배송 주소</Text>
+                                        <Pressable onPress={() => setStep('postcode')} style={styles.searchBtn}>
+                                            <Text style={styles.searchBtnText}>주소 찾기</Text>
                                         </Pressable>
-                                    ))}
+                                    </View>
+                                    <TextInput style={[styles.input, { backgroundColor: '#F8FAFC' }]} value={address} onChangeText={setAddress} placeholder="주소" editable={false} />
+                                    <TextInput style={[styles.input, { marginTop: 8 }]} value={addressDetail} onChangeText={setAddressDetail} placeholder="상세 주소" />
                                 </View>
-                            )}
-                        </View>
-                    </ScrollView>
 
-                    <View style={styles.footer}>
-                        <Pressable style={styles.cancelBtn} onPress={onClose}>
-                            <Text style={styles.cancelBtnText}>취소</Text>
-                        </Pressable>
-                        <Pressable
-                            style={[styles.submitBtn, loading && { opacity: 0.7 }]}
-                            onPress={handleSubmit}
-                            disabled={loading}
-                        >
-                            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>신청하기</Text>}
-                        </Pressable>
-                    </View>
+                                {recentAddresses.length > 0 && (
+                                    <View style={styles.historySection}>
+                                        <Text style={styles.historyTitle}>최근 배송지</Text>
+                                        <View style={styles.historyRow}>
+                                            {recentAddresses.map((item, idx) => (
+                                                <Pressable key={idx} style={styles.historyChip} onPress={() => handleSelectHistory(item)}>
+                                                    <Text style={styles.historyChipText} numberOfLines={1}>{item.address.split(' ').slice(0, 2).join(' ')}...</Text>
+                                                </Pressable>
+                                            ))}
+                                        </View>
+                                    </View>
+                                )}
+                            </View>
+                            <View style={{ height: 40 }} />
+                            <PrimaryButton label="전달 신청하기" onPress={handleSubmit} loading={loading} disabled={loading} />
+                            <View style={{ height: 20 }} />
+                        </ScrollView>
+                    ) : (
+                        <FlatList
+                            data={requests}
+                            keyExtractor={item => item.id}
+                            style={styles.body}
+                            contentContainerStyle={{ paddingBottom: 20 }}
+                            renderItem={({ item }) => {
+                                const status = getStatusInfo(item.status);
+                                return (
+                                    <View style={styles.requestCard}>
+                                        <View style={styles.cardHeader}>
+                                            <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
+                                                <Ionicons name={status.icon as any} size={14} color={status.color} />
+                                                <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+                                            </View>
+                                            <Text style={styles.cardDate}>{new Date(item.created_at).toLocaleDateString()}</Text>
+                                        </View>
+                                        <Text style={styles.cardRecipient}>{item.recipient_name} <Text style={{ fontWeight: '400', color: '#94A3B8' }}>({item.recipient_phone})</Text></Text>
+                                        <Text style={styles.cardAddress} numberOfLines={1}>{item.address} {item.address_detail}</Text>
+                                        {item.status === 'received' && (
+                                            <View style={styles.infoNote}>
+                                                <Text style={styles.infoNoteText}>관리자가 확인했습니다. 안내받으신 계좌로 입금해 주세요.</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                );
+                            }}
+                            ListEmptyComponent={
+                                <View style={styles.emptyBox}>
+                                    <Ionicons name="document-text-outline" size={48} color="#CBD5E1" />
+                                    <Text style={styles.emptyText}>신청 내역이 없습니다.</Text>
+                                </View>
+                            }
+                        />
+                    )}
                 </View>
             </View>
         </Modal>
@@ -318,58 +315,45 @@ export const DeliveryModal = ({
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F8FAFC' },
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-    content: { backgroundColor: '#fff', borderRadius: 24, maxHeight: '90%', padding: 24 },
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 16 },
+    content: { backgroundColor: '#fff', borderRadius: 28, maxHeight: '85%', padding: 20 },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-    title: { fontSize: 20, fontWeight: '800', color: '#1E293B' },
-    body: { marginBottom: 20 },
-    guideBox: { backgroundColor: '#EEF2FF', padding: 16, borderRadius: 12, marginBottom: 24 },
-    guideText: { fontSize: 13, color: '#4338CA', lineHeight: 20, fontWeight: '500' },
-    form: { gap: 20 },
-    inputGroup: { gap: 8 },
+    tabs: { flexDirection: 'row', backgroundColor: '#F1F5F9', borderRadius: 12, padding: 4, flex: 1, marginRight: 12 },
+    tab: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
+    activeTab: { backgroundColor: '#fff', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+    tabText: { fontSize: 13, fontWeight: '600', color: '#94A3B8' },
+    activeTabText: { color: '#1E293B' },
+    closeBtn: { padding: 4 },
+    body: { flexGrow: 0 },
+    guideBox: { backgroundColor: '#EEF2FF', padding: 14, borderRadius: 14, marginBottom: 20, flexDirection: 'row', gap: 10, alignItems: 'center' },
+    guideText: { fontSize: 13, color: '#4338CA', lineHeight: 18, flex: 1 },
+    form: { gap: 16 },
+    inputGroup: { gap: 6 },
     labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     label: { fontSize: 13, fontWeight: '700', color: '#475569', marginLeft: 4 },
     input: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, padding: 14, fontSize: 15, color: '#1E293B' },
     searchBtn: { backgroundColor: '#4F46E5', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
     searchBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-    historySection: { marginTop: 10, gap: 8 },
-    historyTitle: { fontSize: 12, color: '#94A3B8', fontWeight: '700', marginBottom: 4 },
-    historyItem: { flexDirection: 'row', alignItems: 'center', padding: 12, backgroundColor: '#F8FAFC', borderRadius: 10, gap: 8 },
-    historyText: { flex: 1, fontSize: 13, color: '#64748B' },
-    footer: { flexDirection: 'row', gap: 12 },
-    cancelBtn: { flex: 1, paddingVertical: 16, borderRadius: 12, backgroundColor: '#F1F5F9', alignItems: 'center' },
-    cancelBtnText: { color: '#64748B', fontSize: 16, fontWeight: '700' },
-    submitBtn: { flex: 2, paddingVertical: 16, borderRadius: 12, backgroundColor: '#4F46E5', alignItems: 'center' },
-    submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+    historySection: { marginTop: 4 },
+    historyTitle: { fontSize: 11, color: '#94A3B8', fontWeight: '700', marginBottom: 8, marginLeft: 4 },
+    historyRow: { flexDirection: 'row', gap: 8 },
+    historyChip: { backgroundColor: '#F1F5F9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, maxWidth: 100 },
+    historyChipText: { fontSize: 11, color: '#64748B' },
+    requestCard: { padding: 16, borderRadius: 18, backgroundColor: '#fff', borderWidth: 1, borderColor: '#F1F5F9', marginBottom: 12, elevation: 1 },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+    statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, gap: 4 },
+    statusText: { fontSize: 11, fontWeight: '800' },
+    cardDate: { fontSize: 11, color: '#94A3B8' },
+    cardRecipient: { fontSize: 15, fontWeight: '700', color: '#1E293B', marginBottom: 4 },
+    cardAddress: { fontSize: 13, color: '#64748B' },
+    infoNote: { marginTop: 10, padding: 10, backgroundColor: '#F0F9FF', borderRadius: 8 },
+    infoNoteText: { fontSize: 11, color: '#0369A1', lineHeight: 15 },
+    emptyBox: { alignItems: 'center', paddingVertical: 60, gap: 12 },
+    emptyText: { color: '#94A3B8', fontSize: 14 },
     postcodeSafe: { flex: 1, backgroundColor: '#fff' },
     postcodeHeader: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-    backButton: { marginRight: 16 },
-    postcodeTitle: { fontSize: 18, fontWeight: '700', color: '#1E293B' },
-    successIconCircle: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: '#10B981',
-        justifyContent: 'center',
-        alignItems: 'center'
-    },
-    errorBox: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FEF2F2',
-        padding: 12,
-        borderRadius: 10,
-        marginBottom: 20,
-        gap: 8,
-        borderWidth: 1,
-        borderColor: '#FEE2E2',
-    },
-    errorTextItem: {
-        flex: 1,
-        fontSize: 13,
-        color: '#EF4444',
-        fontWeight: '600'
-    }
+    backButton: { marginRight: 12 },
+    postcodeTitle: { fontSize: 18, fontWeight: '800', color: '#1E293B' },
+    successIconCircle: { width: 70, height: 70, borderRadius: 35, backgroundColor: '#10B981', justifyContent: 'center', alignItems: 'center' },
+    title: { fontSize: 22, fontWeight: '900', color: '#1E293B' }
 });

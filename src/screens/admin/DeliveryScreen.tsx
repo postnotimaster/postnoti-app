@@ -59,22 +59,19 @@ export const DeliveryScreen = () => {
         }
     };
 
-    const handleUpdateStatus = async (request: MailDeliveryRequest, newStatus: 'received' | 'shipped') => {
+    const handleUpdateStatus = async (request: MailDeliveryRequest, newStatus: any) => {
         try {
             const updated = await mailDeliveryService.updateRequestStatus(request.id, newStatus);
             setRequests(prev => prev.map(r => r.id === request.id ? updated : r));
             setSelectedRequest(null);
 
-            if (officeInfo?.name) {
-                await notificationService.sendDeliveryStatusPush(
-                    request.profile_id,
-                    officeInfo.name,
-                    newStatus
-                );
-            }
+            const statusLabels: Record<string, string> = {
+                'received': '입금대기',
+                'paid': '발송준비',
+                'shipped': '발송완료'
+            };
 
-            const statusText = newStatus === 'received' ? '접수완료' : '발송완료';
-            Alert.alert('성공', `요청이 ${statusText} 상태로 변경되었습니다.`);
+            Alert.alert('성공', `요청이 ${statusLabels[newStatus] || newStatus} 상태로 변경되었습니다.`);
         } catch (e) {
             Alert.alert('오류', '상태 변경에 실패했습니다.');
         }
@@ -83,8 +80,9 @@ export const DeliveryScreen = () => {
     const renderRequestItem = ({ item }: { item: MailDeliveryRequest }) => {
         const getStatusStyles = (status: string) => {
             switch (status) {
-                case 'pending': return { bg: '#FEF3C7', text: '#D97706', label: '신청됨' };
-                case 'received': return { bg: '#DBEAFE', text: '#2563EB', label: '접수완료' };
+                case 'pending': return { bg: '#FEF3C7', text: '#D97706', label: '접수대기' };
+                case 'received': return { bg: '#DBEAFE', text: '#2563EB', label: '입금대기' };
+                case 'paid': return { bg: '#E0E7FF', text: '#4338CA', label: '발송준비' };
                 case 'shipped': return { bg: '#D1FAE5', text: '#059669', label: '발송완료' };
                 default: return { bg: '#F1F5F9', text: '#64748B', label: status };
             }
@@ -204,10 +202,18 @@ export const DeliveryScreen = () => {
                                             style={[styles.actionButton, { backgroundColor: '#4F46E5' }]}
                                             onPress={() => handleUpdateStatus(selectedRequest, 'received')}
                                         >
-                                            <Text style={styles.actionButtonText}>접수 완료 처리</Text>
+                                            <Text style={styles.actionButtonText}>접수 완료 처리 (입금대기)</Text>
                                         </Pressable>
                                     )}
                                     {selectedRequest.status === 'received' && (
+                                        <Pressable
+                                            style={[styles.actionButton, { backgroundColor: '#4338CA' }]}
+                                            onPress={() => handleUpdateStatus(selectedRequest, 'paid')}
+                                        >
+                                            <Text style={styles.actionButtonText}>입금 확인 처리 (발송준비중)</Text>
+                                        </Pressable>
+                                    )}
+                                    {selectedRequest.status === 'paid' && (
                                         <Pressable
                                             style={[styles.actionButton, { backgroundColor: '#059669' }]}
                                             onPress={() => handleUpdateStatus(selectedRequest, 'shipped')}
