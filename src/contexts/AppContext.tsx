@@ -96,6 +96,8 @@ interface AppContextType {
     optimizeImage: (uri: string) => Promise<string>;
     handleLoginSuccess: (profile: any) => Promise<void>;
     resetOCR: () => void;
+    pendingDeliveryCount: number;
+    loadPendingDeliveryCount: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -138,6 +140,50 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         runOCR,
         resetOCR
     } = useOCR(profiles, masterSenders);
+
+    const [pendingDeliveryCount, setPendingDeliveryCount] = useState(0);
+
+    // 우편물 전달 요청 카운트 로드
+    const loadPendingDeliveryCount = async () => {
+        if (!officeInfo?.id) return;
+        try {
+            const { count, error } = await supabase
+                .from('mail_delivery_requests')
+                .select('*', { count: 'exact', head: true })
+                .eq('company_id', officeInfo.id)
+                .eq('status', 'pending');
+            if (!error) setPendingDeliveryCount(count || 0);
+        } catch (e) {
+            console.error('Failed to load pending delivery count:', e);
+        }
+    };
+
+    // 실시간 신청 감지용 구독
+    useEffect(() => {
+        if (!officeInfo?.id) return;
+
+        const subscription = supabase
+            .channel('delivery_requests_changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'mail_delivery_requests',
+                    filter: `company_id=eq.${officeInfo.id}`
+                },
+                () => {
+                    loadPendingDeliveryCount();
+                }
+            )
+            .subscribe();
+
+        loadPendingDeliveryCount();
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [officeInfo?.id]);
 
     const { handleRegisterMail: registerMailLogic } = useMailRegistration(
         officeInfo,
@@ -447,7 +493,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 },
                 handleLoginSuccess,
                 resetOCR,
-                magicIdResolved
+                magicIdResolved,
+                pendingDeliveryCount,
+                loadPendingDeliveryCount
             }}
         >
             {children}

@@ -165,6 +165,55 @@ export const notificationService = {
     },
 
     /**
+     * Sends a push notification when delivery status changes.
+     */
+    async sendDeliveryStatusPush(
+        profileId: string,
+        companyName: string,
+        newStatus: 'received' | 'shipped'
+    ): Promise<void> {
+        const title = `[${companyName}] 우편물 전달 소식 🚚`;
+        const statusText = newStatus === 'received' ? '접수되어 처리가 시작되었습니다.' : '발송이 완료되었습니다.';
+        const body = `신청하신 우편물 전달 요청이 ${statusText}`;
+
+        try {
+            const { data: profile } = await supabase.from('profiles').select('push_token, web_push_token').eq('id', profileId).single();
+            if (!profile) return;
+
+            // Native Push
+            if (profile.push_token) {
+                fetch('https://exp.host/--/api/v2/push/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        to: profile.push_token,
+                        sound: 'default',
+                        title,
+                        body,
+                        data: { url: `postnoti://view` }
+                    })
+                }).catch(e => console.warn('Delivery push error (native)', e));
+            }
+
+            // Web Push
+            if (profile.web_push_token) {
+                fetch('https://postnoti-app-two.vercel.app/api/send-push', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: profile.web_push_token,
+                        title,
+                        body,
+                        data: { url: `https://postnoti-app-two.vercel.app/view` }
+                    })
+                }).catch(e => console.warn('Delivery push error (web)', e));
+            }
+        } catch (err) {
+            console.error('sendDeliveryStatusPush error:', err);
+        }
+    },
+
+    /**
      * Generates a link for a tenant to view their mailbox.
      */
     generateShareLink(tenant: Tenant, company: Company): string {

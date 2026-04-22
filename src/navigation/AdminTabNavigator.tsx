@@ -6,11 +6,14 @@ import { AdminDashboardScreen } from '../screens/AdminDashboardScreen';
 import { AdminTenantsScreen } from '../screens/AdminTenantsScreen';
 import { AdminMenuScreen } from '../screens/AdminMenuScreen';
 import { AdminNoticeScreen } from '../screens/admin/AdminNoticeScreen';
+import { AdminMailDeliveryScreen } from '../screens/admin/AdminMailDeliveryScreen';
+import { useAppContent } from '../contexts/AppContext';
 
 const Tab = createBottomTabNavigator();
 
 export const AdminTabNavigator = () => {
     const insets = useSafeAreaInsets();
+    const { pendingDeliveryCount } = useAppContent();
 
     return (
         <Tab.Navigator
@@ -22,6 +25,8 @@ export const AdminTabNavigator = () => {
                         iconName = focused ? 'mail-open' : 'mail-outline';
                     } else if (route.name === 'Tenants') {
                         iconName = focused ? 'business' : 'business-outline';
+                    } else if (route.name === 'MailDelivery') {
+                        iconName = focused ? 'paper-plane' : 'paper-plane-outline';
                     } else if (route.name === 'Announcements') {
                         iconName = focused ? 'megaphone' : 'megaphone-outline';
                     } else if (route.name === 'Settings') {
@@ -62,6 +67,14 @@ export const AdminTabNavigator = () => {
                 name="Tenants"
                 component={AdminTenantsScreen}
                 options={{ tabBarLabel: '입주사' }}
+            />
+            <Tab.Screen
+                name="MailDelivery"
+                component={AdminMailDeliveryScreen}
+                options={{
+                    tabBarLabel: '우편전달',
+                    tabBarBadge: pendingDeliveryCount > 0 ? pendingDeliveryCount : undefined
+                }}
             />
             <Tab.Screen
                 name="Announcements"

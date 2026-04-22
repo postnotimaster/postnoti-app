@@ -12,6 +12,7 @@ import { MailItem, MailLog } from './MailItem';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnnouncementModal } from './AnnouncementModal';
+import { MailDeliveryRequestModal } from './MailDeliveryRequestModal';
 
 // Custom Hooks
 import { useTenantAuth } from '../../hooks/tenant/useTenantAuth';
@@ -45,6 +46,7 @@ export const TenantDashboard = ({
     const [selectedMailImage, setSelectedMailImage] = useState<string | null>(null);
     const [isSettingsVisible, setIsSettingsVisible] = useState(false);
     const [isNoticeVisible, setIsNoticeVisible] = useState(false);
+    const [isMailDeliveryVisible, setIsMailDeliveryVisible] = useState(false);
     const [soundEnabled, setSoundEnabled] = useState(true);
 
     // 1. 인증 및 세션 관리
@@ -267,12 +269,21 @@ export const TenantDashboard = ({
 
             {/* 탭 필터 + 새로고침 버튼 통합 */}
             <View style={styles.tabBarContainer}>
-                <View style={styles.tabButtons}>
+                <View style={[styles.tabButtons, { flex: 1 }]}>
                     <Pressable style={[styles.tabButton, filter === 'all' && styles.activeTab]} onPress={() => setFilter('all')}>
-                        <Text style={[styles.tabText, filter === 'all' && styles.activeTabText]}>전체 보기</Text>
+                        <Text style={[styles.tabText, filter === 'all' && styles.activeTabText]}>전체</Text>
                     </Pressable>
                     <Pressable style={[styles.tabButton, filter === 'unread' && styles.activeTab]} onPress={() => setFilter('unread')}>
-                        <Text style={[styles.tabText, filter === 'unread' && styles.activeTabText]}>안읽음 {unreadCount > 0 ? `(${unreadCount})` : ''}</Text>
+                        <Text style={[styles.tabText, filter === 'unread' && styles.activeTabText]}>안읽음</Text>
+                    </Pressable>
+
+                    {/* [NEW] 우편물 전달 버튼 - 차별화된 디자인 */}
+                    <Pressable
+                        style={[styles.tabButton, styles.deliveryTabButton]}
+                        onPress={() => setIsMailDeliveryVisible(true)}
+                    >
+                        <Ionicons name="paper-plane" size={14} color="#fff" />
+                        <Text style={[styles.tabText, { color: '#fff', marginLeft: 4 }]}>우편물 전달</Text>
                     </Pressable>
                 </View>
 
@@ -320,6 +331,15 @@ export const TenantDashboard = ({
                 visible={isNoticeVisible}
                 announcements={announcements}
                 onClose={() => setIsNoticeVisible(false)}
+            />
+
+            <MailDeliveryRequestModal
+                visible={isMailDeliveryVisible}
+                onClose={() => setIsMailDeliveryVisible(false)}
+                companyId={companyId}
+                profileId={myProfile.id}
+                initialName={myProfile.name}
+                initialPhone={myProfile.phone}
             />
 
             <Modal visible={!!selectedMailImage} transparent={true} animationType="fade" onRequestClose={() => setSelectedMailImage(null)}>
@@ -470,5 +490,12 @@ const styles = StyleSheet.create({
     tabButtons: {
         flexDirection: 'row',
         gap: 8,
+    },
+    deliveryTabButton: {
+        backgroundColor: '#4338CA',
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        marginLeft: 4,
     },
 });
