@@ -11,6 +11,7 @@ import { SettingsModal } from './SettingsModal';
 import { MailItem, MailLog } from './MailItem';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { AnnouncementModal } from './AnnouncementModal';
 
 // Custom Hooks
 import { useTenantAuth } from '../../hooks/tenant/useTenantAuth';
@@ -43,6 +44,7 @@ export const TenantDashboard = ({
     const [filter, setFilter] = useState<'all' | 'unread'>('all');
     const [selectedMailImage, setSelectedMailImage] = useState<string | null>(null);
     const [isSettingsVisible, setIsSettingsVisible] = useState(false);
+    const [isNoticeVisible, setIsNoticeVisible] = useState(false);
     const [soundEnabled, setSoundEnabled] = useState(true);
 
     // 1. 인증 및 세션 관리
@@ -202,16 +204,6 @@ export const TenantDashboard = ({
                             />
                         </View>
 
-                        {/* 인증 디버그 패널 (문제가 해결될 때까지 임시 표시) */}
-                        <View style={{ marginTop: 30, padding: 12, backgroundColor: '#F1F5F9', borderRadius: 12, borderStyle: 'dashed', borderWidth: 1, borderColor: '#CBD5E1' }}>
-                            <Text style={{ fontSize: 10, color: '#64748B', fontWeight: '700', marginBottom: 4 }}>DEBUG: 인증 진단 정보</Text>
-                            <Text style={{ fontSize: 10, color: '#94A3B8' }}>• CompanyID: {companyId || '없음'}</Text>
-                            <Text style={{ fontSize: 10, color: '#94A3B8' }}>• MagicLinkID: {magicTenantId || magicProfileId || '없음 (일반 접속)'}</Text>
-                            <Text style={{ fontSize: 10, color: '#94A3B8' }}>• 현재상태: {identifying ? '🔍 ID 검증 시도 중...' : (myProfile ? '✅ 인증 성공 (우편함 진입)' : '⚠️ 인증 실패 (로그인 필요)')}</Text>
-                            {!myProfile && !identifying && (magicTenantId || magicProfileId) && (
-                                <Text style={{ fontSize: 9, color: '#EF4444', marginTop: 4 }}>* 입력된 ID가 DB의 tenants 또는 profiles 테이블에 존재하지 않습니다.</Text>
-                            )}
-                        </View>
 
                         <View style={styles.secureBadge}>
                             <Text style={{ fontSize: 13 }}>🔒</Text>
@@ -245,12 +237,13 @@ export const TenantDashboard = ({
                     </View>
                     <Text style={styles.subtitle}>{companyName} 스마트 우편함</Text>
 
-                    {/* [DEBUG] 지점 ID 확인용 (임시) */}
-                    <Text style={{ fontSize: 9, color: '#CBD5E1', marginTop: 2 }}>ID: {companyId}</Text>
 
-                    {/* [NEW] 이름 아래 공지사항 텍스트 노출 */}
+                    {/* [NEW] 이름 아래 공지사항 텍스트 노출 - 클릭 가능하게 개선 */}
                     {announcements.length > 0 && (
-                        <View style={styles.compactNoticeBox}>
+                        <Pressable
+                            onPress={() => setIsNoticeVisible(true)}
+                            style={styles.compactNoticeBox}
+                        >
                             <Text style={styles.compactNoticeLabel}>📢</Text>
                             <Text style={styles.compactNoticeTitle} numberOfLines={1}>
                                 {announcements[0].title}
@@ -258,7 +251,8 @@ export const TenantDashboard = ({
                             {announcements.length > 1 && (
                                 <Text style={styles.compactNoticeCount}>외 {announcements.length - 1}건</Text>
                             )}
-                        </View>
+                            <Ionicons name="chevron-forward" size={12} color="#94A3B8" style={{ marginLeft: 4 }} />
+                        </Pressable>
                     )}
                 </View>
 
@@ -323,6 +317,12 @@ export const TenantDashboard = ({
                 soundEnabled={soundEnabled}
                 onToggleSound={toggleSound}
                 onClose={() => setIsSettingsVisible(false)}
+            />
+
+            <AnnouncementModal
+                visible={isNoticeVisible}
+                announcements={announcements}
+                onClose={() => setIsNoticeVisible(false)}
             />
 
             {/* 이미지 확대 모달 */}
