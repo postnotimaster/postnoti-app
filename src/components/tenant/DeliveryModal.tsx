@@ -38,6 +38,7 @@ export const DeliveryModal = ({
     const [postcode, setPostcode] = useState('');
     const [address, setAddress] = useState('');
     const [addressDetail, setAddressDetail] = useState('');
+    const [errorText, setErrorText] = useState<string | null>(null);
 
     useEffect(() => {
         if (visible) {
@@ -105,7 +106,12 @@ export const DeliveryModal = ({
             }
         } catch (e: any) {
             console.error('Mail delivery submission error:', e);
-            Alert.alert('오류', `신청에 실패했습니다. (${e.message || '잠시 후 다시 시도해 주세요.'})`);
+            setErrorText(e.message || '신청 중 오류가 발생했습니다.');
+            if (Platform.OS === 'web') {
+                window.alert(`오류: ${e.message || '신청에 실패했습니다.'}`);
+            } else {
+                Alert.alert('오류', `신청에 실패했습니다. (${e.message || '잠시 후 다시 시도해 주세요.'})`);
+            }
         } finally {
             setLoading(false);
         }
@@ -228,6 +234,13 @@ export const DeliveryModal = ({
                             <Text style={styles.guideText}>{guidelines}</Text>
                         </View>
 
+                        {errorText && (
+                            <View style={styles.errorBox}>
+                                <Ionicons name="alert-circle" size={16} color="#EF4444" />
+                                <Text style={styles.errorTextItem}>{errorText}</Text>
+                            </View>
+                        )}
+
                         <View style={styles.form}>
                             <View style={styles.inputGroup}>
                                 <Text style={styles.label}>수령인 이름</Text>
@@ -342,5 +355,22 @@ const styles = StyleSheet.create({
         backgroundColor: '#10B981',
         justifyContent: 'center',
         alignItems: 'center'
+    },
+    errorBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FEF2F2',
+        padding: 12,
+        borderRadius: 10,
+        marginBottom: 20,
+        gap: 8,
+        borderWidth: 1,
+        borderColor: '#FEE2E2',
+    },
+    errorTextItem: {
+        flex: 1,
+        fontSize: 13,
+        color: '#EF4444',
+        fontWeight: '600'
     }
 });
