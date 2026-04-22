@@ -78,7 +78,7 @@ export const useMailRegistration = (
             }
 
             // 3. 알림 발송 및 결과 수집
-            const notifResult = await notificationService.sendPushNotification(
+            const notifResult = await notificationService.sendMailArrivalPush(
                 matchedProfile,
                 officeInfo,
                 detectedSender,
