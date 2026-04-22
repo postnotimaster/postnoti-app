@@ -38,9 +38,7 @@ export const useMailRegistration = (
         }
 
         try {
-            console.log('[useMailRegistration] Process started');
             setOcrLoading(true);
-            Alert.alert('1단계', '사진 업로드를 시작합니다.');
 
             // 1. 이미지를 Supabase Storage에 업로드
             const uploadedMainImage = await storageService.uploadImage(selectedImage);
@@ -48,7 +46,6 @@ export const useMailRegistration = (
             if (!uploadedMainImage) {
                 throw new Error('사진 업로드에 실패했습니다.');
             }
-            Alert.alert('2단계', '데이터베이스에 저장 중...');
 
             // 2. 추가 이미지들도 병렬 업로드
             const uploadedExtraImages: string[] = [];
@@ -76,8 +73,6 @@ export const useMailRegistration = (
                 throw new Error(`데이터 저장 실패: ${regError.message}`);
             }
 
-            Alert.alert('3단계', '알림 발송을 시도합니다.');
-
             // 3. 알림 발송 및 결과 수집
             const notifResult = await notificationService.sendMailArrivalPush(
                 matchedProfile,
@@ -87,13 +82,11 @@ export const useMailRegistration = (
                 customMessage
             );
 
-            console.log('[useMailRegistration] Finished with result:', notifResult);
-
             if (onMailRegistered) onMailRegistered();
             return notifResult;
         } catch (error: any) {
             console.error('Register mail error:', error);
-            Alert.alert('등록 과정 오류', `사유: ${error.message}`);
+            showToast({ message: error.message || '등록 중 문제가 발생했습니다.', type: 'error' });
             return null;
         } finally {
             setOcrLoading(false);

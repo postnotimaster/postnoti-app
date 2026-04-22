@@ -44,15 +44,10 @@ export const mailDeliveryService = {
         // --- 관리자 알림 발송 ---
         try {
             // [지점 개념 제거] 지점 구분 없이 모든 관리자에게 알림 발송
-            const { data: admins, error: adminError } = await supabase
+            const { data: admins } = await supabase
                 .from('profiles')
                 .select('id, push_token, web_push_token')
                 .eq('role', 'admin');
-
-            if (adminError) {
-                Alert.alert('관리자 조회 오류', `사유: ${adminError.message}`);
-                console.error('[MailDeliveryService] Admin lookup error:', adminError);
-            }
 
             if (admins && admins.length > 0) {
                 const adminIdsWithTokens = admins
@@ -66,16 +61,10 @@ export const mailDeliveryService = {
                         `${data.recipient_name}님의 우편물 전달 신청이 접수되었습니다.`,
                         { type: 'mail_delivery', id: (request as any).id }
                     );
-                    // Alert.alert('알림 시도', `${adminIdsWithTokens.length}명의 관리자에게 알림을 전송했습니다.`);
-                } else {
-                    Alert.alert('알림 대상 없음', '시스템에 등록된 관리자의 푸시 토큰이 없습니다.');
                 }
-            } else {
-                Alert.alert('관리자 찾지 못함', '알림을 받을 관리자가 시스템에 없습니다.');
             }
         } catch (pushError) {
             console.warn('Failed to send push notification to admins:', pushError);
-            Alert.alert('알림 시스템 오류', '알림 전송 중 예상치 못한 문제가 발생했습니다.');
         }
 
         return request;

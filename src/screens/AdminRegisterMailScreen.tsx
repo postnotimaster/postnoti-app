@@ -96,7 +96,6 @@ export const AdminRegisterMailScreen = () => {
 
     const onSubmit = async () => {
         try {
-            console.log('[AdminRegisterMail] Starting registration...');
             const finalMessage = selectedPreset || customMessage || undefined;
             const result = await handleRegisterMail(
                 matchedProfile,
@@ -107,8 +106,6 @@ export const AdminRegisterMailScreen = () => {
                 finalMessage
             );
 
-            console.log('[AdminRegisterMail] Registration result:', result);
-
             if (result) {
                 setLastNotifResult(result);
                 if (result.success) {
@@ -116,12 +113,8 @@ export const AdminRegisterMailScreen = () => {
                         { text: '확인', onPress: () => handleSuccessFinish() }
                     ]);
                 } else {
-                    console.log('[AdminRegisterMail] Notification not sent directly, showing fallback modal');
                     setResultModalVisible(true);
                 }
-            } else {
-                console.warn('[AdminRegisterMail] No result returned from handleRegisterMail');
-                showToast({ message: '알림 결과 데이터를 받지 못했습니다.', type: 'error' });
             }
         } catch (e: any) {
             console.error('[AdminRegisterMail] onSubmit error:', e);

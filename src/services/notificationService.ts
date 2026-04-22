@@ -55,11 +55,9 @@ export const notificationService = {
                         .then(res => res.json())
                         .then(json => {
                             console.log('[NotificationService] Expo response:', json);
-                            // Alert.alert('알림 전송 결과', `서버 응답: ${json.data?.status || 'unknown'}`);
                         })
                         .catch(e => {
                             console.warn('[NotificationService] Expo fetch error:', e);
-                            Alert.alert('알림 전송 물리 오류', `주소: exp.host\n사유: ${e.message}`);
                         });
                 }
 
