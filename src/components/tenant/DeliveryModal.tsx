@@ -7,6 +7,7 @@ import {
 const WebView = View as any;
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { PrimaryButton } from '../common/PrimaryButton';
 import { mailDeliveryService, MailDeliveryRequest } from '../../services/mailDeliveryService';
 
 type Props = {
@@ -26,7 +27,7 @@ export const DeliveryModal = ({
     initialName,
     initialPhone
 }: Props) => {
-    const [step, setStep] = useState<'form' | 'postcode'>('form');
+    const [step, setStep] = useState<'form' | 'postcode' | 'success'>('form');
     const [loading, setLoading] = useState(false);
     const [guidelines, setGuidelines] = useState('');
     const [history, setHistory] = useState<MailDeliveryRequest[]>([]);
@@ -84,7 +85,7 @@ export const DeliveryModal = ({
 
         try {
             setLoading(true);
-            await mailDeliveryService.createRequest({
+            const requestData = {
                 company_id: companyId,
                 profile_id: profileId,
                 recipient_name: name,
@@ -92,10 +93,16 @@ export const DeliveryModal = ({
                 postcode,
                 address,
                 address_detail: addressDetail
-            });
-            Alert.alert('신청 완료', '우편물 전달 신청이 정상적으로 접수되었습니다.', [
-                { text: '확인', onPress: onClose }
-            ]);
+            };
+            console.log('Submitting delivery request:', requestData);
+
+            await mailDeliveryService.createRequest(requestData);
+            setStep('success');
+
+            // 네이티브 환경의 경우 알림도 띄움
+            if (Platform.OS !== 'web') {
+                Alert.alert('신청 완료', '우편물 전달 신청이 정상적으로 접수되었습니다.');
+            }
         } catch (e: any) {
             console.error('Mail delivery submission error:', e);
             Alert.alert('오류', `신청에 실패했습니다. (${e.message || '잠시 후 다시 시도해 주세요.'})`);
@@ -177,6 +184,30 @@ export const DeliveryModal = ({
                         </View>
                     )}
                 </SafeAreaView>
+            </Modal>
+        );
+    }
+
+    if (step === 'success') {
+        return (
+            <Modal visible={visible} transparent animationType="fade">
+                <View style={styles.overlay}>
+                    <View style={[styles.content, { alignItems: 'center', paddingVertical: 40 }]}>
+                        <View style={styles.successIconCircle}>
+                            <Ionicons name="checkmark" size={40} color="#fff" />
+                        </View>
+                        <Text style={[styles.title, { marginTop: 20, marginBottom: 10 }]}>신청 완료!</Text>
+                        <Text style={{ textAlign: 'center', color: '#64748B', lineHeight: 22, marginBottom: 30 }}>
+                            우편물 전달 신청이{"\n"}
+                            정상적으로 접수되었습니다.
+                        </Text>
+                        <PrimaryButton
+                            label="확인"
+                            onPress={onClose}
+                            style={{ width: '100%', borderRadius: 12 }}
+                        />
+                    </View>
+                </View>
             </Modal>
         );
     }
@@ -303,5 +334,13 @@ const styles = StyleSheet.create({
     postcodeSafe: { flex: 1, backgroundColor: '#fff' },
     postcodeHeader: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
     backButton: { marginRight: 16 },
-    postcodeTitle: { fontSize: 18, fontWeight: '700', color: '#1E293B' }
+    postcodeTitle: { fontSize: 18, fontWeight: '700', color: '#1E293B' },
+    successIconCircle: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#10B981',
+        justifyContent: 'center',
+        alignItems: 'center'
+    }
 });
