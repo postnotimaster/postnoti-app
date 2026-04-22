@@ -3,8 +3,10 @@ import {
     View, Text, StyleSheet, Modal, Pressable, TextInput,
     ScrollView, ActivityIndicator, Alert, Dimensions, Platform
 } from 'react-native';
-import { WebView } from 'react-native-webview';
+// import { WebView } from 'react-native-webview'; // 네이티브 빌전 전 크래시 방지를 위해 일시 주석 처리
+const WebView = View as any;
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { mailDeliveryService, MailDeliveryRequest } from '../../services/mailDeliveryService';
 
 type Props = {
@@ -16,7 +18,7 @@ type Props = {
     initialPhone?: string;
 };
 
-export const MailDeliveryRequestModal = ({
+export const DeliveryModal = ({
     visible,
     onClose,
     companyId,
@@ -53,15 +55,18 @@ export const MailDeliveryRequestModal = ({
             setGuidelines(guide || '우편물 전달 신청을 하시면 지정된 주소로 배송해 드립니다.');
 
             // 중복 주소 제거하여 유니크한 과거 주소 리스트 생성
-            const uniqueHistory = hist.reduce((acc: MailDeliveryRequest[], current) => {
+            const uniqueHistory = (hist || []).reduce((acc: MailDeliveryRequest[], current) => {
                 const x = acc.find(item => item.address === current.address && item.address_detail === current.address_detail);
                 if (!x) return acc.concat([current]);
                 else return acc;
             }, []).slice(0, 3);
 
             setHistory(uniqueHistory);
-        } catch (e) {
-            console.error(e);
+        } catch (e: any) {
+            console.error('loadGuidelinesAndHistory error:', e);
+            if (e.message?.includes('DB 설정')) {
+                Alert.alert('시스템 알림', e.message);
+            }
         }
     };
 
@@ -143,11 +148,28 @@ export const MailDeliveryRequestModal = ({
                         </Pressable>
                         <Text style={styles.postcodeTitle}>주소 검색</Text>
                     </View>
-                    <WebView
-                        source={{ html: postcodeHtml }}
-                        onMessage={onPostcodeMessage}
-                        style={{ flex: 1 }}
-                    />
+                    {Platform.OS !== 'web' ? (
+                        <WebView
+                            source={{ html: postcodeHtml }}
+                            onMessage={onPostcodeMessage}
+                            style={{ flex: 1 }}
+                            onHttpError={(syntheticEvent) => {
+                                const { nativeEvent } = syntheticEvent;
+                                console.warn('WebView HTTP error: ', nativeEvent);
+                            }}
+                            renderError={(errorName) => <View style={styles.centered}><Text>주소 검색 서비스를 불러올 수 없습니다. ({errorName})</Text></View>}
+                        />
+                    ) : (
+                        <View style={styles.centered}>
+                            <Text style={{ textAlign: 'center', padding: 20 }}>
+                                웹 환경에서는 주소 검색이 지원되지 않습니다.{"\n"}
+                                직접 입력하시거나 모바일 앱을 이용해 주세요.
+                            </Text>
+                            <Pressable onPress={() => setStep('form')} style={styles.cancelBtn}>
+                                <Text>돌아가기</Text>
+                            </Pressable>
+                        </View>
+                    )}
                 </SafeAreaView>
             </Modal>
         );
@@ -165,7 +187,6 @@ export const MailDeliveryRequestModal = ({
                     </View>
 
                     <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
-                        {/* 지점 가이드 */}
                         <View style={styles.guideBox}>
                             <Text style={styles.guideText}>{guidelines}</Text>
                         </View>
@@ -200,10 +221,10 @@ export const MailDeliveryRequestModal = ({
                                     </Pressable>
                                 </View>
                                 <TextInput
-                                    style={[styles.input, { backgroundColor: '#F1F5F9' }]}
-                                    value={postcode ? `[${postcode}] ${address}` : ''}
-                                    editable={false}
-                                    placeholder="주소 찾기 버튼을 눌러주세요"
+                                    style={[styles.input, { backgroundColor: '#F8FAFC' }]}
+                                    value={address}
+                                    onChangeText={setAddress}
+                                    placeholder="주소를 입력하세요 (검색은 빌드 후 가능)"
                                 />
                                 <TextInput
                                     style={[styles.input, { marginTop: 8 }]}
@@ -213,7 +234,6 @@ export const MailDeliveryRequestModal = ({
                                 />
                             </View>
 
-                            {/* 과거 주소 리스트 */}
                             {history.length > 0 && (
                                 <View style={styles.historySection}>
                                     <Text style={styles.historyTitle}>최근 배송지</Text>
@@ -248,10 +268,9 @@ export const MailDeliveryRequestModal = ({
     );
 };
 
-// SafeAreaView (Postcode 전용)
-const SafeAreaView = Platform.OS === 'ios' ? require('react-native').SafeAreaView : View;
-
 const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: '#F8FAFC' },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
     content: { backgroundColor: '#fff', borderRadius: 24, maxHeight: '90%', padding: 24 },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
@@ -275,7 +294,6 @@ const styles = StyleSheet.create({
     cancelBtnText: { color: '#64748B', fontSize: 16, fontWeight: '700' },
     submitBtn: { flex: 2, paddingVertical: 16, borderRadius: 12, backgroundColor: '#4F46E5', alignItems: 'center' },
     submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-    // Postcode Styles
     postcodeSafe: { flex: 1, backgroundColor: '#fff' },
     postcodeHeader: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
     backButton: { marginRight: 16 },

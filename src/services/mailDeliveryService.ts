@@ -57,6 +57,10 @@ export const mailDeliveryService = {
             .eq('profile_id', profileId)
             .order('created_at', { ascending: false });
         if (error) throw error;
+        if (error) {
+            console.error('getMyRequests Error:', error);
+            throw new Error('과거 신청 내역을 불러올 수 없습니다.');
+        }
         return data as MailDeliveryRequest[];
     },
 
@@ -70,7 +74,10 @@ export const mailDeliveryService = {
             .eq('id', id)
             .select()
             .single();
-        if (error) throw error;
+        if (error) {
+            console.error('updateRequestStatus Error:', error);
+            throw new Error('상태 업데이트에 실패했습니다.');
+        }
         return data as MailDeliveryRequest;
     },
 
@@ -83,7 +90,10 @@ export const mailDeliveryService = {
             .select('delivery_guidelines')
             .eq('id', companyId)
             .single();
-        if (error) throw error;
+        if (error) {
+            console.error('getDeliveryGuidelines Error:', error);
+            throw new Error('배송 안내 정보를 불러올 수 없습니다. DB 설정을 확인해주세요.');
+        }
         return data.delivery_guidelines as string;
     },
 

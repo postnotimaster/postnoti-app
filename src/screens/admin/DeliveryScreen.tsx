@@ -7,9 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAppContent } from '../../contexts/AppContext';
 import { mailDeliveryService, MailDeliveryRequest } from '../../services/mailDeliveryService';
-import { notificationService } from '../../services/notificationService'; // 알림 연동용
+import { notificationService } from '../../services/notificationService';
 
-export const AdminMailDeliveryScreen = () => {
+export const DeliveryScreen = () => {
     const { officeInfo } = useAppContent();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -65,7 +65,6 @@ export const AdminMailDeliveryScreen = () => {
             setRequests(prev => prev.map(r => r.id === request.id ? updated : r));
             setSelectedRequest(null);
 
-            // 입주사에게 푸시 알림 발송
             if (officeInfo?.name) {
                 await notificationService.sendDeliveryStatusPush(
                     request.profile_id,
@@ -162,7 +161,6 @@ export const AdminMailDeliveryScreen = () => {
                 }
             />
 
-            {/* 상세 보기 모달 */}
             <Modal visible={!!selectedRequest} transparent animationType="slide" onRequestClose={() => setSelectedRequest(null)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
@@ -258,7 +256,6 @@ const styles = StyleSheet.create({
     profileInfo: { fontSize: 12, color: '#94A3B8' },
     emptyContainer: { alignItems: 'center', marginTop: 40 },
     emptyText: { marginTop: 12, color: '#94A3B8', fontSize: 14 },
-    // 모달 스타일
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
     modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, height: '70%', padding: 24 },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },

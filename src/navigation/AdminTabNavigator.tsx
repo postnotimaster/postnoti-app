@@ -6,7 +6,7 @@ import { AdminDashboardScreen } from '../screens/AdminDashboardScreen';
 import { AdminTenantsScreen } from '../screens/AdminTenantsScreen';
 import { AdminMenuScreen } from '../screens/AdminMenuScreen';
 import { AdminNoticeScreen } from '../screens/admin/AdminNoticeScreen';
-import { AdminMailDeliveryScreen } from '../screens/admin/AdminMailDeliveryScreen';
+import { DeliveryScreen } from '../screens/admin/DeliveryScreen';
 import { useAppContent } from '../contexts/AppContext';
 
 const Tab = createBottomTabNavigator();
@@ -70,7 +70,7 @@ export const AdminTabNavigator = () => {
             />
             <Tab.Screen
                 name="MailDelivery"
-                component={AdminMailDeliveryScreen}
+                component={DeliveryScreen}
                 options={{
                     tabBarLabel: '우편전달',
                     tabBarBadge: pendingDeliveryCount > 0 ? pendingDeliveryCount : undefined

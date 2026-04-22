@@ -12,7 +12,7 @@ import { MailItem, MailLog } from './MailItem';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnnouncementModal } from './AnnouncementModal';
-import { MailDeliveryRequestModal } from './MailDeliveryRequestModal';
+import { DeliveryModal } from './DeliveryModal';
 
 // Custom Hooks
 import { useTenantAuth } from '../../hooks/tenant/useTenantAuth';
@@ -333,7 +333,7 @@ export const TenantDashboard = ({
                 onClose={() => setIsNoticeVisible(false)}
             />
 
-            <MailDeliveryRequestModal
+            <DeliveryModal
                 visible={isMailDeliveryVisible}
                 onClose={() => setIsMailDeliveryVisible(false)}
                 companyId={companyId}
