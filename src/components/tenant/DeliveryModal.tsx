@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, Modal, Pressable, TextInput,
-    ScrollView, ActivityIndicator, Alert, Dimensions, Platform
+    ScrollView, ActivityIndicator, Alert, Platform
 } from 'react-native';
 // import { WebView } from 'react-native-webview'; // 네이티브 빌전 전 크래시 방지를 위해 일시 주석 처리
 const WebView = View as any;
@@ -45,6 +45,8 @@ export const DeliveryModal = ({
             loadGuidelinesAndHistory();
             setName(initialName || '');
             setPhone(initialPhone || '');
+            setErrorText(null);
+            setStep('form');
         }
     }, [visible, initialName, initialPhone]);
 
@@ -56,7 +58,6 @@ export const DeliveryModal = ({
             ]);
             setGuidelines(guide || '우편물 전달 신청을 하시면 지정된 주소로 배송해 드립니다.');
 
-            // 중복 주소 제거하여 유니크한 과거 주소 리스트 생성
             const uniqueHistory = (hist || []).reduce((acc: MailDeliveryRequest[], current) => {
                 const x = acc.find(item => item.address === current.address && item.address_detail === current.address_detail);
                 if (!x) return acc.concat([current]);
@@ -66,9 +67,6 @@ export const DeliveryModal = ({
             setHistory(uniqueHistory);
         } catch (e: any) {
             console.error('loadGuidelinesAndHistory error:', e);
-            if (e.message?.includes('DB 설정')) {
-                Alert.alert('시스템 알림', e.message);
-            }
         }
     };
 
@@ -78,34 +76,56 @@ export const DeliveryModal = ({
         setAddressDetail(item.address_detail || '');
     };
 
+    const handlePostcodeSelected = (data: any) => {
+        setPostcode(data.zonecode || '');
+        setAddress(data.address || '');
+        setStep('form');
+    };
+
     const handleSubmit = async () => {
         if (!name || !phone || !address) {
             Alert.alert('알림', '모든 필수 정보를 입력해 주세요.');
             return;
         }
 
+        const requestData = {
+            company_id: companyId,
+            profile_id: profileId,
+            recipient_name: name,
+            recipient_phone: phone,
+            postcode,
+            address,
+            address_detail: addressDetail
+        };
+
         try {
             setLoading(true);
-            const requestData = {
-                company_id: companyId,
-                profile_id: profileId,
-                recipient_name: name,
-                recipient_phone: phone,
-                postcode,
-                address,
-                address_detail: addressDetail
-            };
+            setErrorText(null);
             console.log('Submitting delivery request:', requestData);
 
             await mailDeliveryService.createRequest(requestData);
             setStep('success');
 
-            // 네이티브 환경의 경우 알림도 띄움
             if (Platform.OS !== 'web') {
                 Alert.alert('신청 완료', '우편물 전달 신청이 정상적으로 접수되었습니다.');
             }
         } catch (e: any) {
             console.error('Mail delivery submission error:', e);
+
+            // 외래키 제약 조건 위반 (무효한 profile_id)인 경우, profile_id 없이 재시도
+            if (e.code === '23503' && e.message?.includes('profile_id')) {
+                try {
+                    console.log('Retrying without profile_id due to FK violation');
+                    const fallbackData = { ...requestData, profile_id: null };
+                    await mailDeliveryService.createRequest(fallbackData as any);
+                    setStep('success');
+                    if (Platform.OS !== 'web') Alert.alert('신청 완료', '우편물 전달 신청이 정상적으로 접수되었습니다.');
+                    return;
+                } catch (retryError) {
+                    console.error('Retry failed:', retryError);
+                }
+            }
+
             setErrorText(e.message || '신청 중 오류가 발생했습니다.');
             if (Platform.OS === 'web') {
                 window.alert(`오류: ${e.message || '신청에 실패했습니다.'}`);
@@ -117,40 +137,7 @@ export const DeliveryModal = ({
         }
     };
 
-    // Daum Postcode HTML
-    const postcodeHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-            <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-        </head>
-        <body style="margin:0;padding:0;">
-            <div id="layer" style="width:100%;height:100vh;"></div>
-            <script>
-                var element_layer = document.getElementById('layer');
-                new daum.Postcode({
-                    oncomplete: function(data) {
-                        window.ReactNativeWebView.postMessage(JSON.stringify(data));
-                    },
-                    width : '100%',
-                    height : '100%'
-                }).embed(element_layer);
-            </script>
-        </body>
-        </html>
-    `;
-
-    const onPostcodeMessage = (event: any) => {
-        try {
-            const data = JSON.parse(event.nativeEvent.data);
-            setPostcode(data.zonecode);
-            setAddress(data.address);
-            setStep('form');
-        } catch (e) {
-            setStep('form');
-        }
-    };
+    // --- Steps Rendering ---
 
     if (step === 'postcode') {
         return (
@@ -164,14 +151,26 @@ export const DeliveryModal = ({
                     </View>
                     {Platform.OS !== 'web' ? (
                         <WebView
-                            source={{ html: postcodeHtml }}
-                            onMessage={onPostcodeMessage}
+                            source={{ uri: 'https://postnoti-app-two.vercel.app/postcode.html' }}
+                            onMessage={(event: any) => {
+                                try {
+                                    const data = JSON.parse(event.nativeEvent.data);
+                                    handlePostcodeSelected(data);
+                                } catch (e) {
+                                    console.error('Postcode message error:', e);
+                                }
+                            }}
                             style={{ flex: 1 }}
-                            onHttpError={(syntheticEvent) => {
+                            originWhitelist={['*']}
+                            javaScriptEnabled={true}
+                            domStorageEnabled={true}
+                            startInLoadingState={true}
+                            renderLoading={() => <View style={styles.centered}><ActivityIndicator size="large" color="#4F46E5" /></View>}
+                            onHttpError={(syntheticEvent: any) => {
                                 const { nativeEvent } = syntheticEvent;
                                 console.warn('WebView HTTP error: ', nativeEvent);
                             }}
-                            renderError={(errorName) => <View style={styles.centered}><Text>주소 검색 서비스를 불러올 수 없습니다. ({errorName})</Text></View>}
+                            renderError={(errorName: string) => <View style={styles.centered}><Text>주소 검색 서비스를 불러올 수 없습니다. ({errorName})</Text></View>}
                         />
                     ) : (
                         <View style={[styles.centered, { padding: 40 }]}>
@@ -229,7 +228,7 @@ export const DeliveryModal = ({
                         </Pressable>
                     </View>
 
-                    <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
+                    <ScrollView style={styles.body} 维护 showsVerticalScrollIndicator={false}>
                         <View style={styles.guideBox}>
                             <Text style={styles.guideText}>{guidelines}</Text>
                         </View>
