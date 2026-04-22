@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     View, Text, StyleSheet, Modal, Pressable, TextInput,
-    ScrollView, ActivityIndicator, Alert, Platform, FlatList
+    ScrollView, ActivityIndicator, Alert, Platform, FlatList, Switch
 } from 'react-native';
 // import { WebView } from 'react-native-webview';
 const WebView = View as any;
@@ -9,6 +9,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PrimaryButton } from '../common/PrimaryButton';
 import { mailDeliveryService, MailDeliveryRequest, MailDeliveryStatus } from '../../services/mailDeliveryService';
+import { profilesService } from '../../services/profilesService';
 import { supabase } from '../../lib/supabase';
 
 type Props = {
@@ -34,6 +35,7 @@ export const DeliveryModal = ({
     const [guidelines, setGuidelines] = useState('');
     const [requests, setRequests] = useState<MailDeliveryRequest[]>([]);
     const [recentAddresses, setRecentAddresses] = useState<MailDeliveryRequest[]>([]);
+    const [savedAddress, setSavedAddress] = useState<{ address: string, address_detail: string, postcode: string } | null>(null);
 
     // Form States
     const [name, setName] = useState(initialName || '');
@@ -41,17 +43,30 @@ export const DeliveryModal = ({
     const [postcode, setPostcode] = useState('');
     const [address, setAddress] = useState('');
     const [addressDetail, setAddressDetail] = useState('');
+    const [saveAsDefault, setSaveAsDefault] = useState(false);
     const [errorText, setErrorText] = useState<string | null>(null);
     const [missingFields, setMissingFields] = useState<string[]>([]);
 
     const loadData = useCallback(async () => {
         try {
-            const [guide, hist] = await Promise.all([
+            const [guide, hist, profile] = await Promise.all([
                 mailDeliveryService.getDeliveryGuidelines(companyId),
-                mailDeliveryService.getMyRequests(profileId)
+                mailDeliveryService.getMyRequests(profileId),
+                profilesService.getProfileById(profileId).catch(() => null)
             ]);
+
             setGuidelines(guide || '우편물 전달 신청을 하시면 지정된 주소로 배송해 드립니다.');
             setRequests(hist || []);
+
+            if (profile?.address) {
+                setSavedAddress({
+                    address: profile.address,
+                    address_detail: profile.address_detail || '',
+                    postcode: profile.postcode || ''
+                });
+            } else {
+                setSavedAddress(null);
+            }
 
             // 최근 주소 (중복 제거)
             const unique = (hist || []).reduce((acc: MailDeliveryRequest[], cur) => {
@@ -72,6 +87,7 @@ export const DeliveryModal = ({
             setStep('form');
             setErrorText(null);
             setMissingFields([]);
+            setSaveAsDefault(false);
         }
     }, [visible, loadData]);
 
@@ -83,11 +99,7 @@ export const DeliveryModal = ({
             .channel(`mail_delivery_${profileId}`)
             .on(
                 'postgres_changes',
-                {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'mail_delivery_requests'
-                },
+                { event: 'UPDATE', schema: 'public', table: 'mail_delivery_requests' },
                 (payload) => {
                     const newReq = payload.new as MailDeliveryRequest;
                     if (newReq.profile_id === profileId || newReq.tenant_id === profileId) {
@@ -97,9 +109,7 @@ export const DeliveryModal = ({
             )
             .subscribe();
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
+        return () => { supabase.removeChannel(channel); };
     }, [visible, profileId]);
 
     // 웹 환경 메시지 수신 (Daum 주소 검색)
@@ -109,9 +119,7 @@ export const DeliveryModal = ({
                 if (e.data && typeof e.data === 'string') {
                     try {
                         const data = JSON.parse(e.data);
-                        if (data.zonecode || data.address) {
-                            handlePostcodeSelected(data);
-                        }
+                        if (data.zonecode || data.address) handlePostcodeSelected(data);
                     } catch (err) { }
                 }
             };
@@ -120,9 +128,9 @@ export const DeliveryModal = ({
         }
     }, [step]);
 
-    const handleSelectHistory = (item: MailDeliveryRequest) => {
-        setPostcode(item.postcode);
-        setAddress(item.address);
+    const handleSelectHistory = (item: any) => {
+        setPostcode(item.postcode || '');
+        setAddress(item.address || '');
         setAddressDetail(item.address_detail || '');
         setMissingFields(prev => prev.filter(f => f !== 'address'));
     };
@@ -161,6 +169,17 @@ export const DeliveryModal = ({
             setLoading(true);
             setErrorText(null);
             setMissingFields([]);
+
+            // 1. 프로필 주소 업데이트 (체크된 경우)
+            if (saveAsDefault) {
+                await profilesService.updateProfile(profileId, {
+                    address,
+                    address_detail: addressDetail,
+                    postcode
+                }).catch(e => console.warn('Failed to save default address:', e));
+            }
+
+            // 2. 요청 생성
             await mailDeliveryService.createRequest(requestData as any);
             setStep('success');
             loadData();
@@ -191,7 +210,7 @@ export const DeliveryModal = ({
         }
     };
 
-    // --- Steps ---
+    // --- Steps Rendering ---
 
     if (step === 'postcode') {
         const postcodeUrl = 'https://postnoti-app-two.vercel.app/postcode.html';
@@ -206,11 +225,7 @@ export const DeliveryModal = ({
                     </View>
                     <View style={{ flex: 1 }}>
                         {Platform.OS === 'web' ? (
-                            <iframe
-                                src={postcodeUrl}
-                                style={{ border: 'none', width: '100%', height: '100%' }}
-                                title="주소 검색"
-                            />
+                            <iframe src={postcodeUrl} style={{ border: 'none', width: '100%', height: '100%' }} title="주소 검색" />
                         ) : (
                             <WebView
                                 source={{ uri: postcodeUrl }}
@@ -243,10 +258,7 @@ export const DeliveryModal = ({
                         </Text>
                         <PrimaryButton
                             label="내역 확인하기"
-                            onPress={() => {
-                                setStep('form');
-                                setActiveTab('list');
-                            }}
+                            onPress={() => { setStep('form'); setActiveTab('list'); }}
                             style={{ width: '100%', borderRadius: 12 }}
                         />
                     </View>
@@ -290,19 +302,8 @@ export const DeliveryModal = ({
                             <View style={styles.form}>
                                 <View style={styles.inputGroup}>
                                     <Text style={[styles.label, missingFields.includes('name') && { color: '#EF4444' }]}>수령인 정보 *</Text>
-                                    <TextInput
-                                        style={[styles.input, missingFields.includes('name') && styles.errorInput]}
-                                        value={name}
-                                        onChangeText={(t) => { setName(t); setMissingFields(prev => prev.filter(f => f !== 'name')); }}
-                                        placeholder="성함"
-                                    />
-                                    <TextInput
-                                        style={[styles.input, { marginTop: 8 }, missingFields.includes('phone') && styles.errorInput]}
-                                        value={phone}
-                                        onChangeText={(t) => { setPhone(t); setMissingFields(prev => prev.filter(f => f !== 'phone')); }}
-                                        placeholder="연락처"
-                                        keyboardType="phone-pad"
-                                    />
+                                    <TextInput style={[styles.input, missingFields.includes('name') && styles.errorInput]} value={name} onChangeText={(t) => { setName(t); setMissingFields(prev => prev.filter(f => f !== 'name')); }} placeholder="성함" />
+                                    <TextInput style={[styles.input, { marginTop: 8 }, missingFields.includes('phone') && styles.errorInput]} value={phone} onChangeText={(t) => { setPhone(t); setMissingFields(prev => prev.filter(f => f !== 'phone')); }} placeholder="연락처" keyboardType="phone-pad" />
                                 </View>
 
                                 <View style={styles.inputGroup}>
@@ -313,49 +314,37 @@ export const DeliveryModal = ({
                                         </Pressable>
                                     </View>
 
-                                    {recentAddresses.length > 0 && (
-                                        <Pressable
-                                            style={styles.useLastAddressBtn}
-                                            onPress={() => handleSelectHistory(recentAddresses[0])}
-                                        >
-                                            <Ionicons name="map-outline" size={14} color="#4F46E5" />
-                                            <Text style={styles.useLastAddressText}>최근 배송지 바로 입력</Text>
-                                        </Pressable>
-                                    )}
+                                    <View style={styles.quickInputRow}>
+                                        {savedAddress && (
+                                            <Pressable style={styles.premiumQuickBtn} onPress={() => handleSelectHistory(savedAddress)}>
+                                                <Ionicons name="bookmark" size={12} color="#fff" />
+                                                <Text style={styles.premiumQuickBtnText}>등록 주소 사용</Text>
+                                            </Pressable>
+                                        )}
+                                        {recentAddresses.length > 0 && (
+                                            <Pressable style={styles.useLastAddressBtn} onPress={() => handleSelectHistory(recentAddresses[0])}>
+                                                <Ionicons name="time" size={12} color="#4F46E5" />
+                                                <Text style={styles.useLastAddressText}>최근 배송지</Text>
+                                            </Pressable>
+                                        )}
+                                    </View>
 
                                     <TextInput
-                                        style={[
-                                            styles.input,
-                                            (Platform.OS !== 'web') && { backgroundColor: '#F8FAFC' },
-                                            missingFields.includes('address') && styles.errorInput
-                                        ]}
+                                        style={[styles.input, (Platform.OS !== 'web') && { backgroundColor: '#F8FAFC' }, missingFields.includes('address') && styles.errorInput]}
                                         value={address}
                                         onChangeText={(t) => { setAddress(t); setMissingFields(prev => prev.filter(f => f !== 'address')); }}
                                         placeholder="주소 (직접 입력 또는 검색)"
                                         editable={Platform.OS === 'web' || !address}
                                     />
-                                    <TextInput
-                                        style={[styles.input, { marginTop: 8 }]}
-                                        value={addressDetail}
-                                        onChangeText={setAddressDetail}
-                                        placeholder="상세 주소"
-                                    />
-                                </View>
+                                    <TextInput style={[styles.input, { marginTop: 8 }]} value={addressDetail} onChangeText={setAddressDetail} placeholder="상세 주소" />
 
-                                {recentAddresses.length > 1 && (
-                                    <View style={styles.historySection}>
-                                        <Text style={styles.historyTitle}>기타 최근 배송지</Text>
-                                        <View style={styles.historyRow}>
-                                            {recentAddresses.slice(1).map((item, idx) => (
-                                                <Pressable key={idx} style={styles.historyChip} onPress={() => handleSelectHistory(item)}>
-                                                    <Text style={styles.historyChipText} numberOfLines={1}>{item.address.split(' ').slice(0, 2).join(' ')}...</Text>
-                                                </Pressable>
-                                            ))}
-                                        </View>
+                                    <View style={styles.saveDefaultRow}>
+                                        <Switch value={saveAsDefault} onValueChange={setSaveAsDefault} trackColor={{ false: "#E2E8F0", true: "#C7D2FE" }} thumbColor={saveAsDefault ? "#4F46E5" : "#F4F3F4"} />
+                                        <Text style={styles.saveDefaultText}>입력한 주소를 내 기본 주소로 저장하기</Text>
                                     </View>
-                                )}
+                                </View>
                             </View>
-                            <View style={{ height: 40 }} />
+                            <View style={{ height: 30 }} />
                             <PrimaryButton label="전달 신청하기" onPress={handleSubmit} loading={loading} disabled={loading} />
                             <View style={{ height: 20 }} />
                         </ScrollView>
@@ -423,13 +412,13 @@ const styles = StyleSheet.create({
     errorInput: { borderColor: '#EF4444', backgroundColor: '#FFF5F5' },
     searchBtn: { backgroundColor: '#4F46E5', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
     searchBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-    useLastAddressBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F3FF', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, gap: 6, alignSelf: 'flex-start', marginBottom: 4 },
+    quickInputRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
+    premiumQuickBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#4F46E5', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, gap: 6 },
+    premiumQuickBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+    useLastAddressBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, gap: 6 },
     useLastAddressText: { color: '#4F46E5', fontSize: 12, fontWeight: '700' },
-    historySection: { marginTop: 4 },
-    historyTitle: { fontSize: 11, color: '#94A3B8', fontWeight: '700', marginBottom: 8, marginLeft: 4 },
-    historyRow: { flexDirection: 'row', gap: 8 },
-    historyChip: { backgroundColor: '#F1F5F9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, maxWidth: 100 },
-    historyChipText: { fontSize: 11, color: '#64748B' },
+    saveDefaultRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 10 },
+    saveDefaultText: { fontSize: 13, color: '#64748B', fontWeight: '500' },
     requestCard: { padding: 16, borderRadius: 18, backgroundColor: '#fff', borderWidth: 1, borderColor: '#F1F5F9', marginBottom: 12, elevation: 1 },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
     statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, gap: 4 },

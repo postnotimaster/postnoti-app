@@ -14,6 +14,9 @@ export interface Profile {
     push_token?: string;       // Native App Push Token
     web_push_token?: string;   // PWA Web Push Token
     mailbox_code?: string;     // [NEW] 사서함 번호 등
+    address?: string;          // [NEW] 기본 주소
+    address_detail?: string;   // [NEW] 기본 상세주소
+    postcode?: string;         // [NEW] 기본 우편번호
     pwa_installed?: boolean;   // PWA Install Status
     last_accessed_at?: string;
 }
