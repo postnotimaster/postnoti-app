@@ -95,25 +95,37 @@ export const AdminRegisterMailScreen = () => {
     ];
 
     const onSubmit = async () => {
-        const finalMessage = selectedPreset || customMessage || undefined;
-        const result = await handleRegisterMail(
-            matchedProfile,
-            selectedImage,
-            detectedMailType,
-            detectedSender,
-            extraImages,
-            finalMessage
-        );
+        try {
+            console.log('[AdminRegisterMail] Starting registration...');
+            const finalMessage = selectedPreset || customMessage || undefined;
+            const result = await handleRegisterMail(
+                matchedProfile,
+                selectedImage,
+                detectedMailType,
+                detectedSender,
+                extraImages,
+                finalMessage
+            );
 
-        if (result) {
-            setLastNotifResult(result);
-            if (result.success) {
-                Alert.alert('발송 완료', '입주사에게 앱 알림을 보냈습니다.', [
-                    { text: '확인', onPress: () => handleSuccessFinish() }
-                ]);
+            console.log('[AdminRegisterMail] Registration result:', result);
+
+            if (result) {
+                setLastNotifResult(result);
+                if (result.success) {
+                    Alert.alert('발송 완료', '입주사에게 앱 알림을 보냈습니다.', [
+                        { text: '확인', onPress: () => handleSuccessFinish() }
+                    ]);
+                } else {
+                    console.log('[AdminRegisterMail] Notification not sent directly, showing fallback modal');
+                    setResultModalVisible(true);
+                }
             } else {
-                setResultModalVisible(true);
+                console.warn('[AdminRegisterMail] No result returned from handleRegisterMail');
+                showToast({ message: '알림 결과 데이터를 받지 못했습니다.', type: 'error' });
             }
+        } catch (e: any) {
+            console.error('[AdminRegisterMail] onSubmit error:', e);
+            Alert.alert('등록 오류', `문제가 발생했습니다: ${e.message}`);
         }
     };
 
