@@ -7,6 +7,7 @@ export interface MailDeliveryRequest {
     id: string;
     company_id: string;
     profile_id: string;
+    tenant_id?: string;
     recipient_name: string;
     recipient_phone: string;
     postcode: string;
@@ -65,11 +66,11 @@ export const mailDeliveryService = {
     },
 
     // 2. 나의 요청 내역 조회 (입주사)
-    async getMyRequests(profileId: string): Promise<MailDeliveryRequest[]> {
+    async getMyRequests(userId: string): Promise<MailDeliveryRequest[]> {
         const { data, error } = await supabase
             .from('mail_delivery_requests')
             .select('*')
-            .eq('profile_id', profileId)
+            .or(`profile_id.eq.${userId},tenant_id.eq.${userId}`)
             .order('created_at', { ascending: false });
 
         if (error) {

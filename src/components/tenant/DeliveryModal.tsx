@@ -86,11 +86,13 @@ export const DeliveryModal = ({
                 {
                     event: 'UPDATE',
                     schema: 'public',
-                    table: 'mail_delivery_requests',
-                    filter: `profile_id=eq.${profileId}`
+                    table: 'mail_delivery_requests'
                 },
                 (payload) => {
-                    setRequests(prev => prev.map(r => r.id === payload.new.id ? { ...r, ...payload.new } : r));
+                    const newReq = payload.new as MailDeliveryRequest;
+                    if (newReq.profile_id === profileId || newReq.tenant_id === profileId) {
+                        setRequests(prev => prev.map(r => r.id === newReq.id ? { ...r, ...newReq } : r));
+                    }
                 }
             )
             .subscribe();
@@ -147,6 +149,7 @@ export const DeliveryModal = ({
         const requestData = {
             company_id: companyId,
             profile_id: profileId,
+            tenant_id: profileId,
             recipient_name: name,
             recipient_phone: phone,
             postcode,
@@ -158,15 +161,17 @@ export const DeliveryModal = ({
             setLoading(true);
             setErrorText(null);
             setMissingFields([]);
-            await mailDeliveryService.createRequest(requestData);
+            await mailDeliveryService.createRequest(requestData as any);
             setStep('success');
             loadData();
         } catch (e: any) {
             console.error('Submit error:', e);
             if (e.code === '23503' && e.message?.includes('profile_id')) {
                 try {
-                    await mailDeliveryService.createRequest({ ...requestData, profile_id: null as any });
+                    const fallbackData = { ...requestData, profile_id: null };
+                    await mailDeliveryService.createRequest(fallbackData as any);
                     setStep('success');
+                    loadData();
                     return;
                 } catch (retryError) { }
             }
