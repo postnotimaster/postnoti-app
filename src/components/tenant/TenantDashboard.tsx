@@ -150,8 +150,7 @@ export const TenantDashboard = ({
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#4F46E5" />
-                <Text style={styles.loadingText}>우편함데이터가져오는 중...</Text>
-                {/* [DEBUG] 로딩 중 상태 표시 */}
+                <Text style={styles.loadingText}>우편함 데이터를 가져오는 중...</Text>
                 {!companyId && <Text style={{ fontSize: 10, color: '#94A3B8', marginTop: 10 }}>지점 데이터를 확인하고 있습니다...</Text>}
             </View>
         );
@@ -204,7 +203,6 @@ export const TenantDashboard = ({
                             />
                         </View>
 
-
                         <View style={styles.secureBadge}>
                             <Text style={{ fontSize: 13 }}>🔒</Text>
                             <Text style={styles.secureText}>안전하게 보호되고 있습니다</Text>
@@ -236,55 +234,54 @@ export const TenantDashboard = ({
                         </Pressable>
                     </View>
                     <Text style={styles.subtitle}>{companyName} 스마트 우편함</Text>
-
-
-                    {/* [NEW] 이름 아래 공지사항 텍스트 노출 - 클릭 가능하게 개선 */}
-                    {announcements.length > 0 && (
-                        <Pressable
-                            onPress={() => setIsNoticeVisible(true)}
-                            style={styles.compactNoticeBox}
-                        >
-                            <Text style={styles.compactNoticeLabel}>📢</Text>
-                            <Text style={styles.compactNoticeTitle} numberOfLines={1}>
-                                {announcements[0].title}
-                            </Text>
-                            {announcements.length > 1 && (
-                                <Text style={styles.compactNoticeCount}>외 {announcements.length - 1}건</Text>
-                            )}
-                            <Ionicons name="chevron-forward" size={12} color="#94A3B8" style={{ marginLeft: 4 }} />
-                        </Pressable>
-                    )}
                 </View>
 
-                <View style={{ alignItems: 'flex-end', gap: 8 }}>
+                <View style={{ alignItems: 'flex-end' }}>
                     <Pressable onPress={() => handleLogout()}>
                         <Text style={{ color: '#EF4444', fontWeight: '600', fontSize: 13 }}>로그아웃</Text>
-                    </Pressable>
-                    <Pressable
-                        onPress={() => refreshAnnouncements()}
-                        style={styles.refreshButton}
-                    >
-                        <Ionicons name="refresh" size={18} color="#6366F1" />
-                        <Text style={styles.refreshButtonText}>새로고침</Text>
                     </Pressable>
                 </View>
             </View>
 
-            {/* 기존 공지사항 퀵 배너 제거됨 (헤더로 통합) */}
+            {/* [NEW] 공지사항 보드 - 최대 5개까지 한 줄씩 출력 */}
+            {announcements.length > 0 && (
+                <View style={styles.noticeBoard}>
+                    {announcements.slice(0, 5).map((notice, index) => (
+                        <Pressable
+                            key={notice.id}
+                            onPress={() => setIsNoticeVisible(true)}
+                            style={[
+                                styles.noticeRow,
+                                index === 0 && { borderTopWidth: 0 }
+                            ]}
+                        >
+                            <Text style={styles.noticeIconText}>📢</Text>
+                            <Text style={styles.noticeTitleText} numberOfLines={1}>
+                                {notice.title}
+                            </Text>
+                            <Ionicons name="chevron-forward" size={14} color="#CBD5E1" />
+                        </Pressable>
+                    ))}
+                </View>
+            )}
 
-            {/* 공지사항 통합 배너 제거됨 */}
+            {/* 탭 필터 + 새로고침 버튼 통합 */}
+            <View style={styles.tabBarContainer}>
+                <View style={styles.tabButtons}>
+                    <Pressable style={[styles.tabButton, filter === 'all' && styles.activeTab]} onPress={() => setFilter('all')}>
+                        <Text style={[styles.tabText, filter === 'all' && styles.activeTabText]}>전체 보기</Text>
+                    </Pressable>
+                    <Pressable style={[styles.tabButton, filter === 'unread' && styles.activeTab]} onPress={() => setFilter('unread')}>
+                        <Text style={[styles.tabText, filter === 'unread' && styles.activeTabText]}>안읽음 {unreadCount > 0 ? `(${unreadCount})` : ''}</Text>
+                    </Pressable>
+                </View>
 
-            {/* 알림 배너 제거됨 */}
-
-            {/* iOS 가이드 제거됨 */}
-
-            {/* 탭 필터 */}
-            <View style={styles.tabContainer}>
-                <Pressable style={[styles.tabButton, filter === 'all' && styles.activeTab]} onPress={() => setFilter('all')}>
-                    <Text style={[styles.tabText, filter === 'all' && styles.activeTabText]}>전체 보기</Text>
-                </Pressable>
-                <Pressable style={[styles.tabButton, filter === 'unread' && styles.activeTab]} onPress={() => setFilter('unread')}>
-                    <Text style={[styles.tabText, filter === 'unread' && styles.activeTabText]}>안읽음 {unreadCount > 0 ? `(${unreadCount})` : ''}</Text>
+                <Pressable
+                    onPress={() => refreshAnnouncements()}
+                    style={styles.refreshButton}
+                >
+                    <Ionicons name="refresh" size={16} color="#4F46E5" />
+                    <Text style={styles.refreshButtonText}>새로고침</Text>
                 </Pressable>
             </View>
 
@@ -325,7 +322,6 @@ export const TenantDashboard = ({
                 onClose={() => setIsNoticeVisible(false)}
             />
 
-            {/* 이미지 확대 모달 */}
             <Modal visible={!!selectedMailImage} transparent={true} animationType="fade" onRequestClose={() => setSelectedMailImage(null)}>
                 <View style={styles.modalContainer}>
                     <Pressable style={styles.closeButton} onPress={() => setSelectedMailImage(null)}>
@@ -421,17 +417,58 @@ const styles = StyleSheet.create({
     refreshButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#EEF2FF',
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 8,
+        backgroundColor: '#fff',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#E0E7FF',
+        borderColor: '#E2E8F0',
     },
     refreshButtonText: {
         fontSize: 12,
         color: '#4F46E5',
         fontWeight: '700',
         marginLeft: 4,
+    },
+
+    // 개선된 공지사항 영역
+    noticeBoard: {
+        backgroundColor: '#fff',
+        marginHorizontal: 16,
+        marginTop: -10, // 헤더와 살짝 겹치게 하여 연결성 강조
+        borderRadius: 16,
+        padding: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 3,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+    },
+    noticeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#F8FAFC',
+    },
+    noticeIconText: { fontSize: 14, marginRight: 10 },
+    noticeTitleText: { flex: 1, fontSize: 14, color: '#334155', fontWeight: '600' },
+
+    // 탭 바 컨테이너 통합
+    tabBarContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#F8FAFC',
+    },
+    tabButtons: {
+        flexDirection: 'row',
+        gap: 8,
     },
 });
