@@ -38,7 +38,9 @@ export const useMailRegistration = (
         }
 
         try {
+            console.log('[useMailRegistration] Process started');
             setOcrLoading(true);
+            Alert.alert('1단계', '사진 업로드를 시작합니다.');
 
             // 1. 이미지를 Supabase Storage에 업로드
             const uploadedMainImage = await storageService.uploadImage(selectedImage);
@@ -46,19 +48,16 @@ export const useMailRegistration = (
             if (!uploadedMainImage) {
                 throw new Error('사진 업로드에 실패했습니다.');
             }
+            Alert.alert('2단계', '데이터베이스에 저장 중...');
 
             // 2. 추가 이미지들도 병렬 업로드
             const uploadedExtraImages: string[] = [];
             if (extraImages && extraImages.length > 0) {
                 const uploadPromises = extraImages.map(img => storageService.uploadImage(img));
                 const results = await Promise.allSettled(uploadPromises);
-
                 results.forEach((result, idx) => {
                     if (result.status === 'fulfilled' && result.value) {
                         uploadedExtraImages.push(result.value);
-                    } else if (result.status === 'rejected') {
-                        console.warn(`Failed to upload extra image ${idx}:`, result.reason);
-                        showToast({ message: '추가 이미지 일부 업로드에 실패했습니다.', type: 'error' });
                     }
                 });
             }
@@ -77,6 +76,8 @@ export const useMailRegistration = (
                 throw new Error(`데이터 저장 실패: ${regError.message}`);
             }
 
+            Alert.alert('3단계', '알림 발송을 시도합니다.');
+
             // 3. 알림 발송 및 결과 수집
             const notifResult = await notificationService.sendMailArrivalPush(
                 matchedProfile,
@@ -86,18 +87,13 @@ export const useMailRegistration = (
                 customMessage
             );
 
-            // Alert.alert('완료', `${matchedProfile.name}님께 알림을 보냈습니다.`); // 이전 단순 알림 제거
+            console.log('[useMailRegistration] Finished with result:', notifResult);
 
-            // 데이터 갱신을 호출자에게 위임
             if (onMailRegistered) onMailRegistered();
-
-            // Reset UI States (Success) 제거 - UI 컴포넌트에서 제어하도록 변경
-            // resetOCR(); 
-
             return notifResult;
         } catch (error: any) {
             console.error('Register mail error:', error);
-            showToast({ message: error.message || '등록 중 문제가 발생했습니다.', type: 'error' });
+            Alert.alert('등록 과정 오류', `사유: ${error.message}`);
             return null;
         } finally {
             setOcrLoading(false);
