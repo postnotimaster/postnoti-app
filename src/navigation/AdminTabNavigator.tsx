@@ -13,7 +13,14 @@ const Tab = createBottomTabNavigator();
 
 export const AdminTabNavigator = () => {
     const insets = useSafeAreaInsets();
-    const { pendingDeliveryCount } = useAppContent();
+    const { pendingDeliveryCount, loadPendingDeliveryCount, officeInfo } = useAppContent();
+
+    // 탭 네비게이터가 렌더링되거나 오피스 정보가 바뀔 때 한 번 더 갱신
+    React.useEffect(() => {
+        if (officeInfo?.id) {
+            loadPendingDeliveryCount();
+        }
+    }, [officeInfo?.id]);
 
     return (
         <Tab.Navigator

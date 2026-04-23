@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Alert, BackHandler } from 'react-native';
+import { Alert, BackHandler, AppState } from 'react-native';
 import * as Linking from 'expo-linking';
 import * as ImagePicker from 'expo-image-picker';
 import * as Clipboard from 'expo-clipboard';
@@ -182,6 +182,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
         return () => {
             subscription.unsubscribe();
+        };
+    }, [officeInfo?.id]);
+
+    // 앱 상태(포그라운드) 변경 시 갱신 리스너
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', (nextAppState) => {
+            if (nextAppState === 'active' && officeInfo?.id) {
+                loadPendingDeliveryCount();
+            }
+        });
+        return () => {
+            subscription.remove();
         };
     }, [officeInfo?.id]);
 

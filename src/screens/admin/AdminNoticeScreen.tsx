@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, FlatList,
     ActivityIndicator, TextInput, Pressable, Modal,
-    ScrollView, Switch, Alert, Platform
+    ScrollView, Switch, Alert, Platform, BackHandler,
+    KeyboardAvoidingView
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAppContent } from '../../contexts/AppContext';
@@ -13,6 +15,7 @@ import { appStyles } from '../../styles/appStyles';
 import { AppHeader } from '../../components/common/AppHeader';
 
 export const AdminNoticeScreen = () => {
+    const navigation = useNavigation<any>();
     const { officeInfo, profiles } = useAppContent();
     const [notices, setNotices] = useState<Announcement[]>([]);
     const [loading, setLoading] = useState(false);
@@ -24,6 +27,8 @@ export const AdminNoticeScreen = () => {
     const [content, setContent] = useState('');
     const [isPriority, setIsPriority] = useState(false);
     const [targetTenants, setTargetTenants] = useState<string[]>([]); // Empty means all
+    const [tenantSearchQuery, setTenantSearchQuery] = useState(''); // 입주사 검색용
+    const [sortBy, setSortBy] = useState<'room' | 'name' | 'company'>('room'); // 정렬 방식
 
     useEffect(() => {
         loadNotices();
@@ -178,74 +183,141 @@ export const AdminNoticeScreen = () => {
             </View>
 
             {/* 작성/수정 모달 */}
-            <Modal visible={modalVisible} animationType="slide">
+            <Modal
+                visible={modalVisible}
+                animationType="slide"
+                onRequestClose={() => setModalVisible(false)} // 안드로이드 뒤로가기 버튼 대응 (취소와 동일)
+            >
                 <SafeAreaView style={{ flex: 1 }}>
-                    <View style={styles.modalHeader}>
-                        <Pressable onPress={() => setModalVisible(false)}>
-                            <Text style={styles.cancelText}>취소</Text>
-                        </Pressable>
-                        <Text style={styles.modalTitle}>{editingNotice ? '공지 수정' : '새 공지 작성'}</Text>
-                        <Pressable onPress={handleSave}>
-                            <Text style={styles.saveText}>저장</Text>
-                        </Pressable>
-                    </View>
-
-                    <ScrollView style={styles.modalContent}>
-                        <View style={styles.formGroup}>
-                            <Text style={styles.label}>제목</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={title}
-                                onChangeText={setTitle}
-                                placeholder="공지 제목을 입력하세요"
-                            />
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        style={{ flex: 1 }}
+                    >
+                        <View style={styles.modalHeader}>
+                            <Pressable onPress={() => setModalVisible(false)}>
+                                <Text style={styles.cancelText}>취소</Text>
+                            </Pressable>
+                            <Text style={styles.modalTitle}>{editingNotice ? '공지 수정' : '새 공지 작성'}</Text>
+                            <Pressable onPress={handleSave}>
+                                <Text style={styles.saveText}>저장</Text>
+                            </Pressable>
                         </View>
 
-                        <View style={styles.formGroup}>
-                            <Text style={styles.label}>내용</Text>
-                            <TextInput
-                                style={[styles.input, styles.textArea]}
-                                value={content}
-                                onChangeText={setContent}
-                                placeholder="공지 내용을 입력하세요"
-                                multiline
-                                textAlignVertical="top"
-                            />
-                        </View>
-
-                        <View style={styles.switchGroup}>
-                            <View>
-                                <Text style={styles.label}>중요 공지 설정</Text>
-                                <Text style={styles.helpText}>리스트 상단에 고정 표시됩니다.</Text>
+                        <ScrollView style={styles.modalContent} keyboardShouldPersistTaps="handled">
+                            <View style={styles.formGroup}>
+                                <Text style={styles.label}>제목</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={title}
+                                    onChangeText={setTitle}
+                                    placeholder="공지 제목을 입력하세요"
+                                />
                             </View>
-                            <Switch value={isPriority} onValueChange={setIsPriority} trackColor={{ true: '#4F46E5' }} />
-                        </View>
 
-                        <View style={[styles.formGroup, { marginTop: 20 }]}>
-                            <Text style={styles.label}>노출 대상 설정</Text>
-                            <Text style={styles.helpText}>아무것도 선택하지 않으면 전체 공지로 나갑니다.</Text>
-                            <View style={styles.tenantPicker}>
-                                {profiles.map(p => (
+                            <View style={styles.formGroup}>
+                                <Text style={styles.label}>내용</Text>
+                                <TextInput
+                                    style={[styles.input, styles.textArea]}
+                                    value={content}
+                                    onChangeText={setContent}
+                                    placeholder="공지 내용을 입력하세요"
+                                    multiline
+                                    textAlignVertical="top"
+                                />
+                            </View>
+
+                            <View style={styles.switchGroup}>
+                                <View>
+                                    <Text style={styles.label}>중요 공지 설정</Text>
+                                    <Text style={styles.helpText}>리스트 상단에 고정 표시됩니다.</Text>
+                                </View>
+                                <Switch value={isPriority} onValueChange={setIsPriority} trackColor={{ true: '#4F46E5' }} />
+                            </View>
+
+                            <View style={[styles.formGroup, { marginTop: 20 }]}>
+                                <Text style={styles.label}>노출 대상 설정</Text>
+                                <Text style={styles.helpText}>아무것도 선택하지 않으면 전체 공지로 나갑니다.</Text>
+
+                                {/* 입주사 검색창 */}
+                                <View style={styles.searchContainer}>
+                                    <Ionicons name="search" size={16} color="#94A3B8" />
+                                    <TextInput
+                                        style={styles.searchInput}
+                                        placeholder="입주사명 또는 호실 검색..."
+                                        value={tenantSearchQuery}
+                                        onChangeText={setTenantSearchQuery}
+                                    />
+                                    {tenantSearchQuery !== '' && (
+                                        <Pressable onPress={() => setTenantSearchQuery('')}>
+                                            <Ionicons name="close-circle" size={16} color="#94A3B8" />
+                                        </Pressable>
+                                    )}
+                                </View>
+
+                                {/* 정렬 버튼 */}
+                                <View style={styles.sortContainer}>
                                     <Pressable
-                                        key={p.id}
-                                        style={[
-                                            styles.tenantChip,
-                                            targetTenants.includes(p.id) && styles.tenantChipActive
-                                        ]}
-                                        onPress={() => toggleTargetTenant(p.id)}
+                                        onPress={() => setSortBy('room')}
+                                        style={[styles.sortButton, sortBy === 'room' && styles.sortButtonActive]}
                                     >
-                                        <Text style={[
-                                            styles.tenantChipText,
-                                            targetTenants.includes(p.id) && styles.tenantChipTextActive
-                                        ]}>
-                                            {p.room_number ? `[${p.room_number}] ` : ''}{p.company_name || p.name}
-                                        </Text>
+                                        <Text style={[styles.sortButtonText, sortBy === 'room' && styles.sortButtonTextActive]}>호실순</Text>
                                     </Pressable>
-                                ))}
+                                    <Pressable
+                                        onPress={() => setSortBy('name')}
+                                        style={[styles.sortButton, sortBy === 'name' && styles.sortButtonActive]}
+                                    >
+                                        <Text style={[styles.sortButtonText, sortBy === 'name' && styles.sortButtonTextActive]}>이름순</Text>
+                                    </Pressable>
+                                    <Pressable
+                                        onPress={() => setSortBy('company')}
+                                        style={[styles.sortButton, sortBy === 'company' && styles.sortButtonActive]}
+                                    >
+                                        <Text style={[styles.sortButtonText, sortBy === 'company' && styles.sortButtonTextActive]}>회사순</Text>
+                                    </Pressable>
+                                </View>
+
+                                <View style={styles.tenantPicker}>
+                                    {[...profiles]
+                                        .sort((a, b) => {
+                                            if (sortBy === 'room') {
+                                                return (a.room_number || '').localeCompare(b.room_number || '', undefined, { numeric: true });
+                                            } else if (sortBy === 'name') {
+                                                return a.name.localeCompare(b.name);
+                                            } else {
+                                                return (a.company_name || '').localeCompare(b.company_name || '');
+                                            }
+                                        })
+                                        .filter(p => {
+                                            if (!tenantSearchQuery) return true;
+                                            const query = tenantSearchQuery.toLowerCase();
+                                            return (
+                                                p.name.toLowerCase().includes(query) ||
+                                                (p.company_name?.toLowerCase() || '').includes(query) ||
+                                                (p.room_number?.toLowerCase() || '').includes(query)
+                                            );
+                                        })
+                                        .map(p => (
+                                            <Pressable
+                                                key={p.id}
+                                                style={[
+                                                    styles.tenantChip,
+                                                    targetTenants.includes(p.id) && styles.tenantChipActive
+                                                ]}
+                                                onPress={() => toggleTargetTenant(p.id)}
+                                            >
+                                                <Text style={[
+                                                    styles.tenantChipText,
+                                                    targetTenants.includes(p.id) && styles.tenantChipTextActive
+                                                ]}>
+                                                    {p.room_number ? `[${p.room_number}] ` : ''}{p.company_name || p.name}
+                                                </Text>
+                                            </Pressable>
+                                        ))}
+                                </View>
                             </View>
-                        </View>
-                        <View style={{ height: 100 }} />
-                    </ScrollView>
+                            <View style={{ height: 150 }} />
+                        </ScrollView>
+                    </KeyboardAvoidingView>
                 </SafeAreaView>
             </Modal>
         </SafeAreaView>
@@ -286,4 +358,44 @@ const styles = StyleSheet.create({
     tenantChipActive: { backgroundColor: '#4F46E5' },
     tenantChipText: { fontSize: 12, color: '#64748B', fontWeight: '600' },
     tenantChipTextActive: { color: '#fff' },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F1F5F9',
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        marginBottom: 12,
+        height: 40
+    },
+    searchInput: {
+        flex: 1,
+        marginLeft: 8,
+        fontSize: 14,
+        color: '#1E293B'
+    },
+    sortContainer: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 12,
+    },
+    sortButton: {
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 6,
+        backgroundColor: '#F1F5F9',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    sortButtonActive: {
+        backgroundColor: '#6366F1',
+        borderColor: '#6366F1',
+    },
+    sortButtonText: {
+        fontSize: 12,
+        color: '#64748B',
+        fontWeight: '700',
+    },
+    sortButtonTextActive: {
+        color: '#fff',
+    },
 });

@@ -54,15 +54,15 @@ export const LandingScreen = () => {
                     <View style={{ flex: 1, padding: 24, justifyContent: 'center', backgroundColor: '#FFFFFF' }}>
                         <View style={{ marginBottom: keyboardVisible ? 10 : 30, marginTop: keyboardVisible ? 20 : 40, alignItems: 'center' }}>
                             <Image
-                                source={require('../../assets/icon.png')}
+                                source={require('../../assets/logo.png')}
                                 style={{
-                                    width: keyboardVisible ? 100 : 180,
-                                    height: keyboardVisible ? 100 : 180,
-                                    borderRadius: keyboardVisible ? 24 : 40
+                                    width: keyboardVisible ? 60 : 90,
+                                    height: keyboardVisible ? 60 : 90,
+                                    borderRadius: keyboardVisible ? 15 : 24
                                 }}
                                 resizeMode="contain"
                             />
-                            <Text style={{ fontSize: 15, color: '#475569', fontWeight: '800', marginTop: -16 }}>공유오피스우편알림 - 포스트노티</Text>
+                            <Text style={{ fontSize: 16, color: '#475569', fontWeight: '800', marginTop: 15 }}>스마트우편알림 - 포스트노티</Text>
                         </View>
 
                         <View style={appStyles.actionSection}>

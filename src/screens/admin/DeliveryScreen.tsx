@@ -10,7 +10,7 @@ import { mailDeliveryService, MailDeliveryRequest } from '../../services/mailDel
 import { notificationService } from '../../services/notificationService';
 
 export const DeliveryScreen = () => {
-    const { officeInfo } = useAppContent();
+    const { officeInfo, loadPendingDeliveryCount } = useAppContent();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [requests, setRequests] = useState<MailDeliveryRequest[]>([]);
@@ -86,6 +86,9 @@ export const DeliveryScreen = () => {
             };
 
             Alert.alert('성공', `요청이 ${statusLabels[newStatus] || newStatus} 상태로 변경되었습니다.`);
+
+            // 뱃지 카운트 실시간 갱신
+            loadPendingDeliveryCount();
         } catch (e) {
             Alert.alert('오류', '상태 변경에 실패했습니다.');
         }

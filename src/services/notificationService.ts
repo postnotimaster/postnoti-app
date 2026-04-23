@@ -158,8 +158,20 @@ export const notificationService = {
 
         try {
             let query = supabase.from('profiles').select('id, push_token, web_push_token');
+
             if (targetTenantIds && targetTenantIds.length > 0) {
-                query = query.in('id', targetTenantIds);
+                // [수정] targetTenantIds는 tenants 테이블의 ID이므로, profile_id를 먼저 조회해야 함
+                const { data: tenants } = await supabase
+                    .from('tenants')
+                    .select('profile_id')
+                    .in('id', targetTenantIds);
+
+                const profileIds = tenants?.map(t => t.profile_id).filter(id => id) || [];
+                if (profileIds.length === 0) {
+                    console.log('[NotificationService] No linked profiles found for targeted tenants');
+                    return;
+                }
+                query = query.in('id', profileIds);
             } else {
                 const { data: tenants } = await supabase.from('tenants').select('profile_id').eq('company_id', company.id);
                 const profileIds = tenants?.map(t => t.profile_id).filter(id => id) || [];

@@ -155,7 +155,7 @@ export const AdminRegisterMailScreen = () => {
         // 개발 환경/테스트 모드일 때 메시지의 링크를 현재 오리진으로 치환
         if (Platform.OS === 'web') {
             const currentOrigin = window.location.origin;
-            message = message.replace('https://postnoti-app.vercel.app', currentOrigin);
+            message = message.replace('https://postnoti-app-two.vercel.app', currentOrigin);
         }
 
         // Android와 iOS의 SMS URL 구분자 처리 (? vs &)

@@ -218,99 +218,109 @@ export const TenantDashboard = ({
     // 메인 대시보드 화면
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                        <Text style={styles.title} numberOfLines={1}>
-                            {(myProfile.company_name || myProfile.name) === myProfile.name
-                                ? `${myProfile.name}님`
-                                : `${myProfile.company_name} ${myProfile.name}님`}
-                        </Text>
-                        {unreadCount > 0 && (
-                            <View style={styles.unreadBadge}>
-                                <Text style={styles.unreadBadgeText}>+{unreadCount}</Text>
-                            </View>
-                        )}
-                        <Pressable onPress={() => setIsSettingsVisible(true)} style={{ marginLeft: 4 }}>
-                            <Ionicons name="settings-outline" size={20} color="#64748B" />
-                        </Pressable>
-                    </View>
-                    <Text style={styles.subtitle}>{companyName} 스마트 우편함</Text>
-                </View>
-
-                <View style={{ alignItems: 'flex-end' }}>
-                    <Pressable onPress={() => handleLogout()}>
-                        <Text style={{ color: '#EF4444', fontWeight: '600', fontSize: 13 }}>로그아웃</Text>
-                    </Pressable>
-                </View>
-            </View>
-
-            {/* [NEW] 공지사항 보드 - 최대 5개까지 한 줄씩 출력 */}
-            {announcements.length > 0 && (
-                <View style={styles.noticeBoard}>
-                    {announcements.slice(0, 5).map((notice, index) => (
-                        <Pressable
-                            key={notice.id}
-                            onPress={() => setIsNoticeVisible(true)}
-                            style={[
-                                styles.noticeRow,
-                                index === 0 && { borderTopWidth: 0 }
-                            ]}
-                        >
-                            <Text style={styles.noticeIconText}>📢</Text>
-                            <Text style={styles.noticeTitleText} numberOfLines={1}>
-                                {notice.title}
-                            </Text>
-                            <Ionicons name="chevron-forward" size={14} color="#CBD5E1" />
-                        </Pressable>
-                    ))}
-                </View>
-            )}
-
-            {/* 탭 필터 + 새로고침 버튼 통합 */}
-            <View style={styles.tabBarContainer}>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.tabButtons}
-                >
-                    <Pressable style={[styles.tabButton, filter === 'all' && styles.activeTab]} onPress={() => setFilter('all')}>
-                        <Text style={[styles.tabText, filter === 'all' && styles.activeTabText]}>전체</Text>
-                    </Pressable>
-                    <Pressable style={[styles.tabButton, filter === 'unread' && styles.activeTab]} onPress={() => setFilter('unread')}>
-                        <Text style={[styles.tabText, filter === 'unread' && styles.activeTabText]}>안읽음</Text>
-                    </Pressable>
-
-                    <Pressable
-                        style={[styles.tabButton, styles.deliveryTabButton]}
-                        onPress={() => setIsMailDeliveryVisible(true)}
-                    >
-                        <Ionicons name="paper-plane" size={14} color="#fff" />
-                        <Text style={[styles.tabText, { color: '#fff', marginLeft: 4 }]}>전달신청</Text>
-                    </Pressable>
-                </ScrollView>
-
-                <Pressable
-                    onPress={() => refreshAnnouncements()}
-                    style={styles.iconRefreshButton}
-                >
-                    <Ionicons name="refresh" size={18} color="#4F46E5" />
-                </Pressable>
-            </View>
-
             {loading || mailsLoading ? (
                 <ActivityIndicator style={{ marginTop: 50 }} color="#4F46E5" />
             ) : (
                 <SectionList
-                    sections={getGroupedMails(filter)}
-                    keyExtractor={(item) => item.id}
+                    sections={[
+                        { title: 'CONTROLS', data: [], type: 'controls' },
+                        ...getGroupedMails(filter).map(s => ({ ...s, type: 'mail' }))
+                    ]}
+                    keyExtractor={(item, index) => item.id || `extra-${index}`}
                     renderItem={renderMailItem}
-                    renderSectionHeader={({ section: { title } }) => (
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>{title}</Text>
+                    renderSectionHeader={({ section }) => {
+                        if ((section as any).type === 'controls') {
+                            return (
+                                <View style={styles.tabBarContainer}>
+                                    <ScrollView
+                                        horizontal
+                                        showsHorizontalScrollIndicator={false}
+                                        contentContainerStyle={styles.tabButtons}
+                                    >
+                                        <Pressable style={[styles.tabButton, filter === 'all' && styles.activeTab]} onPress={() => setFilter('all')}>
+                                            <Text style={[styles.tabText, filter === 'all' && styles.activeTabText]}>전체</Text>
+                                        </Pressable>
+                                        <Pressable style={[styles.tabButton, filter === 'unread' && styles.activeTab]} onPress={() => setFilter('unread')}>
+                                            <Text style={[styles.tabText, filter === 'unread' && styles.activeTabText]}>안읽음</Text>
+                                        </Pressable>
+
+                                        <Pressable
+                                            style={[styles.tabButton, styles.deliveryTabButton]}
+                                            onPress={() => setIsMailDeliveryVisible(true)}
+                                        >
+                                            <Ionicons name="paper-plane" size={14} color="#fff" />
+                                            <Text style={[styles.tabText, { color: '#fff', marginLeft: 4 }]}>전달신청</Text>
+                                        </Pressable>
+                                    </ScrollView>
+
+                                    <Pressable
+                                        onPress={() => refreshAnnouncements()}
+                                        style={styles.iconRefreshButton}
+                                    >
+                                        <Ionicons name="refresh" size={18} color="#4F46E5" />
+                                    </Pressable>
+                                </View>
+                            );
+                        }
+                        return (
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>{section.title}</Text>
+                            </View>
+                        );
+                    }}
+                    stickySectionHeadersEnabled={true}
+                    ListHeaderComponent={
+                        <View>
+                            <View style={styles.header}>
+                                <View style={{ flex: 1 }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                        <Text style={styles.title} numberOfLines={1}>
+                                            {(myProfile.company_name || myProfile.name) === myProfile.name
+                                                ? `${myProfile.name}님`
+                                                : `${myProfile.company_name} ${myProfile.name}님`}
+                                        </Text>
+                                        {unreadCount > 0 && (
+                                            <View style={styles.unreadBadge}>
+                                                <Text style={styles.unreadBadgeText}>+{unreadCount}</Text>
+                                            </View>
+                                        )}
+                                        <Pressable onPress={() => setIsSettingsVisible(true)} style={{ marginLeft: 4 }}>
+                                            <Ionicons name="settings-outline" size={20} color="#64748B" />
+                                        </Pressable>
+                                    </View>
+                                    <Text style={styles.subtitle}>{companyName} 스마트 우편함</Text>
+                                </View>
+
+                                <View style={{ alignItems: 'flex-end' }}>
+                                    <Pressable onPress={() => handleLogout()}>
+                                        <Text style={{ color: '#EF4444', fontWeight: '600', fontSize: 13 }}>로그아웃</Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+
+                            {/* [NEW] 공지사항 보드 - 최대 5개까지 한 줄씩 출력 */}
+                            {announcements.length > 0 && (
+                                <View style={styles.noticeBoard}>
+                                    {announcements.slice(0, 5).map((notice, index) => (
+                                        <Pressable
+                                            key={notice.id}
+                                            onPress={() => setIsNoticeVisible(true)}
+                                            style={[
+                                                styles.noticeRow,
+                                                index === 0 && { borderTopWidth: 0 }
+                                            ]}
+                                        >
+                                            <Text style={styles.noticeIconText}>📢</Text>
+                                            <Text style={styles.noticeTitleText} numberOfLines={1}>
+                                                {notice.title}
+                                            </Text>
+                                            <Ionicons name="chevron-forward" size={14} color="#CBD5E1" />
+                                        </Pressable>
+                                    ))}
+                                </View>
+                            )}
                         </View>
-                    )}
-                    stickySectionHeadersEnabled={false}
+                    }
                     ListEmptyComponent={
                         <View style={{ alignItems: 'center', marginTop: 50 }}>
                             <Text style={styles.emptyText}>
@@ -318,7 +328,7 @@ export const TenantDashboard = ({
                             </Text>
                         </View>
                     }
-                    contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+                    contentContainerStyle={{ paddingBottom: 100 }}
                 />
             )}
 
