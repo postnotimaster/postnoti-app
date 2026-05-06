@@ -175,8 +175,18 @@ function TenantDashboardWrapper(props: any) {
     );
   }
 
-  // 지점 정보를 찾지 못한 경우 (대기 시간이 길어지거나 진짜 없는 경우)
+  // 지점 정보를 찾지 못한 경우
   if (!company || (!company.id && !company.name)) {
+    // [보완] 만약 magicId는 확인되었으나 아직 DB 조회가 완료되지 않은 경우라면, 에러 대신 로딩을 유지
+    if (resolvedMagicId) {
+      return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+          <ActivityIndicator size="large" color="#4F46E5" />
+          <Text style={{ marginTop: 16, color: '#64748B', fontSize: 14 }}>지점 정보를 불러오는 중...</Text>
+        </View>
+      );
+    }
+
     const handleReload = () => {
       if (Platform.OS === 'web') {
         window.location.reload();

@@ -436,13 +436,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                     }
                 }
 
-                // C) [FAST-TRACK] 과거 정상 작동 버전의 핵심 로직 복원
-                // 매직 ID가 있다면 데이터베이스 조회가 끝나기 전이라도 입주자 모드로 미리 전환하여 Landing 노출 차단
+                // C) [FAST-TRACK] 즉시 화면 전환 및 로딩 걷어내기
                 if (magicId) {
                     console.log(`[AppContext] Fast-tracking to tenant_login with MagicId: ${magicId}`);
                     setMode('tenant_login');
-                    // 최소 정보만 담아 우선 세팅 (Wrapper에서 대기 유도)
+                    // 최소 정보만 담아 우선 세팅 (화면을 즉시 열어주기 위함)
                     setBrandingCompany({ magicId, slug } as any);
+                    setMagicIdResolved(true); // 여기서 바로 럭키! (화면 열기 스위치 On)
                 }
 
                 // D) 최종 결과 조회 및 적용
@@ -470,7 +470,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
 
         const subscription = Linking.addEventListener('url', (event) => handleDeepLink(event.url));
-        setMagicIdResolved(true);
+        if (!initialUrl) setMagicIdResolved(true); // 딥링크가 없는 경우에도 초기화 완료 처리
         return () => subscription.remove();
     };
 
