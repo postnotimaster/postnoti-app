@@ -30,8 +30,8 @@ import { AdminNotificationSettingsScreen } from './src/screens/AdminNotification
 import { KakaoGuideOverlay } from './src/components/common/KakaoGuideOverlay';
 
 function AppContent() {
-  const { isInitializing: authLoading, brandingCompany, setBrandingCompany } = useAuth();
-  const { mode, setMode, magicIdResolved, isInitializing: uiLoading } = useUI();
+  const { isInitializing: authLoading } = useAuth();
+  const { mode, setMode, magicIdResolved, isInitializing: uiLoading, brandingCompany, setBrandingCompany } = useUI();
   const { expoPushToken, webPushToken } = useNotifications();
 
   const isSystemInitializing = authLoading || uiLoading;
@@ -143,21 +143,15 @@ export default function App() {
     <SafeAreaProvider>
       <ToastProvider>
         <AuthProvider>
-          <UIProviderWrapper>
+          <UIProvider>
             <NotificationProvider>
               <OCRProvider>
                 <AppContent />
               </OCRProvider>
             </NotificationProvider>
-          </UIProviderWrapper>
+          </UIProvider>
         </AuthProvider>
       </ToastProvider>
     </SafeAreaProvider>
   );
 }
-
-// Wrapper to pass setBrandingCompany to UIProvider
-const UIProviderWrapper = ({ children }: { children: React.ReactNode }) => {
-  const { setBrandingCompany } = useAuth();
-  return <UIProvider setBrandingCompany={setBrandingCompany}>{children}</UIProvider>;
-};

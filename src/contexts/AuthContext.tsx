@@ -85,7 +85,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         <AuthContext.Provider value={{
             officeInfo, setOfficeInfo,
             tenantProfile, setTenantProfile,
-            brandingCompany, setBrandingCompany,
             profiles, setProfiles,
             handleLoginSuccess,
             loadInitialData,

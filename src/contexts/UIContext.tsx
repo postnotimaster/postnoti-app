@@ -10,6 +10,8 @@ export type AppMode = 'landing' | 'admin_login' | 'admin_branch_select' | 'admin
 interface UIContextType {
     mode: AppMode;
     setMode: (mode: AppMode) => void;
+    brandingCompany: Company | null;
+    setBrandingCompany: (comp: Company | null) => void;
     isInitializing: boolean;
     magicIdResolved: boolean;
     isAdminMgmtVisible: boolean;
@@ -26,8 +28,9 @@ interface UIContextType {
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
 
-export const UIProvider = ({ children, setBrandingCompany }: { children: ReactNode, setBrandingCompany: (c: Company | null) => void }) => {
+export const UIProvider = ({ children }: { children: ReactNode }) => {
     const [mode, setMode] = useState<AppMode>('landing');
+    const [brandingCompany, setBrandingCompany] = useState<Company | null>(null);
     const [isInitializing, setIsInitializing] = useState(true);
     const [magicIdResolved, setMagicIdResolved] = useState(false);
 
@@ -128,6 +131,7 @@ export const UIProvider = ({ children, setBrandingCompany }: { children: ReactNo
     return (
         <UIContext.Provider value={{
             mode, setMode,
+            brandingCompany, setBrandingCompany,
             isInitializing,
             magicIdResolved,
             isAdminMgmtVisible, setIsAdminMgmtVisible,
