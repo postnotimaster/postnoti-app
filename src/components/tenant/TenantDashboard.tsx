@@ -167,7 +167,7 @@ export const TenantDashboard = ({
 
     const sections = React.useMemo(() => [
         { title: 'CONTROLS', data: [], type: 'controls' },
-        ...getGroupedMails(filter).map(s => ({ ...s, type: 'mail' }))
+        ...(getGroupedMails(filter) || []).map(s => ({ ...s, type: 'mail' }))
     ], [getGroupedMails, filter]);
 
     // -----------------------------------------------------
@@ -179,7 +179,7 @@ export const TenantDashboard = ({
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#4F46E5" />
-                <Text style={styles.loadingText}>우편함 데이터를 가져오는 중...</Text>
+                <Text style={styles.loadingText}>입주자 정보를 확인하고 있습니다...</Text>
                 {!companyId && <Text style={{ fontSize: 10, color: '#94A3B8', marginTop: 10 }}>지점 데이터를 확인하고 있습니다...</Text>}
             </View>
         );
@@ -245,10 +245,10 @@ export const TenantDashboard = ({
     // 메인 대시보드 화면
     return (
         <View style={styles.container}>
-            {loading || mailsLoading || !myProfile ? (
+            {mailsLoading && mails.length === 0 ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#4F46E5" />
-                    <Text style={styles.loadingText}>입주자 정보를 확인하고 있습니다...</Text>
+                    <Text style={styles.loadingText}>우편물 데이터를 가져오는 중...</Text>
                 </View>
             ) : (
                 <SectionList
@@ -318,9 +318,13 @@ export const TenantDashboard = ({
                                 <View style={{ flex: 1 }}>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                                         <Text style={styles.title} numberOfLines={1}>
-                                            {(myProfile?.company_name || myProfile?.name) === myProfile?.name
-                                                ? `${myProfile?.name || ''}님`
-                                                : `${myProfile?.company_name || ''} ${myProfile?.name || ''}님`}
+                                            {(() => {
+                                                const cName = myProfile?.company_name || '';
+                                                const pName = myProfile?.name || '';
+                                                if (!cName && !pName) return '입주자님';
+                                                if (cName === pName) return `${pName}님`;
+                                                return `${cName} ${pName}님`.trim();
+                                            })()}
                                         </Text>
                                         {unreadCount > 0 && (
                                             <View style={styles.unreadBadge}>

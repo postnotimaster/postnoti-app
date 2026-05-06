@@ -341,7 +341,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 
                 // [중요] 화면 전환 우선 수행 (UX 속도 개선 핵심)
                 setMode('tenant_login');
-                setBrandingCompany({ magicId, slug } as any);
+                // 임시 id를 부여하여 App.tsx의 로딩 체크를 통과하게 함
+                setBrandingCompany({ id: magicId, magicId, slug } as any);
                 setMagicIdResolved(true); // 화면 열기 허용
 
                 // 백그라운드에서 실제 상세 정보 로드 (비차단)
