@@ -81,7 +81,7 @@ export const LandingScreen = () => {
                                 <LoginScreen
                                     onLoginSuccess={async (profile) => {
                                         await handleLoginSuccess(profile);
-                                        navigation.replace('AdminHome');
+                                        setMode('admin_dashboard');
                                     }}
                                     onBack={() => { }}
                                     isEmbedded={true}
@@ -89,7 +89,7 @@ export const LandingScreen = () => {
                             </View>
 
                             <Pressable
-                                onPress={() => navigation.navigate('AdminSignup')}
+                                onPress={() => setMode('admin_signup')}
                                 style={{ marginTop: 40, alignItems: 'center' }}
                             >
                                 <Text style={{ fontSize: 16, color: '#64748B' }}>

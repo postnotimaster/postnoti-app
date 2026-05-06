@@ -20,7 +20,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     setIsManualSearchVisible,
     onLayout
 }) => {
-    const { pendingDeliveryCount } = useAppContent() as any;
+    const { pendingDeliveryCount, setMode } = useAppContent() as any;
 
     return (
         <View
@@ -47,7 +47,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                                 alignItems: 'center',
                                 justifyContent: 'space-between'
                             }}
-                            onPress={() => navigation.navigate('MailDelivery')}
+                            onPress={() => {
+                                // 탭 이동은 여전히 navigation 사용 가능 (같은 Navigator 내에 있음)
+                                navigation.navigate('MailDelivery');
+                            }}
                         >
                             <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                                 <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
@@ -88,7 +91,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                             const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
                             if (!result.canceled) {
                                 runOCR(result.assets[0].uri);
-                                navigation.navigate('AdminRegisterMail');
+                                setMode('admin_register_mail');
                             }
                         }}
                     >
@@ -101,7 +104,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                         style={[appStyles.premiumQuickBtn, { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', flex: 1.2 }]}
                         onPress={() => {
                             setIsManualSearchVisible(true);
-                            navigation.navigate('AdminRegisterMail');
+                            setMode('admin_register_mail');
                         }}
                     >
                         <Ionicons name="people" size={24} color="#64748B" style={{ marginBottom: 8 }} />

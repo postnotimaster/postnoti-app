@@ -130,9 +130,7 @@ export const AdminSignupScreen = () => {
             // 5. 완료 처리
             setOfficeInfo(company);
             setMode('admin_dashboard');
-            Alert.alert('가입 완료', '포스트노티 오피스 가입이 완료되었습니다!', [
-                { text: '대시보드로 이동', onPress: () => navigation.replace('AdminDashboard') }
-            ]);
+            Alert.alert('가입 완료', '포스트노티 오피스 가입이 완료되었습니다!');
 
         } catch (error: any) {
             Alert.alert('가입 실패', error.message);
@@ -325,7 +323,7 @@ export const AdminSignupScreen = () => {
                     )}
 
                     <Pressable
-                        onPress={() => navigation.goBack()}
+                        onPress={() => setMode('landing')}
                         style={{ marginTop: 40, alignItems: 'center' }}
                     >
                         <Text style={{ color: '#94A3B8', fontSize: 14 }}>이미 가입하셨나요? 로그인하기</Text>

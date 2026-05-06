@@ -9,12 +9,12 @@ import { useNavigation } from '@react-navigation/native';
 
 export const AdminSendersScreen = () => {
     const navigation = useNavigation<any>();
-    const { setMasterSenders } = useAppContent();
+    const { setMasterSenders, setMode } = useAppContent();
 
     const handleBack = async () => {
         const senders = await masterSendersService.getAllSenders();
         setMasterSenders(senders.map(s => s.name));
-        navigation.goBack();
+        setMode('admin_dashboard');
     };
 
     return (

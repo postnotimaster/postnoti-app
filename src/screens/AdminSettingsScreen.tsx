@@ -12,7 +12,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 
 export const AdminSettingsScreen = () => {
     const navigation = useNavigation<any>();
-    const { officeInfo, setOfficeInfo } = useAppContent();
+    const { officeInfo, setOfficeInfo, setMode } = useAppContent();
     const [loading, setLoading] = useState(false);
     const [adminProfile, setAdminProfile] = useState<any>(null);
     const [authEmail, setAuthEmail] = useState('');
@@ -93,7 +93,7 @@ export const AdminSettingsScreen = () => {
                 style: 'destructive',
                 onPress: async () => {
                     await supabase.auth.signOut();
-                    navigation.replace('Landing');
+                    setMode('landing');
                 }
             }
         ]);
@@ -105,7 +105,7 @@ export const AdminSettingsScreen = () => {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ flex: 1 }}
             >
-                <AppHeader title="마이페이지 / 설정" onBack={() => navigation.goBack()} />
+                <AppHeader title="마이페이지 / 설정" onBack={() => setMode('admin_dashboard')} />
 
                 <ScrollView style={{ flex: 1, backgroundColor: '#F8FAFC' }} contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
                     {/* 관리자 프로필 섹션 */}

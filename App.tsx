@@ -18,6 +18,7 @@ import { AdminSignupScreen } from './src/screens/AdminSignupScreen';
 import { AdminSettingsScreen } from './src/screens/AdminSettingsScreen';
 import { AdminMenuScreen } from './src/screens/AdminMenuScreen';
 import { AdminSendersScreen } from './src/screens/AdminSendersScreen';
+import { AdminNotificationSettingsScreen } from './src/screens/AdminNotificationSettingsScreen';
 import { AdminTabNavigator } from './src/navigation/AdminTabNavigator';
 import { TenantTabNavigator } from './src/navigation/TenantTabNavigator';
 import { KakaoGuideOverlay } from './src/components/common/KakaoGuideOverlay';
@@ -62,6 +63,9 @@ function AppContent() {
 
       case 'admin_senders':
         return <AdminSendersScreen />;
+
+      case 'admin_signup':
+        return <AdminSignupScreen />;
 
       case 'tenant_login':
       case 'tenant_dashboard':

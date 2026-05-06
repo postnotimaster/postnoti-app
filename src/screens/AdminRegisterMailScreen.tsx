@@ -137,7 +137,7 @@ export const AdminRegisterMailScreen = () => {
         setSelectedPreset(null);
         setResultModalVisible(false);
         if (resetOCR) resetOCR(); // 화면을 나갈 때 초기화
-        navigation.navigate('AdminHome');
+        setMode('admin_dashboard');
     };
 
     const handleSmsFallback = async () => {
