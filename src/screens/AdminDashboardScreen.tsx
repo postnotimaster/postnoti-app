@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Image, Modal, ActivityIndicator, SectionList, Alert, BackHandler, KeyboardAvoidingView, Platform, Linking, LayoutAnimation, UIManager, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../contexts/AuthContext';
@@ -53,14 +52,12 @@ export const AdminDashboardScreen = ({ route }: any) => {
     const headerHeightRef = useRef<number>(0);
     const isSearchPinnedRef = useRef<boolean>(false);
 
-    // 화면 포커스 시 첫 페이지 로드
-    useFocusEffect(
-        useCallback(() => {
-            if (officeInfo?.id) {
-                loadFirstPage();
-            }
-        }, [officeInfo?.id, dateFilter])
-    );
+    // 화면 진입 시 첫 페이지 로드
+    useEffect(() => {
+        if (officeInfo?.id) {
+            loadFirstPage();
+        }
+    }, [officeInfo?.id, dateFilter]);
 
     // 키보드 닫힘 감지 (물리 백버튼으로 닫힐 때 완벽 복구 보장)
     useEffect(() => {
@@ -115,34 +112,32 @@ export const AdminDashboardScreen = ({ route }: any) => {
         }
     };
 
-    // 뒤로가기 종료 처리 (포커스되었을 때만 작동)
-    useFocusEffect(
-        useCallback(() => {
-            const backAction = () => {
-                if (isSearchFocused || isSearchPinnedRef.current) {
-                    Keyboard.dismiss();
-                    setIsSearchFocused(false);
-                    isSearchPinnedRef.current = false;
-                    sectionListRef.current?.getScrollResponder()?.scrollTo({
-                        y: 0,
-                        animated: true
-                    });
-                    return true;
-                }
-                if (isHistoryVisible || isManualSearchVisible) {
-                    return false; // 모달이나 서치는 내부 뒤로가기 동작 유도 (이미 AppContext 등에서 처리되거나 기본동작)
-                }
-                Alert.alert("앱 종료", "정말 앱을 종료하시겠습니까?", [
-                    { text: "취소", style: "cancel" },
-                    { text: "종료", onPress: () => BackHandler.exitApp() }
-                ]);
+    // 뒤로가기 종료 처리
+    useEffect(() => {
+        const backAction = () => {
+            if (isSearchFocused || isSearchPinnedRef.current) {
+                Keyboard.dismiss();
+                setIsSearchFocused(false);
+                isSearchPinnedRef.current = false;
+                sectionListRef.current?.getScrollResponder()?.scrollTo({
+                    y: 0,
+                    animated: true
+                });
                 return true;
-            };
+            }
+            if (isHistoryVisible || isManualSearchVisible) {
+                return false; 
+            }
+            Alert.alert("앱 종료", "정말 앱을 종료하시겠습니까?", [
+                { text: "취소", style: "cancel" },
+                { text: "종료", onPress: () => BackHandler.exitApp() }
+            ]);
+            return true;
+        };
 
-            const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-            return () => backHandler.remove();
-        }, [isSearchFocused, isHistoryVisible, isManualSearchVisible])
-    );
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+        return () => backHandler.remove();
+    }, [isSearchFocused, isHistoryVisible, isManualSearchVisible]);
 
     if (!officeInfo) {
         return (

@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { Company } from '../services/companiesService';
 import { tenantsService, Tenant } from '../services/tenantsService';
 
-export type AppMode = 'landing' | 'admin_login' | 'admin_branch_select' | 'admin_dashboard' | 'admin_register_mail' | 'admin_notification_settings' | 'admin_settings' | 'admin_tenants' | 'admin_delivery' | 'admin_announcements' | 'admin_menu' | 'tenant_login' | 'tenant_dashboard';
+export type AppMode = 'landing' | 'admin_login' | 'admin_branch_select' | 'admin_dashboard' | 'admin_register_mail' | 'admin_notification_settings' | 'admin_settings' | 'admin_tenants' | 'admin_delivery' | 'admin_announcements' | 'admin_menu' | 'admin_senders' | 'admin_signup' | 'tenant_login' | 'tenant_dashboard';
 
 interface UIContextType {
     mode: AppMode;
@@ -65,6 +65,7 @@ export const UIProvider = ({ children, setBrandingCompany }: { children: ReactNo
     };
 
     useEffect(() => {
+        let subscription: any;
         const init = async () => {
             try {
                 let initialUrl = await Linking.getInitialURL();
@@ -76,11 +77,10 @@ export const UIProvider = ({ children, setBrandingCompany }: { children: ReactNo
             } finally {
                 setIsInitializing(false);
             }
-
-            const subscription = Linking.addEventListener('url', (event) => handleDeepLink(event.url));
-            return () => subscription.remove();
         };
         init();
+        subscription = Linking.addEventListener('url', (event) => handleDeepLink(event.url));
+        return () => subscription?.remove();
     }, []);
 
     return (

@@ -87,7 +87,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             tenantProfile, setTenantProfile,
             brandingCompany, setBrandingCompany,
             profiles, setProfiles,
-            handleLoginSuccess
+            handleLoginSuccess,
+            loadInitialData,
+            isInitializing
         }}>
             {children}
         </AuthContext.Provider>
