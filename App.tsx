@@ -106,12 +106,12 @@ function AppContent() {
           <TenantTabNavigator
             route={{
               params: {
-                companyId: brandingCompany.id,
-                companyName: brandingCompany.name,
+                companyId: brandingCompany?.id,
+                companyName: brandingCompany?.name,
                 pushToken: expoPushToken,
                 webPushToken: webPushToken,
-                magicProfileId: (brandingCompany as any).magicId,
-                magicTenantId: (brandingCompany as any).targetTenantId || (brandingCompany as any).magicId,
+                magicProfileId: (brandingCompany as any)?.magicId,
+                magicTenantId: (brandingCompany as any)?.targetTenantId || (brandingCompany as any)?.magicId,
                 onBack: () => {
                   setMode('landing');
                   setBrandingCompany(null);

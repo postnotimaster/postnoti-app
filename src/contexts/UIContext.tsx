@@ -90,6 +90,12 @@ export const UIProvider = ({ children, setBrandingCompany }: { children: ReactNo
     useEffect(() => {
         let subscription: any;
         const init = async () => {
+            // 3초 후에는 무조건 로딩 완료 처리 (백지 화면 방지 세이프가드)
+            const timeout = setTimeout(() => {
+                setMagicIdResolved(true);
+                setIsInitializing(false);
+            }, 3000);
+
             try {
                 let initialUrl: string | null = null;
                 
@@ -107,8 +113,10 @@ export const UIProvider = ({ children, setBrandingCompany }: { children: ReactNo
                     setMagicIdResolved(true);
                 }
             } catch (e) {
+                console.error('[UIContext] Init failed:', e);
                 setMagicIdResolved(true);
             } finally {
+                clearTimeout(timeout);
                 setIsInitializing(false);
             }
         };
