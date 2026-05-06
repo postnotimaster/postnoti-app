@@ -2,6 +2,7 @@ import React from 'react';
 import { SafeAreaView, View } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { useUI } from '../contexts/UIContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import { SenderManagement } from '../components/admin/SenderManagement';
 import { appStyles } from '../styles/appStyles';
 import { AppHeader } from '../components/common/AppHeader';
@@ -10,10 +11,10 @@ import { masterSendersService } from '../services/masterSendersService';
 export const AdminSendersScreen = () => {
     const { setProfiles } = useAuth();
     const { setMode } = useUI();
+    const { refreshMasterSenders } = useNotifications();
 
     const handleBack = async () => {
-        const senders = await masterSendersService.getAllSenders();
-        setMasterSenders(senders.map(s => s.name));
+        await refreshMasterSenders();
         setMode('admin_dashboard');
     };
 

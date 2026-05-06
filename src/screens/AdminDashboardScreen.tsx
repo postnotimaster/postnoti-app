@@ -17,6 +17,7 @@ import { tenantsService } from '../services/tenantsService';
 import { DashboardHeader } from '../components/admin/dashboard/DashboardHeader';
 import { DashboardSearchBar } from '../components/admin/dashboard/DashboardSearchBar';
 import { MailHistoryCard } from '../components/admin/dashboard/MailHistoryCard';
+import { TenantInfoSummary } from '../components/admin/dashboard/TenantInfoSummary';
 import { AdminTabBar } from '../components/admin/AdminTabBar';
 
 

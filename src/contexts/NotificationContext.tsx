@@ -12,6 +12,7 @@ interface NotificationContextType {
     webPushToken: string;
     pendingDeliveryCount: number;
     loadPendingDeliveryCount: () => Promise<void>;
+    refreshMasterSenders: () => Promise<void>;
     masterSenders: string[];
 }
 
@@ -115,6 +116,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             webPushToken,
             pendingDeliveryCount,
             loadPendingDeliveryCount,
+            refreshMasterSenders: loadMasterSenders,
             masterSenders
         }}>
             {children}
