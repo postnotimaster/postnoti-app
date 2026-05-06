@@ -205,17 +205,21 @@ function TenantDashboardWrapper(props: any) {
   }
 
   return (
-    <TenantDashboard
-      companyId={company.id}
-      companyName={company.name}
-      pushToken={expoPushToken}
-      webPushToken={webPushToken}
-      magicProfileId={resolvedMagicId}
-      magicTenantId={resolvedMagicId}
-      onBack={() => {
-        setMode('landing');
-        setBrandingCompany(null);
-        props.navigation.navigate('Landing');
+    <TenantTabNavigator
+      route={{
+        params: {
+          companyId: company.id,
+          companyName: company.name,
+          pushToken: expoPushToken,
+          webPushToken: webPushToken,
+          magicProfileId: resolvedMagicId,
+          magicTenantId: resolvedMagicId,
+          onBack: () => {
+            setMode('landing');
+            setBrandingCompany(null);
+            props.navigation.navigate('Landing');
+          }
+        }
       }}
     />
   );

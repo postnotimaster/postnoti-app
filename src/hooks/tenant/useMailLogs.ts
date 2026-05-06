@@ -84,30 +84,26 @@ export const useMailLogs = ({
     // 안읽은 개수 연산
     const unreadCount = useMemo(() => mails.filter(m => !m.read_at).length, [mails]);
 
-    // 날짜별 그룹화 (성능 최적화 적용)
-    const getGroupedMails = (filter: 'all' | 'unread') => {
+    // 날짜별 그룹화 (성능 최적화 적용: useMemo 대신 호출부에서 제어할 수 있도록 로직 보강)
+    const getGroupedMails = useMemo(() => (filter: 'all' | 'unread') => {
         const filtered = mails.filter(mail => {
             if (filter === 'unread') return !mail.read_at;
             return true;
         });
 
+        if (filtered.length === 0) return [];
+
         const groups: { [key: string]: MailLog[] } = {};
+        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 (${dayNames[now.getDay()]})`;
+        const yest = new Date(Date.now() - 86400000);
+        const yestStr = `${yest.getFullYear()}년 ${yest.getMonth() + 1}월 ${yest.getDate()}일 (${dayNames[yest.getDay()]})`;
+
         filtered.forEach(mail => {
             if (!mail.created_at) return;
             const d = new Date(mail.created_at);
-            const year = d.getFullYear();
-            const month = d.getMonth() + 1;
-            const date = d.getDate();
-            const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-            const day = dayNames[d.getDay()];
-
-            const dateStr = `${year}년 ${month}월 ${date}일 (${day})`;
-
-            // 오늘/어제 처리
-            const now = new Date();
-            const todayStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 (${dayNames[now.getDay()]})`;
-            const yest = new Date(Date.now() - 86400000);
-            const yestStr = `${yest.getFullYear()}년 ${yest.getMonth() + 1}월 ${yest.getDate()}일 (${dayNames[yest.getDay()]})`;
+            const dateStr = `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${dayNames[d.getDay()]})`;
 
             let displayTitle = dateStr;
             if (dateStr === todayStr) displayTitle = `오늘 (${dateStr})`;
@@ -121,7 +117,7 @@ export const useMailLogs = ({
             title,
             data: groups[title]
         }));
-    };
+    }, [mails]);
 
     return {
         mails,

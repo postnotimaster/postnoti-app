@@ -135,13 +135,18 @@ export const TenantDashboard = ({
         return () => backHandler.remove();
     }, [selectedMailImage, myProfile, onBack, companyId]);
 
-    const renderMailItem = ({ item }: { item: MailLog }) => (
+    const renderMailItem = React.useCallback(({ item }: { item: MailLog }) => (
         <MailItem
             item={item}
             onImagePress={(uri) => setSelectedMailImage(uri)}
             onMarkRead={(id) => setMails(prev => prev.map(m => m.id === id ? { ...m, read_at: new Date().toISOString() } : m))}
         />
-    );
+    ), [setSelectedMailImage, setMails]);
+
+    const sections = React.useMemo(() => [
+        { title: 'CONTROLS', data: [], type: 'controls' },
+        ...getGroupedMails(filter).map(s => ({ ...s, type: 'mail' }))
+    ], [getGroupedMails, filter]);
 
     // -----------------------------------------------------
     // 렌더링 시작
@@ -222,13 +227,10 @@ export const TenantDashboard = ({
                 <ActivityIndicator style={{ marginTop: 50 }} color="#4F46E5" />
             ) : (
                 <SectionList
-                    sections={[
-                        { title: 'CONTROLS', data: [], type: 'controls' },
-                        ...getGroupedMails(filter).map(s => ({ ...s, type: 'mail' }))
-                    ]}
+                    sections={sections}
                     keyExtractor={(item, index) => item.id || `extra-${index}`}
                     renderItem={renderMailItem}
-                    renderSectionHeader={({ section }) => {
+                    renderSectionHeader={React.useCallback(({ section }: any) => {
                         if ((section as any).type === 'controls') {
                             return (
                                 <View style={styles.tabBarContainer}>
@@ -267,7 +269,7 @@ export const TenantDashboard = ({
                                 <Text style={styles.sectionTitle}>{section.title}</Text>
                             </View>
                         );
-                    }}
+                    }, [filter, refreshAnnouncements])}
                     stickySectionHeadersEnabled={true}
                     ListHeaderComponent={
                         <View>
