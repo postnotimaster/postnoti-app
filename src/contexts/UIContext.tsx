@@ -45,8 +45,8 @@ export const UIProvider = ({ children, setBrandingCompany }: { children: ReactNo
             const decodedUrl = decodeURIComponent(url);
             
             // 1. 신규 우편알림 문자 링크 (m=magic_id & p=tenant_id)
-            const paramMMatch = decodedUrl.match(/[?&]m=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
-            const paramPMatch = decodedUrl.match(/[?&]p=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+            const paramMMatch = decodedUrl.match(/[?&]m=([^&?#]+)/i);
+            const paramPMatch = decodedUrl.match(/[?&]p=([^&?#]+)/i);
             const msgMagicId = paramMMatch ? paramMMatch[1] : null;
             const tenantId = paramPMatch ? paramPMatch[1] : null;
 

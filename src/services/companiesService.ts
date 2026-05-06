@@ -5,6 +5,7 @@ export type Company = {
     name: string;
     address?: string;
     slug: string;
+    magic_id: string;
     business_number?: string;
     contact_phone?: string;
     tenant_limit?: number;
