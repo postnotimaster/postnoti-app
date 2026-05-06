@@ -40,6 +40,7 @@ export const UIProvider = ({ children, setBrandingCompany }: { children: ReactNo
 
     const handleDeepLink = async (url: string | null) => {
         if (!url) return;
+        console.log('[UIContext] Handling DeepLink:', url);
         try {
             const decodedUrl = decodeURIComponent(url);
             
@@ -48,6 +49,8 @@ export const UIProvider = ({ children, setBrandingCompany }: { children: ReactNo
             const paramPMatch = decodedUrl.match(/[?&]p=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
             const msgMagicId = paramMMatch ? paramMMatch[1] : null;
             const tenantId = paramPMatch ? paramPMatch[1] : null;
+
+            console.log('[UIContext] Parsed Params:', { msgMagicId, tenantId });
 
             // 2. 구형 매직링크 또는 슬러그
             const uuidMatch = (!msgMagicId && !tenantId) ? decodedUrl.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i) : null;

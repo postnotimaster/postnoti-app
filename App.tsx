@@ -30,12 +30,14 @@ import { AdminNotificationSettingsScreen } from './src/screens/AdminNotification
 import { KakaoGuideOverlay } from './src/components/common/KakaoGuideOverlay';
 
 function AppContent() {
-  const { isInitializing, brandingCompany, setBrandingCompany } = useAuth();
-  const { mode, setMode, magicIdResolved } = useUI();
+  const { isInitializing: authLoading, brandingCompany, setBrandingCompany } = useAuth();
+  const { mode, setMode, magicIdResolved, isInitializing: uiLoading } = useUI();
   const { expoPushToken, webPushToken } = useNotifications();
 
+  const isSystemInitializing = authLoading || uiLoading;
+
   // 1. 초기 시스템 로딩
-  if (isInitializing) {
+  if (isSystemInitializing) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
         <Text style={{ fontSize: 28, fontWeight: '900', color: '#1E293B', letterSpacing: 2 }}>POSTNOTI</Text>
