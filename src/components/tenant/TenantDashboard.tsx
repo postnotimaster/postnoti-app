@@ -245,8 +245,11 @@ export const TenantDashboard = ({
     // 메인 대시보드 화면
     return (
         <View style={styles.container}>
-            {loading || mailsLoading ? (
-                <ActivityIndicator style={{ marginTop: 50 }} color="#4F46E5" />
+            {loading || mailsLoading || !myProfile ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#4F46E5" />
+                    <Text style={styles.loadingText}>입주자 정보를 확인하고 있습니다...</Text>
+                </View>
             ) : (
                 <SectionList
                     sections={sections}
@@ -315,9 +318,9 @@ export const TenantDashboard = ({
                                 <View style={{ flex: 1 }}>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                                         <Text style={styles.title} numberOfLines={1}>
-                                            {(myProfile.company_name || myProfile.name) === myProfile.name
-                                                ? `${myProfile.name}님`
-                                                : `${myProfile.company_name} ${myProfile.name}님`}
+                                            {(myProfile?.company_name || myProfile?.name) === myProfile?.name
+                                                ? `${myProfile?.name || ''}님`
+                                                : `${myProfile?.company_name || ''} ${myProfile?.name || ''}님`}
                                         </Text>
                                         {unreadCount > 0 && (
                                             <View style={styles.unreadBadge}>

@@ -320,157 +320,86 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const setupDeepLinking = async () => {
-        const handleDeepLink = async (url: string | null) => {
-            console.log(`[AppContext] Handling DeepLink: ${url}`);
-            if (!url) return;
+    // --- 딥링크 처리 통합 함수 (v24:05 Final) ---
+    const handleDeepLink = async (url: string | null) => {
+        if (!url) return;
+        console.log(`[AppContext] handleDeepLink: ${url}`);
 
-            let slug = '';
-            let magicId = '';
+        try {
+            const decodedUrl = decodeURIComponent(url);
+            
+            // 1. MagicId(UUID) 추출 - 어떤 위치에 있든 강제 추출
+            const uuidMatch = decodedUrl.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+            const magicId = uuidMatch ? uuidMatch[0] : null;
 
-            // 1. 고도화된 URL 파싱 (UUID 패턴 강제 추출 방식 도입)
-            try {
-                // A) URL 디코딩 처리
-                const decodedUrl = decodeURIComponent(url);
+            // 2. Slug 추출
+            const slugMatch = decodedUrl.match(/\/branch\/([^\/?#]+)/);
+            const slug = slugMatch ? slugMatch[1] : null;
 
-                // B) UUID 패턴 강제 매칭 (가장 강력함 - 어떤 위치에 있든 36자리 UUID만 추출)
-                const uuidMatch = decodedUrl.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-                if (uuidMatch) {
-                    magicId = uuidMatch[0];
-                    console.log('[AppContext] UUID Pattern Match Success:', magicId);
-                }
+            if (magicId) {
+                console.log(`[AppContext] FAST-TRACK Triggered with MagicId: ${magicId}`);
+                
+                // [중요] 화면 전환 우선 수행 (UX 속도 개선 핵심)
+                setMode('tenant_login');
+                setBrandingCompany({ magicId, slug } as any);
+                setMagicIdResolved(true); // 화면 열기 허용
 
-                // C) 기존 방식들 (Fallback)
-                if (!magicId) {
-                    const pMatch = decodedUrl.match(/(?:\?|&|%3F|%26)p=([^&/?#]+)/i);
-                    if (pMatch) magicId = pMatch[1];
-                }
+                // 백그라운드에서 실제 상세 정보 로드 (비차단)
+                const { data, error } = await supabase
+                    .from('companies')
+                    .select('*')
+                    .eq('magic_id', magicId)
+                    .single();
 
-                // 슬러그 추출
-                const slugMatch = decodedUrl.match(/\/branch\/([^/?#]+)/i);
-                if (slugMatch) slug = slugMatch[1];
-
-                // C) Expo Linking API 파서 활용
-                const parsed = Linking.parse(url);
-                if (!magicId && parsed.queryParams?.p) magicId = parsed.queryParams.p as string;
-
-                // D) Brute-force Split (최후의 수단: 무조건 p= 뒤를 뽑음)
-                if (!magicId) {
-                    const decoded = decodeURIComponent(url);
-                    if (decoded.includes('p=')) {
-                        magicId = decoded.split('p=')[1].split('&')[0].split('/')[0];
-                    }
-                }
-
-                if (!slug) {
-                    if (parsed.hostname === 'branch') slug = parsed.path || '';
-                    else if (parsed.path?.includes('branch/')) {
-                        slug = parsed.path.split('branch/')[1].split('/')[0];
-                    }
-                }
-            } catch (e) {
-                console.warn('[AppContext] Parsing error, falling back to manual split:', e);
-                const cleanUrl = decodeURIComponent(url);
-                if (cleanUrl.includes('p=')) magicId = cleanUrl.split('p=')[1].split('&')[0];
-                if (cleanUrl.includes('/branch/')) slug = cleanUrl.split('/branch/')[1].split('/')[0].split('?')[0];
-            }
-
-            // --- 후속 처리: ID가 URL 전체인 경우 방지 (Sanitization) ---
-            if (magicId && (magicId.includes('://') || magicId.length > 100)) {
-                console.log('[AppContext] MagicId looks like a URL, cleaning again...');
-                const subMatch = magicId.match(/(?:\?|&|%3F|%26)p=([^&/?#]+)/i);
-                if (subMatch) magicId = subMatch[1];
-                else magicId = '';
-            }
-
-            // Web 전용 패스 추출 보강
-            if (!slug && Platform.OS === 'web' && typeof window !== 'undefined') {
-                const path = window.location.pathname;
-                if (path.includes('/branch/')) slug = path.split('/branch/')[1].split('/')[0];
-            }
-
-            // Web 전용 p 추출 보강
-            if (!magicId && Platform.OS === 'web' && typeof window !== 'undefined') {
-                try {
-                    const params = new URLSearchParams(window.location.search);
-                    magicId = params.get('p') || '';
-                } catch (e) { }
-            }
-
-            if (slug || magicId) {
-                console.log(`[AppContext] DeepLink Hit - Slug: ${slug || '(없음)'}, MagicId: ${magicId || '(없음)'}`);
-
-                let resolvedCompany: Company | null = null;
-
-                // A) 슬러그가 있는 경우 우선 처리
-                if (slug) {
+                if (data && !error) {
+                    console.log(`[AppContext] Detail company loaded: ${data.name}`);
+                    setBrandingCompany({ ...data, magicId } as any);
+                } else if (error) {
+                    // magic_id로 못 찾은 경우 역방향 조회 (최후의 수단)
                     try {
-                        const { data } = await supabase.from('companies').select('*').ilike('slug', slug.trim()).single();
-                        if (data) resolvedCompany = data as Company;
+                        const tenant = await tenantsService.getTenantById(magicId);
+                        if (tenant?.company_id) {
+                            const { data: comp } = await supabase.from('companies').select('*').eq('id', tenant.company_id).single();
+                            if (comp) setBrandingCompany({ ...comp, magicId } as any);
+                        }
                     } catch (e) { }
                 }
-
-                // B) 슬러그가 없거나 못 찾았는데 magicId가 있는 경우 역방향 조회 (Hybrid)
-                if (!resolvedCompany && magicId) {
-                    console.log(`[AppContext] No slug/company found, attempting reverse lookup for MagicId: ${magicId}`);
-                    try {
-                        // 1. tenants 테이블 확인
-                        const tenantResult = await tenantsService.getTenantById(magicId);
-                        let targetCompanyId = tenantResult?.company_id;
-
-                        // 2. profiles 테이블 확인 (legacy)
-                        if (!targetCompanyId) {
-                            const profileResult = await profilesService.getProfileById(magicId);
-                            targetCompanyId = profileResult?.company_id;
-                        }
-
-                        if (targetCompanyId) {
-                            const { data } = await supabase.from('companies').select('*').eq('id', targetCompanyId).single();
-                            if (data) {
-                                console.log(`[AppContext] Reverse lookup success! Office: ${data.name}`);
-                                resolvedCompany = data as Company;
-                            }
-                        }
-                    } catch (e) {
-                        console.error('[AppContext] Reverse lookup error:', e);
-                    }
-                }
-
-                // C) [FAST-TRACK] 즉시 화면 전환 및 로딩 걷어내기
-                if (magicId) {
-                    console.log(`[AppContext] Fast-tracking to tenant_login with MagicId: ${magicId}`);
-                    setMode('tenant_login');
-                    // 최소 정보만 담아 우선 세팅 (화면을 즉시 열어주기 위함)
-                    setBrandingCompany({ magicId, slug } as any);
-                    setMagicIdResolved(true); // 여기서 바로 럭키! (화면 열기 스위치 On)
-                }
-
-                // D) 최종 결과 조회 및 적용
-                if (resolvedCompany) {
-                    console.log(`[AppContext] Applying resolved company: ${resolvedCompany.name}`);
-                    setBrandingCompany({ ...resolvedCompany, magicId } as any);
-                    setMode('tenant_login');
-                }
             }
-        };
+        } catch (e) {
+            console.error('[AppContext] DeepLink processing failed:', e);
+        } finally {
+            // 어떤 경우에도 처리가 시도되었음을 표시하여 무한 로딩 방지
+            setMagicIdResolved(true);
+        }
+    };
 
-        // 타임아웃 적용 (최대 3초만 대기하고 다음 단계로)
+    const setupDeepLinking = async () => {
+        // 타임아웃 적용 (최대 3초만 대기)
         const timeoutPromise = new Promise(resolve => setTimeout(() => {
-            console.log('[AppContext] DeepLink Init Timeout - Proceeding anyway');
+            console.log('[AppContext] DeepLink Init Timeout');
+            setMagicIdResolved(true);
             resolve(null);
         }, 3000));
 
-        let initialUrl = await Linking.getInitialURL();
-        if (!initialUrl && Platform.OS === 'web' && typeof window !== 'undefined') {
-            initialUrl = window.location.href;
+        try {
+            // 1. 초기 URL 획득 (웹 새로고침 상황 고려)
+            let initialUrl = await Linking.getInitialURL();
+            if (!initialUrl && Platform.OS === 'web' && typeof window !== 'undefined') {
+                initialUrl = window.location.href;
+            }
+
+            if (initialUrl) {
+                await Promise.race([handleDeepLink(initialUrl), timeoutPromise]);
+            } else {
+                setMagicIdResolved(true);
+            }
+        } catch (e) {
+            console.error('[AppContext] setupDeepLinking failed:', e);
+            setMagicIdResolved(true);
         }
 
-        if (initialUrl) {
-            await Promise.race([handleDeepLink(initialUrl), timeoutPromise]);
-        }
-
+        // 2. 앱 실행 중의 딥링크 리스너 등록
         const subscription = Linking.addEventListener('url', (event) => handleDeepLink(event.url));
-        if (!initialUrl) setMagicIdResolved(true); // 딥링크가 없는 경우에도 초기화 완료 처리
         return () => subscription.remove();
     };
 
@@ -482,22 +411,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                     redirectToExternalBrowser();
                 }
 
-                // 1. 딥링크 분석 (타임아웃 적용됨)
+                // 1. 딥링크 분석 및 화면 전환 설정
                 await setupDeepLinking();
 
-                // 2. 초기 데이터 로드 (비차단)
+                // 2. 비차단 데이터 로드
                 loadInitialData();
                 setupNotifications();
             } catch (error) {
                 console.error('Initialization error:', error);
+                setMagicIdResolved(true);
             } finally {
                 setIsInitialLoading(false);
             }
         };
         init();
     }, []);
-
-    // handleBranchSelect removed in 1:1 refactor
 
     const handleRegisterMail = async (
         tenant: Tenant | null,
