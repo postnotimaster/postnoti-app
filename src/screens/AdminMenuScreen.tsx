@@ -56,7 +56,7 @@ export const AdminMenuScreen = () => {
 
                 <View style={{ gap: 8 }}>
                     <Pressable
-                        onPress={() => navigation.navigate('AdminSettings')}
+                        onPress={() => setMode('admin_settings')}
                         style={[appStyles.premiumMenuBtn, { padding: 15 }]}
                     >
                         <Ionicons name="person-circle-outline" size={24} color="#4F46E5" style={{ marginRight: 16 }} />
@@ -71,14 +71,14 @@ export const AdminMenuScreen = () => {
 
                     <Pressable
                         onPress={() => {
-                            navigation.navigate('AdminSenders');
+                            setMode('admin_notification_settings');
                         }}
                         style={[appStyles.premiumMenuBtn, { padding: 15 }]}
                     >
-                        <Ionicons name="key-outline" size={24} color="#1E293B" style={{ marginRight: 16 }} />
+                        <Ionicons name="chatbubble-ellipses-outline" size={24} color="#1E293B" style={{ marginRight: 16 }} />
                         <View style={appStyles.menuBtnTextGroup}>
-                            <Text style={appStyles.menuBtnLabel}>발신처 키워드 설정</Text>
-                            <Text style={appStyles.menuBtnDesc}>자동 인식을 위한 필터링 키워드 관리</Text>
+                            <Text style={appStyles.menuBtnLabel}>알림 메시지 설정</Text>
+                            <Text style={appStyles.menuBtnDesc}>기본 문구 및 빠른 메시지 관리</Text>
                         </View>
                         <Ionicons name="chevron-forward-outline" size={20} color="#CBD5E1" />
                     </Pressable>

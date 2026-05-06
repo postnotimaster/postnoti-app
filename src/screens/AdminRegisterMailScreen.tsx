@@ -86,22 +86,31 @@ export const AdminRegisterMailScreen = () => {
         prevOcrLoading.current = ocrLoading;
     }, [ocrLoading, matchedProfile, runOCR, resetOCR, setSelectedProfileForHistory, setIsHistoryVisible, navigation]);
 
-    const presets = [
+    const [presets, setPresets] = React.useState<string[]>([
         "주문하신 택배가 도착했습니다 📦",
         "중요 등기 우편이 도착했습니다 ✉️",
         "일반 우편물이 도착했습니다 📮",
         "물품은 입구 데스크에서 수령 가능합니다 💁",
         "택배함에 보관해 두었습니다 🔒"
-    ];
+    ]);
+
+    React.useEffect(() => {
+        if (officeInfo?.settings?.notification_presets) {
+            setPresets(officeInfo.settings.notification_presets);
+        }
+    }, [officeInfo]);
 
     const onSubmit = async () => {
         try {
-            const finalMessage = selectedPreset || customMessage || undefined;
+            // [수정] 기본 메시지 로직 적용
+            const defaultMsg = officeInfo?.settings?.default_message || "안녕하세요. 우편물이 도착했습니다.";
+            const finalMessage = selectedPreset || customMessage || defaultMsg;
+            
             const result = await handleRegisterMail(
                 matchedProfile,
                 selectedImage,
-                detectedMailType,
-                detectedSender,
+                '일반', // 우편 종류 고정 (UI 삭제됨)
+                '',     // 발신처 비움 (UI 삭제됨)
                 extraImages,
                 finalMessage
             );
@@ -179,11 +188,7 @@ export const AdminRegisterMailScreen = () => {
     };
 
     const handleBack = () => {
-        if (navigation.canGoBack()) {
-            navigation.goBack();
-        } else {
-            navigation.navigate('AdminHome');
-        }
+        setMode('admin_dashboard');
     };
 
     const handleAddExtraImage = async (camera: boolean) => {
@@ -314,31 +319,7 @@ export const AdminRegisterMailScreen = () => {
                                         )}
                                     </View>
                                 </View>
-
-                                <View style={appStyles.inputGroup}>
-                                    <Text style={appStyles.label}>발신처 (보낸이)</Text>
-                                    <TextInput
-                                        style={appStyles.input}
-                                        value={detectedSender}
-                                        onChangeText={setDetectedSender}
-                                        placeholder="보낸이를 확인해주세요"
-                                    />
-                                </View>
-
-                                <View style={appStyles.inputGroup}>
-                                    <Text style={appStyles.label}>우편 종류</Text>
-                                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={appStyles.typeList}>
-                                        {['일반', '등기/중요', '세금/국세', '고지서/요금'].map(t => (
-                                            <Pressable
-                                                key={t}
-                                                style={[appStyles.typeChip, detectedMailType === t && appStyles.typeChipActive]}
-                                                onPress={() => setDetectedMailType(t as any)}
-                                            >
-                                                <Text style={[appStyles.typeChipText, detectedMailType === t && appStyles.typeChipTextActive]}>{t}</Text>
-                                            </Pressable>
-                                        ))}
-                                    </ScrollView>
-                                </View>
+                                {/* 발신처 및 우편 종류 섹션 삭제됨 */}
                             </SectionCard>
 
                             <SectionCard title="💬 알림 메시지 선택">
