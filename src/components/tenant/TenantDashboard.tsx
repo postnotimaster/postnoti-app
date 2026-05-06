@@ -342,7 +342,7 @@ export const TenantDashboard = ({
                             </View>
 
                             {/* [NEW] 공지사항 보드 - 최대 5개까지 한 줄씩 출력 */}
-                            {announcements.length > 0 && (
+                            {announcements && announcements.length > 0 && (
                                 <View style={styles.noticeBoard}>
                                     {announcements.slice(0, 5).map((notice, index) => (
                                         <Pressable
@@ -392,9 +392,9 @@ export const TenantDashboard = ({
                 visible={isMailDeliveryVisible}
                 onClose={() => setIsMailDeliveryVisible(false)}
                 companyId={companyId}
-                profileId={myProfile.id}
-                initialName={myProfile.name}
-                initialPhone={myProfile.phone}
+                profileId={myProfile?.id || ''}
+                initialName={myProfile?.name || ''}
+                initialPhone={myProfile?.phone || ''}
             />
 
             <Modal visible={!!selectedMailImage} transparent={true} animationType="fade" onRequestClose={() => setSelectedMailImage(null)}>
