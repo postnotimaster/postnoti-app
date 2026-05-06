@@ -18,8 +18,10 @@ import { AdminSignupScreen } from './src/screens/AdminSignupScreen';
 import { AdminSettingsScreen } from './src/screens/AdminSettingsScreen';
 import { AdminMenuScreen } from './src/screens/AdminMenuScreen';
 import { AdminSendersScreen } from './src/screens/AdminSendersScreen';
-import { AdminNotificationSettingsScreen } from './src/screens/AdminNotificationSettingsScreen';
-import { AdminTabNavigator } from './src/navigation/AdminTabNavigator';
+import { AdminDashboardScreen } from './src/screens/AdminDashboardScreen';
+import { AdminTenantsScreen } from './src/screens/AdminTenantsScreen';
+import { AdminNoticeScreen } from './src/screens/admin/AdminNoticeScreen';
+import { DeliveryScreen } from './src/screens/admin/DeliveryScreen';
 import { TenantTabNavigator } from './src/navigation/TenantTabNavigator';
 import { KakaoGuideOverlay } from './src/components/common/KakaoGuideOverlay';
 
@@ -50,8 +52,20 @@ function AppContent() {
     switch (mode) {
       case 'admin_dashboard':
       case 'admin_branch_select':
-        return <AdminTabNavigator />;
+        return <AdminDashboardScreen />;
       
+      case 'admin_tenants':
+        return <AdminTenantsScreen />;
+
+      case 'admin_delivery':
+        return <DeliveryScreen />;
+
+      case 'admin_announcements':
+        return <AdminNoticeScreen />;
+
+      case 'admin_menu':
+        return <AdminMenuScreen />;
+
       case 'admin_register_mail':
         return <AdminRegisterMailScreen />;
 

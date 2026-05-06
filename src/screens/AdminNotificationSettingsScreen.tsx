@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TextInput, Pressable, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAppContent } from '../contexts/AppContext';
 import { appStyles } from '../styles/appStyles';
@@ -10,7 +9,6 @@ import { PrimaryButton } from '../components/common/PrimaryButton';
 import { supabase } from '../lib/supabase';
 
 export const AdminNotificationSettingsScreen = () => {
-    const navigation = useNavigation();
     const { officeInfo, setMode } = useAppContent();
     const [loading, setLoading] = useState(false);
     const [defaultMessage, setDefaultMessage] = useState('안녕하세요. 우편물이 도착했습니다.');
@@ -115,7 +113,7 @@ export const AdminNotificationSettingsScreen = () => {
 
     return (
         <SafeAreaView style={appStyles.safeArea} edges={['top', 'left', 'right']}>
-            <AppHeader title="알림 메시지 설정" onBack={() => setMode('admin_dashboard')} />
+            <AppHeader title="알림 메시지 설정" onBack={() => setMode('admin_menu')} />
             
             <KeyboardAvoidingView 
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}

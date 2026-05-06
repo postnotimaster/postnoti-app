@@ -23,7 +23,7 @@ import { recognizeText, MailType, classifyMail, preprocessImage as ocrPreprocess
 import { useOCR } from '../hooks/useOCR';
 import { useMailRegistration } from '../hooks/useMailRegistration';
 
-export type AppMode = 'landing' | 'admin_login' | 'admin_branch_select' | 'admin_dashboard' | 'admin_register_mail' | 'tenant_login' | 'tenant_dashboard';
+export type AppMode = 'landing' | 'admin_login' | 'admin_branch_select' | 'admin_dashboard' | 'admin_register_mail' | 'admin_notification_settings' | 'admin_settings' | 'admin_tenants' | 'admin_delivery' | 'admin_announcements' | 'admin_menu' | 'tenant_login' | 'tenant_dashboard';
 
 interface AppContextType {
     // Global State

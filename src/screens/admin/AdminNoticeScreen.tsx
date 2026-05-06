@@ -5,7 +5,6 @@ import {
     ScrollView, Switch, Alert, Platform, BackHandler,
     KeyboardAvoidingView
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAppContent } from '../../contexts/AppContext';
@@ -13,9 +12,9 @@ import { noticeService, Announcement } from '../../services/noticeService';
 import { notificationService } from '../../services/notificationService';
 import { appStyles } from '../../styles/appStyles';
 import { AppHeader } from '../../components/common/AppHeader';
+import { AdminTabBar } from '../../components/admin/AdminTabBar';
 
 export const AdminNoticeScreen = () => {
-    const navigation = useNavigation<any>();
     const { officeInfo, profiles } = useAppContent();
     const [notices, setNotices] = useState<Announcement[]>([]);
     const [loading, setLoading] = useState(false);
@@ -181,6 +180,7 @@ export const AdminNoticeScreen = () => {
                     />
                 )}
             </View>
+            <AdminTabBar />
 
             {/* 작성/수정 모달 */}
             <Modal

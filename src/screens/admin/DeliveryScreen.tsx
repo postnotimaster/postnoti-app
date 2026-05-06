@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAppContent } from '../../contexts/AppContext';
+import { AdminTabBar } from '../../components/admin/AdminTabBar';
 import { mailDeliveryService, MailDeliveryRequest } from '../../services/mailDeliveryService';
 import { notificationService } from '../../services/notificationService';
 
@@ -299,6 +300,7 @@ export const DeliveryScreen = () => {
                     </View>
                 </View>
             </Modal>
+            <AdminTabBar />
         </SafeAreaView>
     );
 };

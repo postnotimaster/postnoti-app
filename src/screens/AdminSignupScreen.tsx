@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, Alert, ActivityIndicator, Pressable, Image, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { companiesService } from '../services/companiesService';
 import { profilesService } from '../services/profilesService';
@@ -9,7 +8,6 @@ import { appStyles } from '../styles/appStyles';
 import { useAppContent } from '../contexts/AppContext';
 
 export const AdminSignupScreen = () => {
-    const navigation = useNavigation<any>();
     const { setMode, setOfficeInfo } = useAppContent();
 
     const [step, setStep] = useState(1);

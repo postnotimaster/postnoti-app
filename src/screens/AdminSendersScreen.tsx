@@ -5,10 +5,8 @@ import { SenderManagement } from '../components/admin/SenderManagement';
 import { appStyles } from '../styles/appStyles';
 import { AppHeader } from '../components/common/AppHeader';
 import { masterSendersService } from '../services/masterSendersService';
-import { useNavigation } from '@react-navigation/native';
 
 export const AdminSendersScreen = () => {
-    const navigation = useNavigation<any>();
     const { setMasterSenders, setMode } = useAppContent();
 
     const handleBack = async () => {

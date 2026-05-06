@@ -7,7 +7,6 @@ import { useAppContent } from '../../../contexts/AppContext';
 
 interface DashboardHeaderProps {
     officeInfo: any;
-    navigation: any;
     runOCR: (uri: string) => void;
     setIsManualSearchVisible: (visible: boolean) => void;
     onLayout: (e: any) => void;
@@ -15,7 +14,6 @@ interface DashboardHeaderProps {
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     officeInfo,
-    navigation,
     runOCR,
     setIsManualSearchVisible,
     onLayout
@@ -48,8 +46,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                                 justifyContent: 'space-between'
                             }}
                             onPress={() => {
-                                // 탭 이동은 여전히 navigation 사용 가능 (같은 Navigator 내에 있음)
-                                navigation.navigate('MailDelivery');
+                                setMode('admin_delivery');
                             }}
                         >
                             <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>

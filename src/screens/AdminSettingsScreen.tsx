@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, Alert, ActivityIndicator, Pressable, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { companiesService } from '../services/companiesService';
 import { profilesService } from '../services/profilesService';
@@ -11,7 +10,6 @@ import { PrimaryButton } from '../components/common/PrimaryButton';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 export const AdminSettingsScreen = () => {
-    const navigation = useNavigation<any>();
     const { officeInfo, setOfficeInfo, setMode } = useAppContent();
     const [loading, setLoading] = useState(false);
     const [adminProfile, setAdminProfile] = useState<any>(null);
@@ -105,7 +103,7 @@ export const AdminSettingsScreen = () => {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ flex: 1 }}
             >
-                <AppHeader title="마이페이지 / 설정" onBack={() => setMode('admin_dashboard')} />
+                <AppHeader title="마이페이지 / 설정" onBack={() => setMode('admin_menu')} />
 
                 <ScrollView style={{ flex: 1, backgroundColor: '#F8FAFC' }} contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
                     {/* 관리자 프로필 섹션 */}

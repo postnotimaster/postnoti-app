@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Image, Pressable, Keyboard } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import { LoginScreen } from '../components/auth/LoginScreen';
 import { PrimaryButton } from '../components/common/PrimaryButton';
 import { appStyles } from '../styles/appStyles';
@@ -8,7 +7,6 @@ import { useAppContent } from '../contexts/AppContext';
 import { isKakaoTalk, redirectToExternalBrowser } from '../utils/browserDetection';
 
 export const LandingScreen = () => {
-    const navigation = useNavigation<any>();
     const { setMode, handleLoginSuccess } = useAppContent();
     const [keyboardVisible, setKeyboardVisible] = React.useState(false);
 

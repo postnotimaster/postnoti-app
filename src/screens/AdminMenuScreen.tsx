@@ -1,7 +1,6 @@
 import React, { useRef } from 'react';
 import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
 import { useAppContent } from '../contexts/AppContext';
@@ -14,9 +13,9 @@ import { SenderManagement } from '../components/admin/SenderManagement';
 import { tenantsService } from '../services/tenantsService';
 import { masterSendersService } from '../services/masterSendersService';
 import { notificationService } from '../services/notificationService';
+import { AdminTabBar } from '../components/admin/AdminTabBar';
 
 export const AdminMenuScreen = () => {
-    const navigation = useNavigation<any>();
     const {
         officeInfo,
         setProfiles, setMasterSenders,
@@ -33,7 +32,7 @@ export const AdminMenuScreen = () => {
                 style: 'destructive',
                 onPress: async () => {
                     await supabase.auth.signOut();
-                    navigation.replace('Landing');
+                    setMode('landing');
                 }
             }
         ]);
@@ -47,7 +46,7 @@ export const AdminMenuScreen = () => {
 
     return (
         <SafeAreaView style={appStyles.safeArea} edges={['top', 'left', 'right']}>
-            <AppHeader title="관리 메뉴" onBack={() => navigation.goBack()} />
+            <AppHeader title="관리 메뉴" onBack={() => setMode('admin_dashboard')} />
 
             <ScrollView style={{ flex: 1, backgroundColor: '#F8FAFC' }} contentContainerStyle={{ padding: 20 }}>
                 <View style={[appStyles.bottomSheetHeader, { marginBottom: 15 }]}>
@@ -116,6 +115,7 @@ export const AdminMenuScreen = () => {
 
                 <View style={{ height: 40 }} />
             </ScrollView>
+            <AdminTabBar />
         </SafeAreaView>
     );
 };

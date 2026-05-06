@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable, Image, ActivityIndicator, TextInput, Modal, Alert, Linking, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
 import { notificationService, NotificationResult } from '../services/notificationService';
-import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAppContent } from '../contexts/AppContext';
 import { useToast } from '../contexts/ToastContext';
@@ -11,7 +10,6 @@ import { SectionCard } from '../components/common/SectionCard';
 import { PrimaryButton } from '../components/common/PrimaryButton';
 
 export const AdminRegisterMailScreen = () => {
-    const navigation = useNavigation<any>();
     const { showToast } = useToast();
     const {
         selectedImage,
@@ -72,7 +70,7 @@ export const AdminRegisterMailScreen = () => {
                                     resetOCR();
                                     setSelectedProfileForHistory(matchedProfile);
                                     setIsHistoryVisible(true);
-                                    navigation.navigate('AdminHome');
+                                    setMode('admin_dashboard');
                                 }
                             },
                             {
@@ -85,7 +83,7 @@ export const AdminRegisterMailScreen = () => {
             }
         }
         prevOcrLoading.current = ocrLoading;
-    }, [ocrLoading, matchedProfile, runOCR, resetOCR, setSelectedProfileForHistory, setIsHistoryVisible, navigation]);
+    }, [ocrLoading, matchedProfile, runOCR, resetOCR, setSelectedProfileForHistory, setIsHistoryVisible, setMode]);
 
     const [presets, setPresets] = React.useState<string[]>([
         "주문하신 택배가 도착했습니다 📦",

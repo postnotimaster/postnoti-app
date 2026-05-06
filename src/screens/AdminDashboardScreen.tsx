@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Image, Modal, ActivityIndicator, SectionList, Alert, BackHandler, KeyboardAvoidingView, Platform, Linking, LayoutAnimation, UIManager, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAppContent } from '../contexts/AppContext';
@@ -14,7 +14,7 @@ import { tenantsService } from '../services/tenantsService';
 import { DashboardHeader } from '../components/admin/dashboard/DashboardHeader';
 import { DashboardSearchBar } from '../components/admin/dashboard/DashboardSearchBar';
 import { MailHistoryCard } from '../components/admin/dashboard/MailHistoryCard';
-import { TenantInfoSummary } from '../components/admin/dashboard/TenantInfoSummary';
+import { AdminTabBar } from '../components/admin/AdminTabBar';
 
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -22,7 +22,6 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 export const AdminDashboardScreen = ({ route }: any) => {
-    const navigation = useNavigation<any>();
     const {
         officeInfo,
         profiles,
@@ -181,7 +180,6 @@ export const AdminDashboardScreen = ({ route }: any) => {
                     ListHeaderComponent={
                         <DashboardHeader
                             officeInfo={officeInfo}
-                            navigation={navigation}
                             runOCR={runOCR}
                             setIsManualSearchVisible={setIsManualSearchVisible}
                             onLayout={(e) => { headerHeightRef.current = e.nativeEvent.layout.height; }}
@@ -320,6 +318,7 @@ export const AdminDashboardScreen = ({ route }: any) => {
                         </View>
                     </View>
                 </Modal>
+                <AdminTabBar />
             </KeyboardAvoidingView>
         </SafeAreaView >
     );
