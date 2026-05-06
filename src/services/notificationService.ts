@@ -210,7 +210,7 @@ export const notificationService = {
     },
 
     generateShareLink(tenant: Tenant, company: Company): string {
-        return `https://postnoti-app-two.vercel.app/view?p=${tenant.id}`;
+        return `https://postnoti-app-two.vercel.app/view?m=${company.magic_id}&p=${tenant.id}`;
     },
 
     getShareMessage(tenant: Tenant, company: Company): string {

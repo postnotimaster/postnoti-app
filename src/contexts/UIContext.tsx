@@ -43,17 +43,31 @@ export const UIProvider = ({ children, setBrandingCompany }: { children: ReactNo
         try {
             const decodedUrl = decodeURIComponent(url);
             
-            // 1. 우편알림 문자 링크 (p=tenant_id)
-            const tenantMatch = decodedUrl.match(/[?&]p=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
-            const tenantId = tenantMatch ? tenantMatch[1] : null;
+            // 1. 신규 우편알림 문자 링크 (m=magic_id & p=tenant_id)
+            const paramMMatch = decodedUrl.match(/[?&]m=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+            const paramPMatch = decodedUrl.match(/[?&]p=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+            const msgMagicId = paramMMatch ? paramMMatch[1] : null;
+            const tenantId = paramPMatch ? paramPMatch[1] : null;
 
             // 2. 구형 매직링크 또는 슬러그
-            const uuidMatch = !tenantId ? decodedUrl.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i) : null;
-            const magicId = uuidMatch ? uuidMatch[0] : null;
+            const uuidMatch = (!msgMagicId && !tenantId) ? decodedUrl.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i) : null;
+            const magicId = msgMagicId || (uuidMatch ? uuidMatch[0] : null);
             const slugMatch = decodedUrl.match(/\/branch\/([^\/?#]+)/);
             const slug = slugMatch ? slugMatch[1] : null;
 
-            if (tenantId) {
+            if (magicId) {
+                // magic_id가 있으면 권한 문제 없이 오피스 정보를 조회할 수 있음
+                const { data, error } = await supabase.from('companies').select('*').eq('magic_id', magicId).single();
+                if (data && !error) {
+                    setMode('tenant_login');
+                    setBrandingCompany({ ...data, magicId: data.magic_id, targetTenantId: tenantId } as any);
+                } else {
+                    // DB 조회 실패해도 일단 화면은 띄워주기 (구형 방식 폴백)
+                    setMode('tenant_login');
+                    setBrandingCompany({ id: magicId, magicId, slug, targetTenantId: tenantId } as any);
+                }
+            } else if (tenantId) {
+                // 구형 알림 문자 (p=tenant_id 만 있는 경우) - RLS 때문에 실패할 수 있으나 시도는 해봄
                 const { data: tenantData } = await supabase.from('tenants').select('company_id').eq('id', tenantId).single();
                 if (tenantData?.company_id) {
                     const { data: companyData } = await supabase.from('companies').select('*').eq('id', tenantData.company_id).single();
@@ -61,14 +75,6 @@ export const UIProvider = ({ children, setBrandingCompany }: { children: ReactNo
                         setMode('tenant_login');
                         setBrandingCompany({ ...companyData, magicId: companyData.magic_id, targetTenantId: tenantId } as any);
                     }
-                }
-            } else if (magicId) {
-                setMode('tenant_login');
-                setBrandingCompany({ id: magicId, magicId, slug } as any);
-
-                const { data, error } = await supabase.from('companies').select('*').eq('magic_id', magicId).single();
-                if (data && !error) {
-                    setBrandingCompany({ ...data, magicId } as any);
                 }
             }
         } catch (e) {
