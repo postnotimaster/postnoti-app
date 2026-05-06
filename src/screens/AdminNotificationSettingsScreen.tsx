@@ -26,6 +26,7 @@ export const AdminNotificationSettingsScreen = () => {
     }, [officeInfo?.id]);
 
     const loadSettings = async () => {
+        if (!officeInfo?.id) return;
         setLoading(true);
         try {
             const { data, error } = await supabase
@@ -34,13 +35,19 @@ export const AdminNotificationSettingsScreen = () => {
                 .eq('id', officeInfo.id)
                 .single();
 
+            // 컬럼이 없거나 에러가 나도 기본값 유지
+            if (error) {
+                console.log('Settings column might be missing, using defaults:', error.message);
+                return;
+            }
+
             if (data?.settings) {
                 const settings = data.settings;
                 if (settings.default_message) setDefaultMessage(settings.default_message);
                 if (settings.notification_presets) setPresets(settings.notification_presets);
             }
         } catch (error) {
-            console.error('Load settings error:', error);
+            console.error('Load settings unexpected error:', error);
         } finally {
             setLoading(false);
         }
