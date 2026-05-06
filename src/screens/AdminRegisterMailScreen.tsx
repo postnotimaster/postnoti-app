@@ -109,10 +109,11 @@ export const AdminRegisterMailScreen = () => {
             if (result) {
                 setLastNotifResult(result);
                 if (result.success) {
-                    Alert.alert('발송 완료', '입주사에게 앱 알림을 보냈습니다.', [
-                        { text: '확인', onPress: () => handleSuccessFinish() }
-                    ]);
+                    // [개선] 앱 설치 사용자는 알럿 없이 즉시 성공 처리 (토스트 피드백)
+                    showToast({ message: '알림이 성공적으로 전송되었습니다 🔔', type: 'success' });
+                    handleSuccessFinish();
                 } else {
+                    // 앱 미설치 시에만 문자 발송 유도 팝업 노출
                     setResultModalVisible(true);
                 }
             }
@@ -525,10 +526,11 @@ export const AdminRegisterMailScreen = () => {
                                 <Text style={{ fontSize: 30 }}>⚠️</Text>
                             </View>
 
-                            <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 10 }}>알림 전달 불가</Text>
+                            <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 10 }}>앱 미설치 입주사</Text>
                             <Text style={{ fontSize: 15, color: '#64748B', textAlign: 'center', lineHeight: 22, marginBottom: 25 }}>
-                                입주사가 앱을 설치하지 않았거나{"\n"}알림을 꺼둔 상태입니다.{"\n"}
-                                <Text style={{ fontWeight: '700', color: '#4F46E5' }}>문자(SMS)로 링크를 보내시겠습니까?</Text>
+                                해당 입주사는 아직 앱을 설치하지 않았습니다.{"\n"}
+                                우편물 확인을 위해{"\n"}
+                                <Text style={{ fontWeight: '700', color: '#4F46E5' }}>문자(SMS)로 안내 링크를 보내주세요.</Text>
                             </Text>
 
                             <PrimaryButton

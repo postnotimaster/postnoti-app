@@ -86,8 +86,19 @@ export const TenantDashboard = ({
     const {
         showInstallBanner,
         setShowInstallBanner,
-        handleInstallPrompt
+        handleInstallPrompt,
+        isIOS,
+        isStandalone
     } = usePWAInstall(myProfile?.id);
+
+    const [isIOSGuideVisible, setIsIOSGuideVisible] = useState(false);
+
+    const onInstallPress = async () => {
+        const result = await handleInstallPrompt();
+        if (result === 'ios_guide') {
+            setIsIOSGuideVisible(true);
+        }
+    };
 
     // 4. 알림 동기화 관리
     const {
@@ -98,6 +109,17 @@ export const TenantDashboard = ({
         showToast,
         setLoading
     });
+
+    // [추가] 앱(스탠드얼론)으로 접속했을 때 알림 권한이 없으면 자동 요청
+    useEffect(() => {
+        if (isStandalone && myProfile?.id && !myProfile.web_push_token && !myProfile.push_token) {
+            // 약간의 지연을 주어 화면이 뜬 후 팝업이 나오게 함
+            const timer = setTimeout(() => {
+                requestNotificationPermission();
+            }, 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [isStandalone, myProfile?.id, myProfile?.web_push_token, myProfile?.push_token]);
 
     // 5. 공지사항 관리
     const { announcements, refreshAnnouncements } = useAnnouncements({
@@ -273,6 +295,22 @@ export const TenantDashboard = ({
                     stickySectionHeadersEnabled={true}
                     ListHeaderComponent={
                         <View>
+                            {/* PWA 설치 유도 배너 (스탠드얼론이 아닐 때만 노출) */}
+                            {showInstallBanner && !isStandalone && (
+                                <View style={styles.installBanner}>
+                                    <View style={{ flex: 1, marginRight: 12 }}>
+                                        <Text style={styles.installBannerTitle}>🔔 실시간 알림을 받아보세요</Text>
+                                        <Text style={styles.installBannerDesc}>앱으로 등록하면 우편물 도착 시 즉시 알려드립니다.</Text>
+                                    </View>
+                                    <Pressable style={styles.installButton} onPress={onInstallPress}>
+                                        <Text style={styles.installButtonText}>{isIOS ? '등록 방법' : '앱 설치'}</Text>
+                                    </Pressable>
+                                    <Pressable style={{ marginLeft: 10, padding: 4 }} onPress={() => setShowInstallBanner(false)}>
+                                        <Ionicons name="close" size={18} color="#94A3B8" />
+                                    </Pressable>
+                                </View>
+                            )}
+
                             <View style={styles.header}>
                                 <View style={{ flex: 1 }}>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -366,6 +404,40 @@ export const TenantDashboard = ({
                     </ReactNativeZoomableView>
                     <View style={styles.zoomFooter}>
                         <Text style={styles.zoomFooterText}>💡 두 손가락으로 확대할 수 있습니다</Text>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* iOS 전용 설치 가이드 모달 */}
+            <Modal visible={isIOSGuideVisible} transparent={true} animationType="fade" onRequestClose={() => setIsIOSGuideVisible(false)}>
+                <View style={[styles.modalContainer, { justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.8)' }]}>
+                    <View style={{ backgroundColor: '#fff', padding: 24, borderRadius: 24, width: '85%', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 16 }}>아이폰 앱 등록 방법 📲</Text>
+                        
+                        <View style={{ alignSelf: 'stretch', gap: 16 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center' }}>
+                                    <Text style={{ color: '#fff', fontWeight: '800' }}>1</Text>
+                                </View>
+                                <Text style={{ fontSize: 15, color: '#475569' }}>하단 메뉴의 <Text style={{ fontWeight: '700', color: '#1E293B' }}>공유 버튼</Text>을 누릅니다.</Text>
+                                <Ionicons name="share-outline" size={20} color="#4F46E5" />
+                            </View>
+
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center' }}>
+                                    <Text style={{ color: '#fff', fontWeight: '800' }}>2</Text>
+                                </View>
+                                <Text style={{ fontSize: 15, color: '#475569' }}>리스트를 올려 <Text style={{ fontWeight: '700', color: '#1E293B' }}>홈 화면에 추가</Text>를 누릅니다.</Text>
+                                <Ionicons name="add-circle-outline" size={20} color="#4F46E5" />
+                            </View>
+                        </View>
+
+                        <Pressable 
+                            style={{ marginTop: 32, backgroundColor: '#1E293B', paddingVertical: 14, paddingHorizontal: 40, borderRadius: 12 }}
+                            onPress={() => setIsIOSGuideVisible(false)}
+                        >
+                            <Text style={{ color: '#fff', fontWeight: '700' }}>확인했습니다</Text>
+                        </Pressable>
                     </View>
                 </View>
             </Modal>
