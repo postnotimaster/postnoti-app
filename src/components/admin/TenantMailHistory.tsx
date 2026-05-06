@@ -20,7 +20,7 @@ import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-vi
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import { storageService } from '../../services/storageService';
-import { useAppContent } from '../../contexts/AppContext';
+import { useOCRContext } from '../../contexts/OCRContext';
 import { notificationService } from '../../services/notificationService';
 
 interface TenantMailHistoryProps {
@@ -36,7 +36,7 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
     const [selectedFullImage, setSelectedFullImage] = useState<string | null>(null);
     const [imageRotation, setImageRotation] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
-    const { optimizeImage } = useAppContent() as any;
+    const { optimizeImage } = useOCRContext();
 
     useEffect(() => {
         loadHistory();

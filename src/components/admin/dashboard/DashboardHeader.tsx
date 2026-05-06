@@ -3,7 +3,8 @@ import { View, Text, Pressable, Platform } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import { appStyles } from '../../../styles/appStyles';
-import { useAppContent } from '../../../contexts/AppContext';
+import { useUI } from '../../../contexts/UIContext';
+import { useNotifications } from '../../../contexts/NotificationContext';
 
 interface DashboardHeaderProps {
     officeInfo: any;
@@ -18,7 +19,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     setIsManualSearchVisible,
     onLayout
 }) => {
-    const { pendingDeliveryCount, setMode } = useAppContent() as any;
+    const { setMode } = useUI();
+    const { pendingDeliveryCount } = useNotifications();
 
     return (
         <View

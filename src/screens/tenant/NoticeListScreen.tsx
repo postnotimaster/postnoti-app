@@ -2,10 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, Platform } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAnnouncements } from '../../hooks/tenant/useAnnouncements';
-import { useAppContent } from '../../contexts/AppContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const NoticeListScreen = () => {
-    const { brandingCompany, tenantProfile } = useAppContent();
+    const { brandingCompany, tenantProfile } = useAuth();
     const { announcements, loading, refreshAnnouncements } = useAnnouncements({
         companyId: brandingCompany?.id || '',
         tenantId: tenantProfile?.tenant_id || tenantProfile?.id

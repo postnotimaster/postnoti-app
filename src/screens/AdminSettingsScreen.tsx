@@ -3,14 +3,16 @@ import { View, Text, TextInput, ScrollView, Alert, ActivityIndicator, Pressable,
 import { supabase } from '../lib/supabase';
 import { companiesService } from '../services/companiesService';
 import { profilesService } from '../services/profilesService';
-import { useAppContent } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useUI } from '../contexts/UIContext';
 import { appStyles } from '../styles/appStyles';
 import { AppHeader } from '../components/common/AppHeader';
 import { PrimaryButton } from '../components/common/PrimaryButton';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 export const AdminSettingsScreen = () => {
-    const { officeInfo, setOfficeInfo, setMode } = useAppContent();
+    const { officeInfo, setOfficeInfo } = useAuth();
+    const { setMode } = useUI();
     const [loading, setLoading] = useState(false);
     const [adminProfile, setAdminProfile] = useState<any>(null);
     const [authEmail, setAuthEmail] = useState('');

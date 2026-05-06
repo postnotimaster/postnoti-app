@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useAppContent } from '../../contexts/AppContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { noticeService, Announcement } from '../../services/noticeService';
 import { notificationService } from '../../services/notificationService';
 import { appStyles } from '../../styles/appStyles';
@@ -15,7 +15,7 @@ import { AppHeader } from '../../components/common/AppHeader';
 import { AdminTabBar } from '../../components/admin/AdminTabBar';
 
 export const AdminNoticeScreen = () => {
-    const { officeInfo, profiles } = useAppContent();
+    const { officeInfo, profiles } = useAuth();
     const [notices, setNotices] = useState<Announcement[]>([]);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);

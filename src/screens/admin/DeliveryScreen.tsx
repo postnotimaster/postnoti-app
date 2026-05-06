@@ -5,13 +5,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useAppContent } from '../../contexts/AppContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { AdminTabBar } from '../../components/admin/AdminTabBar';
 import { mailDeliveryService, MailDeliveryRequest } from '../../services/mailDeliveryService';
 import { notificationService } from '../../services/notificationService';
 
 export const DeliveryScreen = () => {
-    const { officeInfo, loadPendingDeliveryCount } = useAppContent();
+    const { officeInfo } = useAuth();
+    const { loadPendingDeliveryCount } = useNotifications();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [requests, setRequests] = useState<MailDeliveryRequest[]>([]);

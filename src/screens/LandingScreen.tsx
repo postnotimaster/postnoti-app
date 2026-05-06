@@ -3,11 +3,13 @@ import { View, Text, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, I
 import { LoginScreen } from '../components/auth/LoginScreen';
 import { PrimaryButton } from '../components/common/PrimaryButton';
 import { appStyles } from '../styles/appStyles';
-import { useAppContent } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useUI } from '../contexts/UIContext';
 import { isKakaoTalk, redirectToExternalBrowser } from '../utils/browserDetection';
 
 export const LandingScreen = () => {
-    const { setMode, handleLoginSuccess } = useAppContent();
+    const { handleLoginSuccess } = useAuth();
+    const { setMode } = useUI();
     const [keyboardVisible, setKeyboardVisible] = React.useState(false);
 
     React.useEffect(() => {

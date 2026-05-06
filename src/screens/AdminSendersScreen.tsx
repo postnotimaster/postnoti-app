@@ -1,13 +1,15 @@
 import React from 'react';
 import { SafeAreaView, View } from 'react-native';
-import { useAppContent } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useUI } from '../contexts/UIContext';
 import { SenderManagement } from '../components/admin/SenderManagement';
 import { appStyles } from '../styles/appStyles';
 import { AppHeader } from '../components/common/AppHeader';
 import { masterSendersService } from '../services/masterSendersService';
 
 export const AdminSendersScreen = () => {
-    const { setMasterSenders, setMode } = useAppContent();
+    const { setProfiles } = useAuth();
+    const { setMode } = useUI();
 
     const handleBack = async () => {
         const senders = await masterSendersService.getAllSenders();

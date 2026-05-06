@@ -4,7 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
-import { useAppContent } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useUI } from '../contexts/UIContext';
+import { useOCRContext } from '../contexts/OCRContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import { appStyles } from '../styles/appStyles';
 import { AppHeader } from '../components/common/AppHeader';
 import { TenantMailHistory } from '../components/admin/TenantMailHistory';
@@ -22,20 +25,17 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 export const AdminDashboardScreen = ({ route }: any) => {
+    const { officeInfo, profiles, setProfiles } = useAuth();
     const {
-        officeInfo,
-        profiles,
-        setProfiles,
-        masterSenders,
-        setMasterSenders,
         isHistoryVisible,
         setIsHistoryVisible,
         selectedProfileForHistory,
         setSelectedProfileForHistory,
-        runOCR,
         isManualSearchVisible,
         setIsManualSearchVisible,
-    } = useAppContent();
+    } = useUI();
+    const { runOCR } = useOCRContext();
+    const { masterSenders } = useNotifications();
 
     // 자체 대시보드 상태 (AppContext에서 분리됨)
     const [mailLogs, setMailLogs] = useState<any[]>([]);

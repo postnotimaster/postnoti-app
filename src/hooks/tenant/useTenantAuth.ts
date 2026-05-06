@@ -3,7 +3,7 @@ import { Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { profilesService } from '../../services/profilesService';
 import { tenantsService, Tenant } from '../../services/tenantsService';
-import { useAppContent } from '../../contexts/AppContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface UseTenantAuthProps {
     companyId: string;
@@ -22,7 +22,7 @@ export const useTenantAuth = ({
     webPushToken,
     showToast
 }: UseTenantAuthProps) => {
-    const { tenantProfile, setTenantProfile } = useAppContent();
+    const { tenantProfile, setTenantProfile } = useAuth();
     const [name, setName] = useState('');
     const [phoneSuffix, setPhoneSuffix] = useState('');
     const [myProfile, setMyProfile] = useState<any | null>(tenantProfile);

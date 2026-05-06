@@ -1,11 +1,13 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useAppContent, AppMode } from '../../contexts/AppContext';
+import { useUI, AppMode } from '../../contexts/UIContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const AdminTabBar = () => {
-    const { mode, setMode, pendingDeliveryCount } = useAppContent();
+    const { mode, setMode } = useUI();
+    const { pendingDeliveryCount } = useNotifications();
     const insets = useSafeAreaInsets();
 
     const tabs: { mode: AppMode; label: string; icon: any; activeIcon: any }[] = [

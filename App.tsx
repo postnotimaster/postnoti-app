@@ -7,7 +7,10 @@ import React from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AppProvider, useAppContent } from './src/contexts/AppContext';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { UIProvider, useUI } from './src/contexts/UIContext';
+import { OCRProvider } from './src/contexts/OCRContext';
+import { NotificationProvider, useNotifications } from './src/contexts/NotificationContext';
 import { ToastProvider } from './src/contexts/ToastContext';
 import { StatusBar } from 'expo-status-bar';
 
@@ -23,19 +26,13 @@ import { AdminTenantsScreen } from './src/screens/AdminTenantsScreen';
 import { AdminNoticeScreen } from './src/screens/admin/AdminNoticeScreen';
 import { DeliveryScreen } from './src/screens/admin/DeliveryScreen';
 import { TenantTabNavigator } from './src/navigation/TenantTabNavigator';
+import { AdminNotificationSettingsScreen } from './src/screens/AdminNotificationSettingsScreen';
 import { KakaoGuideOverlay } from './src/components/common/KakaoGuideOverlay';
 
 function AppContent() {
-  const { 
-    isInitializing, 
-    mode, 
-    setMode,
-    brandingCompany, 
-    magicIdResolved, 
-    expoPushToken, 
-    webPushToken,
-    setBrandingCompany
-  } = useAppContent();
+  const { isInitializing, brandingCompany, setBrandingCompany } = useAuth();
+  const { mode, setMode, magicIdResolved } = useUI();
+  const { expoPushToken, webPushToken } = useNotifications();
 
   // 1. 초기 시스템 로딩
   if (isInitializing) {
@@ -143,10 +140,22 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ToastProvider>
-        <AppProvider>
-          <AppContent />
-        </AppProvider>
+        <AuthProvider>
+          <UIProviderWrapper>
+            <NotificationProvider>
+              <OCRProvider>
+                <AppContent />
+              </OCRProvider>
+            </NotificationProvider>
+          </UIProviderWrapper>
+        </AuthProvider>
       </ToastProvider>
     </SafeAreaProvider>
   );
 }
+
+// Wrapper to pass setBrandingCompany to UIProvider
+const UIProviderWrapper = ({ children }: { children: React.ReactNode }) => {
+  const { setBrandingCompany } = useAuth();
+  return <UIProvider setBrandingCompany={setBrandingCompany}>{children}</UIProvider>;
+};

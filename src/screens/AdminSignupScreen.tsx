@@ -5,10 +5,12 @@ import { companiesService } from '../services/companiesService';
 import { profilesService } from '../services/profilesService';
 import { PrimaryButton } from '../components/common/PrimaryButton';
 import { appStyles } from '../styles/appStyles';
-import { useAppContent } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useUI } from '../contexts/UIContext';
 
 export const AdminSignupScreen = () => {
-    const { setMode, setOfficeInfo } = useAppContent();
+    const { setOfficeInfo } = useAuth();
+    const { setMode } = useUI();
 
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);

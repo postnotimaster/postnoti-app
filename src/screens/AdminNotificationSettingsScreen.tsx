@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TextInput, Pressable, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useAppContent } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useUI } from '../contexts/UIContext';
 import { appStyles } from '../styles/appStyles';
 import { AppHeader } from '../components/common/AppHeader';
 import { PrimaryButton } from '../components/common/PrimaryButton';
 import { supabase } from '../lib/supabase';
 
 export const AdminNotificationSettingsScreen = () => {
-    const { officeInfo, setMode } = useAppContent();
+    const { officeInfo } = useAuth();
+    const { setMode } = useUI();
     const [loading, setLoading] = useState(false);
     const [defaultMessage, setDefaultMessage] = useState('안녕하세요. 우편물이 도착했습니다.');
     const [presets, setPresets] = useState<string[]>([]);

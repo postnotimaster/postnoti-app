@@ -2,7 +2,9 @@ import React from 'react';
 import { View, Text, ScrollView, Pressable, Image, ActivityIndicator, TextInput, Modal, Alert, Linking, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
 import { notificationService, NotificationResult } from '../services/notificationService';
 import * as ImagePicker from 'expo-image-picker';
-import { useAppContent } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useUI } from '../contexts/UIContext';
+import { useOCRContext } from '../contexts/OCRContext';
 import { useToast } from '../contexts/ToastContext';
 import { appStyles } from '../styles/appStyles';
 import { AppHeader } from '../components/common/AppHeader';
@@ -11,15 +13,25 @@ import { PrimaryButton } from '../components/common/PrimaryButton';
 
 export const AdminRegisterMailScreen = () => {
     const { showToast } = useToast();
+    const { officeInfo, profiles } = useAuth();
+    const {
+        mode,
+        setMode,
+        isHistoryVisible,
+        setIsHistoryVisible,
+        isManualSearchVisible,
+        setIsManualSearchVisible,
+        manualSearchQuery,
+        setManualSearchQuery,
+        setSelectedProfileForHistory
+    } = useUI();
     const {
         selectedImage,
+        setSelectedImage,
         ocrLoading,
         runOCR,
-        setOcrLoading,
-        setSelectedImage,
         matchedProfile,
         setMatchedProfile,
-        profiles,
         detectedSender,
         setDetectedSender,
         detectedMailType,
@@ -27,18 +39,9 @@ export const AdminRegisterMailScreen = () => {
         extraImages,
         setExtraImages,
         handleRegisterMail,
-        isManualSearchVisible,
-        setIsManualSearchVisible,
-        manualSearchQuery,
-        setManualSearchQuery,
-        ocrPreprocess,
-        optimizeImage,
-        officeInfo,
         resetOCR,
-        setSelectedProfileForHistory,
-        setIsHistoryVisible,
-        setMode
-    } = useAppContent() as any;
+        optimizeImage
+    } = useOCRContext();
 
     const [customMessage, setCustomMessage] = React.useState('');
     const [selectedPreset, setSelectedPreset] = React.useState<string | null>(null);

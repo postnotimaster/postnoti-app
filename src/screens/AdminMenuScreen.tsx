@@ -3,7 +3,8 @@ import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
-import { useAppContent } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useUI } from '../contexts/UIContext';
 import { appStyles } from '../styles/appStyles';
 import { AppHeader } from '../components/common/AppHeader';
 import { supabase } from '../lib/supabase';
@@ -16,11 +17,8 @@ import { notificationService } from '../services/notificationService';
 import { AdminTabBar } from '../components/admin/AdminTabBar';
 
 export const AdminMenuScreen = () => {
-    const {
-        officeInfo,
-        setProfiles, setMasterSenders,
-        setMode
-    } = useAppContent();
+    const { officeInfo, setOfficeInfo } = useAuth();
+    const { setMode } = useUI();
 
     const tenantMgmtRef = useRef<any>(null);
 
