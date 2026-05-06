@@ -109,7 +109,7 @@ function AppContent() {
                 pushToken: expoPushToken,
                 webPushToken: webPushToken,
                 magicProfileId: (brandingCompany as any).magicId,
-                magicTenantId: (brandingCompany as any).magicId,
+                magicTenantId: (brandingCompany as any).targetTenantId || (brandingCompany as any).magicId,
                 onBack: () => {
                   setMode('landing');
                   setBrandingCompany(null);

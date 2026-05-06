@@ -42,15 +42,29 @@ export const UIProvider = ({ children, setBrandingCompany }: { children: ReactNo
         if (!url) return;
         try {
             const decodedUrl = decodeURIComponent(url);
-            const uuidMatch = decodedUrl.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+            
+            // 1. 우편알림 문자 링크 (p=tenant_id)
+            const tenantMatch = decodedUrl.match(/[?&]p=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+            const tenantId = tenantMatch ? tenantMatch[1] : null;
+
+            // 2. 구형 매직링크 또는 슬러그
+            const uuidMatch = !tenantId ? decodedUrl.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i) : null;
             const magicId = uuidMatch ? uuidMatch[0] : null;
             const slugMatch = decodedUrl.match(/\/branch\/([^\/?#]+)/);
             const slug = slugMatch ? slugMatch[1] : null;
 
-            if (magicId) {
+            if (tenantId) {
+                const { data: tenantData } = await supabase.from('tenants').select('company_id').eq('id', tenantId).single();
+                if (tenantData?.company_id) {
+                    const { data: companyData } = await supabase.from('companies').select('*').eq('id', tenantData.company_id).single();
+                    if (companyData) {
+                        setMode('tenant_login');
+                        setBrandingCompany({ ...companyData, magicId: companyData.magic_id, targetTenantId: tenantId } as any);
+                    }
+                }
+            } else if (magicId) {
                 setMode('tenant_login');
                 setBrandingCompany({ id: magicId, magicId, slug } as any);
-                setMagicIdResolved(true);
 
                 const { data, error } = await supabase.from('companies').select('*').eq('magic_id', magicId).single();
                 if (data && !error) {
