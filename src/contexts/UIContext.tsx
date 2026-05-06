@@ -70,8 +70,8 @@ export const UIProvider = ({ children, setBrandingCompany }: { children: ReactNo
                     setBrandingCompany({ id: magicId, magicId, slug, targetTenantId: tenantId } as any);
                 }
             } else if (tenantId) {
-                // 구형 알림 문자 (p=tenant_id 만 있는 경우) - RLS 때문에 실패할 수 있으나 시도는 해봄
-                const { data: tenantData } = await supabase.from('tenants').select('company_id').eq('id', tenantId).single();
+                // 구형 알림 문자 (p=tenant_id 만 있는 경우) - RPC를 통해 RLS 우회하여 조회
+                const tenantData = await tenantsService.getTenantById(tenantId);
                 if (tenantData?.company_id) {
                     const { data: companyData } = await supabase.from('companies').select('*').eq('id', tenantData.company_id).single();
                     if (companyData) {
@@ -91,10 +91,21 @@ export const UIProvider = ({ children, setBrandingCompany }: { children: ReactNo
         let subscription: any;
         const init = async () => {
             try {
-                let initialUrl = await Linking.getInitialURL();
-                if (!initialUrl && Platform.OS === 'web') initialUrl = window.location.href;
-                if (initialUrl) await handleDeepLink(initialUrl);
-                else setMagicIdResolved(true);
+                let initialUrl: string | null = null;
+                
+                if (Platform.OS === 'web') {
+                    initialUrl = window.location.href;
+                } else {
+                    initialUrl = await Linking.getInitialURL();
+                }
+
+                console.log('[UIContext] Detected Initial URL:', initialUrl);
+
+                if (initialUrl && (initialUrl.includes('?') || initialUrl.includes('branch') || initialUrl.includes('postnoti://'))) {
+                    await handleDeepLink(initialUrl);
+                } else {
+                    setMagicIdResolved(true);
+                }
             } catch (e) {
                 setMagicIdResolved(true);
             } finally {
