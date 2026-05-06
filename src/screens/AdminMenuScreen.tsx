@@ -19,7 +19,8 @@ export const AdminMenuScreen = () => {
     const navigation = useNavigation<any>();
     const {
         officeInfo,
-        setProfiles, setMasterSenders
+        setProfiles, setMasterSenders,
+        setMode
     } = useAppContent();
 
     const tenantMgmtRef = useRef<any>(null);

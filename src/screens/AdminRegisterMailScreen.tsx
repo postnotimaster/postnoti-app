@@ -38,7 +38,8 @@ export const AdminRegisterMailScreen = () => {
         officeInfo,
         resetOCR,
         setSelectedProfileForHistory,
-        setIsHistoryVisible
+        setIsHistoryVisible,
+        setMode
     } = useAppContent() as any;
 
     const [customMessage, setCustomMessage] = React.useState('');
