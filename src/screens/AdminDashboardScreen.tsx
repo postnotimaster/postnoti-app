@@ -158,7 +158,7 @@ export const AdminDashboardScreen = ({ route }: any) => {
                 <SectionList
                     ref={sectionListRef}
                     style={appStyles.flexContainer}
-                    contentContainerStyle={{ paddingBottom: isSearchFocused ? 600 : 100, paddingTop: 0 }}
+                    contentContainerStyle={{ paddingBottom: isSearchFocused ? 600 : 40, paddingTop: 0 }}
                     stickySectionHeadersEnabled={true}
                     keyboardShouldPersistTaps="handled"
                     onScroll={(e) => {

@@ -34,7 +34,7 @@ export const LandingScreen = () => {
             >
                 <ScrollView
                     style={appStyles.flexContainer}
-                    contentContainerStyle={{ paddingBottom: 50 }}
+                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
                     keyboardShouldPersistTaps="handled"
                 >
                     {isKakaoTalk() && (

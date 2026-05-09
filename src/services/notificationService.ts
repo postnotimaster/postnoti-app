@@ -27,54 +27,69 @@ export const notificationService = {
         try {
             const { data: profiles } = await supabase
                 .from('profiles')
-                .select('push_token, web_push_token')
+                .select('id, push_token, web_push_token')
                 .in('id', profileIds);
 
             if (!profiles || profiles.length === 0) {
                 return;
             }
 
-            for (const profile of profiles) {
-                let sent = false;
+            // 1. 모든 유효한 토큰 수집 및 중복 제거
+            const uniqueExpoTokens = new Set<string>();
+            const uniqueWebTokens = new Set<string>();
+            
+            // 한 사용자가 네이티브 토큰을 가지고 있다면 웹 토큰은 제외하기 위해 추적
+            const profilesWithNative = new Set<string>();
 
-                // 1. Native Push (Expo) 우선 순위
-                if (profile.push_token) {
-                    try {
-                        const response = await fetch('https://postnoti-app-two.vercel.app/api/send-expo', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                to: profile.push_token,
-                                sound: 'default',
-                                title,
-                                body,
-                                priority: 'high',
-                                data: { ...data, url: `postnoti://view` }
-                            })
-                        });
-                        if (response.ok) sent = true;
-                    } catch (e: any) {
-                        console.warn('[NotificationService] Expo fetch error:', e);
-                    }
+            profiles.forEach(p => {
+                if (p.push_token) {
+                    uniqueExpoTokens.add(p.push_token);
+                    profilesWithNative.add(p.id);
                 }
+            });
 
-                // 2. Web Push (Firebase) - 네이티브 전송 실패했거나 토큰이 없는 경우만 시도
-                // (한 기기에서 중복 알림이 오는 것을 방지하기 위함)
-                if (!sent && profile.web_push_token) {
-                    try {
-                        await fetch('https://postnoti-app-two.vercel.app/api/send-push', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                token: profile.web_push_token,
-                                title,
-                                body,
-                                data: { ...data, url: `https://postnoti-app-two.vercel.app/view` }
-                            })
-                        });
-                    } catch (e: any) {
-                        // ignore web push errors
-                    }
+            profiles.forEach(p => {
+                // 네이티브 토큰이 없는 프로필이거나, 네이티브 토큰 전송 목록에 없는 웹 토큰만 추가
+                if (p.web_push_token && !profilesWithNative.has(p.id)) {
+                    uniqueWebTokens.add(p.web_push_token);
+                }
+            });
+
+            // 2. 네이티브 푸시 발송 (중복 없는 토큰 리스트 대상)
+            for (const token of uniqueExpoTokens) {
+                try {
+                    await fetch('https://postnoti-app-two.vercel.app/api/send-expo', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            to: token,
+                            sound: 'default',
+                            title,
+                            body,
+                            priority: 'high',
+                            data: { ...data, url: `postnoti://view` }
+                        })
+                    });
+                } catch (e) {
+                    console.warn('[NotificationService] Expo fetch error:', e);
+                }
+            }
+
+            // 3. 웹 푸시 발송 (중복 없는 토큰 리스트 대상)
+            for (const token of uniqueWebTokens) {
+                try {
+                    await fetch('https://postnoti-app-two.vercel.app/api/send-push', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            token,
+                            title,
+                            body,
+                            data: { ...data, url: `https://postnoti-app-two.vercel.app/view` }
+                        })
+                    });
+                } catch (e) {
+                    // ignore web push errors
                 }
             }
         } catch (err: any) {
