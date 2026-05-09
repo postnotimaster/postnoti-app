@@ -186,18 +186,23 @@ export const TenantDashboard = ({
         if (item.type === 'header') {
             return (
                 <View>
-                    {/* PWA 설치 유도 배너 */}
+                    {/* PWA 설치 유도 배너 - 더욱 강조된 디자인 */}
                     {showInstallBanner && !isStandalone && (
-                        <View style={styles.installBanner}>
-                            <View style={{ flex: 1, marginRight: 12 }}>
-                                <Text style={styles.installBannerTitle}>🔔 실시간 알림을 받아보세요</Text>
-                                <Text style={styles.installBannerDesc}>앱으로 등록하면 우편물 도착 시 즉시 알려드립니다.</Text>
+                        <View style={styles.premiumInstallBanner}>
+                            <View style={styles.installIconBox}>
+                                <Ionicons name="notifications-circle" size={32} color="#4F46E5" />
                             </View>
-                            <Pressable style={styles.installButton} onPress={onInstallPress}>
-                                <Text style={styles.installButtonText}>{isIOS ? '등록 방법' : '앱 설치'}</Text>
-                            </Pressable>
-                            <Pressable style={{ marginLeft: 10, padding: 4 }} onPress={() => setShowInstallBanner(false)}>
-                                <Ionicons name="close" size={18} color="#94A3B8" />
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.installBannerTitle}>실시간 알림을 받으시겠습니까?</Text>
+                                <Text style={styles.installBannerDesc}>앱으로 등록하면 우편물 도착 소식을 즉시 푸시 알림으로 보내드립니다.</Text>
+                                <Pressable style={styles.premiumInstallButton} onPress={onInstallPress}>
+                                    <Text style={styles.premiumInstallButtonText}>
+                                        {isIOS ? '아이폰에 앱 추가하기 (10초)' : '포스트노티 앱 설치하기'}
+                                    </Text>
+                                </Pressable>
+                            </View>
+                            <Pressable style={styles.closeBannerBtn} onPress={() => setShowInstallBanner(false)}>
+                                <Ionicons name="close" size={20} color="#94A3B8" />
                             </Pressable>
                         </View>
                     )}
@@ -522,19 +527,41 @@ const styles = StyleSheet.create({
     closeButtonText: { color: '#fff', fontWeight: '700', fontSize: 15 },
     zoomFooter: { position: 'absolute', bottom: 40, width: '100%', alignItems: 'center' },
     zoomFooterText: { color: '#fff', fontSize: 12, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
-    installBanner: {
-        backgroundColor: '#EEF2FF',
+    premiumInstallBanner: {
+        backgroundColor: '#fff',
         margin: 16,
-        marginBottom: 0,
-        padding: 16,
-        borderRadius: 16,
+        padding: 20,
+        borderRadius: 24,
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         borderWidth: 1,
-        borderColor: '#C7D2FE',
+        borderColor: '#E2E8F0',
+        shadowColor: '#4F46E5',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        elevation: 5,
     },
-    installBannerTitle: { fontSize: 15, fontWeight: '800', color: '#4338CA', marginBottom: 2 },
-    installBannerDesc: { fontSize: 12, color: '#6366F1' },
+    installIconBox: {
+        width: 48,
+        height: 48,
+        borderRadius: 14,
+        backgroundColor: '#EEF2FF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    installBannerTitle: { fontSize: 17, fontWeight: '800', color: '#1E293B', marginBottom: 4 },
+    installBannerDesc: { fontSize: 13, color: '#64748B', lineHeight: 18, marginBottom: 16 },
+    premiumInstallButton: {
+        backgroundColor: '#4F46E5',
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 12,
+        alignSelf: 'flex-start',
+    },
+    premiumInstallButtonText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+    closeBannerBtn: { padding: 4, marginLeft: 8 },
     installButton: {
         backgroundColor: '#4F46E5',
         paddingHorizontal: 16,

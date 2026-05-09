@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, Pressable, Image, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, Pressable, Image, ScrollView, StyleSheet, Alert, Platform } from 'react-native';
 import { mailService } from '../../services/mailService';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 export type MailLog = {
     id: string;
@@ -35,7 +35,20 @@ export const MailItem = ({ item, onImagePress, onMarkRead }: Props) => {
         }
     };
 
-    // extra_images parsing (handles both array and JSON string)
+    const handleDownload = (uri: string) => {
+        if (Platform.OS === 'web') {
+            const link = document.createElement('a');
+            link.href = uri;
+            link.download = `postnoti_mail_${item.id}.jpg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else {
+            Alert.alert('알림', '브라우저에서 열기 후 이미지를 길게 눌러 저장하실 수 있습니다.');
+        }
+    };
+
+    // extra_images parsing
     const extraImages: string[] = (() => {
         if (Array.isArray(item.extra_images)) return item.extra_images;
         if (typeof item.extra_images === 'string') {
@@ -54,38 +67,35 @@ export const MailItem = ({ item, onImagePress, onMarkRead }: Props) => {
             <View style={itemStyles.info}>
                 <View style={itemStyles.header}>
                     <View style={itemStyles.row}>
-                        <Text style={itemStyles.mailType}>{item.mail_type}</Text>
                         {item.read_at ? (
-                            <View style={[itemStyles.badge, { backgroundColor: '#DCFCE7' }]}>
-                                <Text style={[itemStyles.badgeText, { color: '#15803D' }]}>읽음</Text>
+                            <View style={[itemStyles.badge, { backgroundColor: '#F1F5F9' }]}>
+                                <Text style={[itemStyles.badgeText, { color: '#64748B' }]}>읽음</Text>
                             </View>
                         ) : (
                             <View style={[itemStyles.badge, { backgroundColor: '#FEF2F2' }]}>
                                 <Text style={[itemStyles.badgeText, { color: '#DC2626' }]}>안읽음</Text>
                             </View>
                         )}
+                        <Text style={itemStyles.date}>
+                            {new Date(item.created_at).toLocaleDateString()}
+                        </Text>
                     </View>
-                    <Text style={itemStyles.date}>
-                        {new Date(item.created_at).toLocaleDateString()}
-                    </Text>
                 </View>
-                <Text style={itemStyles.content} numberOfLines={2}>
-                    {item.ocr_content || '내용 없음'}
-                </Text>
-                {item.image_url && (
-                    <View style={itemStyles.row}>
-                        <View style={[itemStyles.badge, { backgroundColor: '#EFF6FF' }]}>
-                            <Text style={[itemStyles.badgeText, { color: '#1E40AF' }]}>📷 사진 보기</Text>
-                        </View>
-                        {extraImages.length > 0 && (
-                            <View style={[itemStyles.badge, { backgroundColor: '#EEF2FF' }]}>
-                                <Text style={[itemStyles.badgeText, { color: '#4338CA' }]}>📄 +{extraImages.length}페이지</Text>
-                            </View>
-                        )}
-                    </View>
-                )}
+
+                <View style={{ marginTop: 8 }}>
+                    {item.image_url && (
+                        <Pressable 
+                            style={itemStyles.downloadBtn} 
+                            onPress={() => handleDownload(item.image_url!)}
+                        >
+                            <Ionicons name="download-outline" size={16} color="#4F46E5" />
+                            <Text style={itemStyles.downloadText}>이미지 저장</Text>
+                        </Pressable>
+                    )}
+                </View>
+
                 {extraImages.length > 0 && (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={itemStyles.extraScroll}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
                         <View style={itemStyles.row}>
                             {extraImages.map((img, idx) => (
                                 <Pressable key={idx} onPress={() => onImagePress(img)}>
@@ -123,12 +133,11 @@ const itemStyles = StyleSheet.create({
     info: { flex: 1 },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
     row: { flexDirection: 'row', gap: 6 },
-    mailType: { fontSize: 13, fontWeight: '700', color: '#4F46E5', backgroundColor: '#EEF2FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-    badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
-    badgeText: { fontSize: 11, fontWeight: '600' },
-    date: { fontSize: 12, color: '#94A3B8' },
-    content: { fontSize: 14, color: '#334155', marginBottom: 8, lineHeight: 20 },
-    extraScroll: { marginTop: 10 },
+    badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+    badgeText: { fontSize: 12, fontWeight: '800' },
+    date: { fontSize: 13, color: '#94A3B8', marginLeft: 4 },
+    downloadBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F3FF', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, gap: 4, alignSelf: 'flex-start' },
+    downloadText: { fontSize: 12, fontWeight: '700', color: '#4F46E5' },
     extraThumb: { width: 60, height: 60, borderRadius: 8, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
-    mainImage: { width: 70, height: 70, borderRadius: 12, marginLeft: 12, backgroundColor: '#F1F5F9' },
+    mainImage: { width: 80, height: 80, borderRadius: 14, marginLeft: 12, backgroundColor: '#F1F5F9' },
 });
