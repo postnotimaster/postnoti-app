@@ -26,8 +26,8 @@ export const usePWAInstall = (profileId?: string) => {
             setShowInstallBanner(true);
         };
 
-        // 3. iOS 안내 노출 결정 (아이폰이고 스탠드얼론이 아닐 때)
-        if (ios && !standalone) {
+        // 3. 설치 안내 노출 결정 (스탠드얼론이 아닐 때 무조건 노출 시도)
+        if (!standalone) {
             setShowInstallBanner(true);
         }
 

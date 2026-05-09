@@ -92,11 +92,18 @@ export const TenantDashboard = ({
     } = usePWAInstall(myProfile?.id);
 
     const [isIOSGuideVisible, setIsIOSGuideVisible] = useState(false);
+    const [isAndroidGuideVisible, setIsAndroidGuideVisible] = useState(false);
 
     const onInstallPress = async () => {
-        const result = await handleInstallPrompt();
-        if (result === 'ios_guide') {
+        if (isIOS) {
             setIsIOSGuideVisible(true);
+            return;
+        }
+        
+        const result = await handleInstallPrompt();
+        if (result !== 'accepted') {
+            // 브라우저 자동 팝업이 안 뜰 경우 수동 가이드 표시
+            setIsAndroidGuideVisible(true);
         }
     };
 
@@ -137,6 +144,32 @@ export const TenantDashboard = ({
     const toggleSound = async (val: boolean) => {
         setSoundEnabled(val);
         await AsyncStorage.setItem('soundEnabled', String(val));
+    };
+
+    const downloadImage = async (uri: string) => {
+        if (!uri) return;
+        
+        try {
+            if (Platform.OS === 'web') {
+                const response = await fetch(uri);
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = `postnoti_${new Date().getTime()}.jpg`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(blobUrl);
+                showToast({ message: '이미지를 다운로드했습니다.', type: 'success' });
+            } else {
+                Alert.alert('알림', '브라우저에서 열기 후 이미지를 길게 눌러 저장하실 수 있습니다.');
+            }
+        } catch (error) {
+            console.error('Download error:', error);
+            showToast({ message: '다운로드 중 오류가 발생했습니다.', type: 'error' });
+        }
     };
 
     // 하드웨어 뒤로가기 제어
@@ -442,12 +475,20 @@ export const TenantDashboard = ({
 
             <Modal visible={!!selectedMailImage} transparent={true} animationType="fade" onRequestClose={() => setSelectedMailImage(null)}>
                 <View style={styles.modalContainer}>
-                    <Pressable style={styles.closeButton} onPress={() => setSelectedMailImage(null)}>
-                        <Text style={styles.closeButtonText}>✕ 닫기</Text>
-                    </Pressable>
+                    <View style={styles.modalTopBar}>
+                        <Pressable style={styles.modalActionBtn} onPress={() => downloadImage(selectedMailImage!)}>
+                            <Ionicons name="download-outline" size={24} color="#fff" />
+                            <Text style={styles.modalActionText}>저장</Text>
+                        </Pressable>
+                        <Pressable style={styles.modalActionBtn} onPress={() => setSelectedMailImage(null)}>
+                            <Ionicons name="close" size={28} color="#fff" />
+                        </Pressable>
+                    </View>
+                    
                     <ReactNativeZoomableView maxZoom={5} minZoom={1} initialZoom={1} bindToBorders={true} style={styles.zoomWrapper}>
                         {selectedMailImage && <Image source={{ uri: selectedMailImage }} style={styles.modalImage} resizeMode="contain" />}
                     </ReactNativeZoomableView>
+                    
                     <View style={styles.zoomFooter}>
                         <Text style={styles.zoomFooterText}>💡 두 손가락으로 확대할 수 있습니다</Text>
                     </View>
@@ -481,6 +522,38 @@ export const TenantDashboard = ({
                         <Pressable 
                             style={{ marginTop: 32, backgroundColor: '#1E293B', paddingVertical: 14, paddingHorizontal: 40, borderRadius: 12 }}
                             onPress={() => setIsIOSGuideVisible(false)}
+                        >
+                            <Text style={{ color: '#fff', fontWeight: '700' }}>확인했습니다</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Android/Chrome 설치 가이드 모달 */}
+            <Modal visible={isAndroidGuideVisible} transparent={true} animationType="fade" onRequestClose={() => setIsAndroidGuideVisible(false)}>
+                <View style={[styles.modalContainer, { justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.8)' }]}>
+                    <View style={{ backgroundColor: '#fff', padding: 24, borderRadius: 24, width: '85%', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 16 }}>앱 설치 방법 (안드로이드) 📲</Text>
+                        
+                        <View style={{ alignSelf: 'stretch', gap: 16 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center' }}>
+                                    <Text style={{ color: '#fff', fontWeight: '800' }}>1</Text>
+                                </View>
+                                <Text style={{ fontSize: 15, color: '#475569' }}>주소창 우측의 <Text style={{ fontWeight: '700', color: '#1E293B' }}>점 3개(⋮)</Text> 메뉴를 누릅니다.</Text>
+                            </View>
+
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center' }}>
+                                    <Text style={{ color: '#fff', fontWeight: '800' }}>2</Text>
+                                </View>
+                                <Text style={{ fontSize: 15, color: '#475569' }}><Text style={{ fontWeight: '700', color: '#1E293B' }}>앱 설치</Text> 또는 <Text style={{ fontWeight: '700', color: '#1E293B' }}>홈 화면에 추가</Text>를 누릅니다.</Text>
+                            </View>
+                        </View>
+
+                        <Pressable 
+                            style={{ marginTop: 32, backgroundColor: '#4F46E5', paddingVertical: 14, paddingHorizontal: 40, borderRadius: 12 }}
+                            onPress={() => setIsAndroidGuideVisible(false)}
                         >
                             <Text style={{ color: '#fff', fontWeight: '700' }}>확인했습니다</Text>
                         </Pressable>
@@ -521,12 +594,31 @@ const styles = StyleSheet.create({
     sectionTitle: { fontSize: 16, fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: 0.5 },
     emptyText: { textAlign: 'center', color: '#94A3B8', fontSize: 15 },
     modalContainer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)' },
+    modalTopBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingTop: Platform.OS === 'ios' ? 60 : 40,
+        paddingBottom: 10,
+        zIndex: 10,
+    },
+    modalActionBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        gap: 6,
+    },
+    modalActionText: { color: '#fff', fontSize: 15, fontWeight: '700' },
     zoomWrapper: { flexGrow: 1, justifyContent: 'center', alignItems: 'center' },
-    modalImage: { width: Dimensions.get('window').width, height: Dimensions.get('window').height * 0.8 },
+    modalImage: { width: Dimensions.get('window').width, height: Dimensions.get('window').height * 0.7 },
     closeButton: { position: 'absolute', top: 50, right: 20, zIndex: 10, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
     closeButtonText: { color: '#fff', fontWeight: '700', fontSize: 15 },
     zoomFooter: { position: 'absolute', bottom: 40, width: '100%', alignItems: 'center' },
-    zoomFooterText: { color: '#fff', fontSize: 12, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
+    zoomFooterText: { color: '#fff', fontSize: 12, backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
     premiumInstallBanner: {
         backgroundColor: '#fff',
         margin: 16,

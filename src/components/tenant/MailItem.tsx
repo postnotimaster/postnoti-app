@@ -35,19 +35,6 @@ export const MailItem = ({ item, onImagePress, onMarkRead }: Props) => {
         }
     };
 
-    const handleDownload = (uri: string) => {
-        if (Platform.OS === 'web') {
-            const link = document.createElement('a');
-            link.href = uri;
-            link.download = `postnoti_mail_${item.id}.jpg`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } else {
-            Alert.alert('알림', '브라우저에서 열기 후 이미지를 길게 눌러 저장하실 수 있습니다.');
-        }
-    };
-
     // extra_images parsing
     const extraImages: string[] = (() => {
         if (Array.isArray(item.extra_images)) return item.extra_images;
@@ -83,15 +70,6 @@ export const MailItem = ({ item, onImagePress, onMarkRead }: Props) => {
                 </View>
 
                 <View style={{ marginTop: 8 }}>
-                    {item.image_url && (
-                        <Pressable 
-                            style={itemStyles.downloadBtn} 
-                            onPress={() => handleDownload(item.image_url!)}
-                        >
-                            <Ionicons name="download-outline" size={16} color="#4F46E5" />
-                            <Text style={itemStyles.downloadText}>이미지 저장</Text>
-                        </Pressable>
-                    )}
                 </View>
 
                 {extraImages.length > 0 && (
@@ -136,8 +114,6 @@ const itemStyles = StyleSheet.create({
     badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
     badgeText: { fontSize: 12, fontWeight: '800' },
     date: { fontSize: 13, color: '#94A3B8', marginLeft: 4 },
-    downloadBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F3FF', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, gap: 4, alignSelf: 'flex-start' },
-    downloadText: { fontSize: 12, fontWeight: '700', color: '#4F46E5' },
     extraThumb: { width: 60, height: 60, borderRadius: 8, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
     mainImage: { width: 80, height: 80, borderRadius: 14, marginLeft: 12, backgroundColor: '#F1F5F9' },
 });
