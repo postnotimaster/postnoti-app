@@ -219,18 +219,28 @@ export const TenantDashboard = ({
         if (item.type === 'header') {
             return (
                 <View>
-                    {/* PWA 설치 유도 배너 - 더욱 강조된 디자인 */}
+                    {/* PWA 설치 유도 배너 - 더욱 친절한 안내 */}
                     {showInstallBanner && !isStandalone && (
                         <View style={styles.premiumInstallBanner}>
                             <View style={styles.installIconBox}>
-                                <Ionicons name="notifications-circle" size={32} color="#4F46E5" />
+                                <Ionicons name="apps" size={32} color="#4F46E5" />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={styles.installBannerTitle}>실시간 알림을 받으시겠습니까?</Text>
-                                <Text style={styles.installBannerDesc}>앱으로 등록하면 우편물 도착 소식을 즉시 푸시 알림으로 보내드립니다.</Text>
+                                <Text style={styles.installBannerTitle}>매번 링크 찾기 힘드시죠? 🏠</Text>
+                                <Text style={styles.installBannerDesc}>우편함 앱을 홈 화면에 꺼내두면:</Text>
+                                <View style={{ marginVertical: 8, gap: 4 }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                        <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                                        <Text style={{ fontSize: 13, color: '#475569' }}>우편물 도착 시 실시간 알림</Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                        <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                                        <Text style={{ fontSize: 13, color: '#475569' }}>홈 화면에서 한 번에 열기</Text>
+                                    </View>
+                                </View>
                                 <Pressable style={styles.premiumInstallButton} onPress={onInstallPress}>
                                     <Text style={styles.premiumInstallButtonText}>
-                                        {isIOS ? '아이폰에 앱 추가하기 (10초)' : '포스트노티 앱 설치하기'}
+                                        내 휴대폰에 앱 추가하기
                                     </Text>
                                 </Pressable>
                             </View>
@@ -495,67 +505,64 @@ export const TenantDashboard = ({
                 </View>
             </Modal>
 
-            {/* iOS 전용 설치 가이드 모달 */}
-            <Modal visible={isIOSGuideVisible} transparent={true} animationType="fade" onRequestClose={() => setIsIOSGuideVisible(false)}>
+            {/* 통합 설치 가이드 모달 */}
+            <Modal visible={isIOSGuideVisible || isAndroidGuideVisible} transparent={true} animationType="fade" onRequestClose={() => { setIsIOSGuideVisible(false); setIsAndroidGuideVisible(false); }}>
                 <View style={[styles.modalContainer, { justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.8)' }]}>
-                    <View style={{ backgroundColor: '#fff', padding: 24, borderRadius: 24, width: '85%', alignItems: 'center' }}>
-                        <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 16 }}>아이폰 앱 등록 방법 📲</Text>
+                    <View style={{ backgroundColor: '#fff', padding: 24, borderRadius: 28, width: '90%', maxWidth: 400 }}>
+                        <Text style={{ fontSize: 20, fontWeight: '900', color: '#1E293B', marginBottom: 8, textAlign: 'center' }}>
+                            {isIOS ? '아이폰 앱 추가 방법 📲' : '안드로이드 앱 추가 방법 📲'}
+                        </Text>
+                        <Text style={{ fontSize: 14, color: '#64748B', marginBottom: 24, textAlign: 'center' }}>버튼 클릭으로 설치가 안 될 때 따라해 보세요!</Text>
                         
-                        <View style={{ alignSelf: 'stretch', gap: 16 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Text style={{ color: '#fff', fontWeight: '800' }}>1</Text>
-                                </View>
-                                <Text style={{ fontSize: 15, color: '#475569' }}>하단 메뉴의 <Text style={{ fontWeight: '700', color: '#1E293B' }}>공유 버튼</Text>을 누릅니다.</Text>
-                                <Ionicons name="share-outline" size={20} color="#4F46E5" />
-                            </View>
-
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Text style={{ color: '#fff', fontWeight: '800' }}>2</Text>
-                                </View>
-                                <Text style={{ fontSize: 15, color: '#475569' }}>리스트를 올려 <Text style={{ fontWeight: '700', color: '#1E293B' }}>홈 화면에 추가</Text>를 누릅니다.</Text>
-                                <Ionicons name="add-circle-outline" size={20} color="#4F46E5" />
-                            </View>
+                        <View style={{ alignSelf: 'stretch', gap: 20 }}>
+                            {isIOS ? (
+                                <>
+                                    <View style={styles.guideStep}>
+                                        <View style={styles.stepNumber}><Text style={styles.stepNumberText}>1</Text></View>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={styles.stepTitle}>브라우저 하단의 <Text style={{ fontWeight: '800', color: '#4F46E5' }}>공유 버튼</Text>을 눌러주세요.</Text>
+                                            <View style={{ flexDirection: 'row', marginTop: 4, gap: 8 }}>
+                                                <Ionicons name="share-outline" size={24} color="#4F46E5" />
+                                                <Text style={{ fontSize: 12, color: '#94A3B8' }}>(사각형에 화살표 모양)</Text>
+                                            </View>
+                                        </View>
+                                    </View>
+                                    <View style={styles.guideStep}>
+                                        <View style={styles.stepNumber}><Text style={styles.stepNumberText}>2</Text></View>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={styles.stepTitle}>메뉴를 위로 올려 <Text style={{ fontWeight: '800', color: '#4F46E5' }}>[홈 화면에 추가]</Text>를 눌러주세요.</Text>
+                                            <Ionicons name="add-circle-outline" size={24} color="#4F46E5" style={{ marginTop: 4 }} />
+                                        </View>
+                                    </View>
+                                </>
+                            ) : (
+                                <>
+                                    <View style={styles.guideStep}>
+                                        <View style={styles.stepNumber}><Text style={styles.stepNumberText}>1</Text></View>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={styles.stepTitle}>우측 상단 혹은 하단의 <Text style={{ fontWeight: '800', color: '#4F46E5' }}>메뉴 버튼</Text>을 눌러주세요.</Text>
+                                            <View style={{ flexDirection: 'row', marginTop: 4, gap: 8 }}>
+                                                <Ionicons name="ellipsis-vertical" size={24} color="#4F46E5" />
+                                                <Ionicons name="menu" size={24} color="#4F46E5" />
+                                                <Text style={{ fontSize: 12, color: '#94A3B8' }}>(점 3개 혹은 가로줄 3개)</Text>
+                                            </View>
+                                        </View>
+                                    </View>
+                                    <View style={styles.guideStep}>
+                                        <View style={styles.stepNumber}><Text style={styles.stepNumberText}>2</Text></View>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={styles.stepTitle}><Text style={{ fontWeight: '800', color: '#4F46E5' }}>[앱 설치]</Text> 또는 <Text style={{ fontWeight: '800', color: '#4F46E5' }}>[홈 화면에 추가]</Text>를 눌러주세요.</Text>
+                                        </View>
+                                    </View>
+                                </>
+                            )}
                         </View>
 
                         <Pressable 
-                            style={{ marginTop: 32, backgroundColor: '#1E293B', paddingVertical: 14, paddingHorizontal: 40, borderRadius: 12 }}
-                            onPress={() => setIsIOSGuideVisible(false)}
+                            style={{ marginTop: 32, backgroundColor: '#1E293B', paddingVertical: 16, borderRadius: 16, alignItems: 'center' }}
+                            onPress={() => { setIsIOSGuideVisible(false); setIsAndroidGuideVisible(false); }}
                         >
-                            <Text style={{ color: '#fff', fontWeight: '700' }}>확인했습니다</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
-
-            {/* Android/Chrome 설치 가이드 모달 */}
-            <Modal visible={isAndroidGuideVisible} transparent={true} animationType="fade" onRequestClose={() => setIsAndroidGuideVisible(false)}>
-                <View style={[styles.modalContainer, { justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.8)' }]}>
-                    <View style={{ backgroundColor: '#fff', padding: 24, borderRadius: 24, width: '85%', alignItems: 'center' }}>
-                        <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 16 }}>앱 설치 방법 (안드로이드) 📲</Text>
-                        
-                        <View style={{ alignSelf: 'stretch', gap: 16 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Text style={{ color: '#fff', fontWeight: '800' }}>1</Text>
-                                </View>
-                                <Text style={{ fontSize: 15, color: '#475569' }}>주소창 우측의 <Text style={{ fontWeight: '700', color: '#1E293B' }}>점 3개(⋮)</Text> 메뉴를 누릅니다.</Text>
-                            </View>
-
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Text style={{ color: '#fff', fontWeight: '800' }}>2</Text>
-                                </View>
-                                <Text style={{ fontSize: 15, color: '#475569' }}><Text style={{ fontWeight: '700', color: '#1E293B' }}>앱 설치</Text> 또는 <Text style={{ fontWeight: '700', color: '#1E293B' }}>홈 화면에 추가</Text>를 누릅니다.</Text>
-                            </View>
-                        </View>
-
-                        <Pressable 
-                            style={{ marginTop: 32, backgroundColor: '#4F46E5', paddingVertical: 14, paddingHorizontal: 40, borderRadius: 12 }}
-                            onPress={() => setIsAndroidGuideVisible(false)}
-                        >
-                            <Text style={{ color: '#fff', fontWeight: '700' }}>확인했습니다</Text>
+                            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>확인했습니다</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -663,6 +670,12 @@ const styles = StyleSheet.create({
     installButtonText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 
     noticeText: { fontSize: 13, color: '#475569', flex: 1 },
+
+    // 가이드 스텝 스타일
+    guideStep: { flexDirection: 'row', gap: 16, alignItems: 'flex-start' },
+    stepNumber: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center', marginTop: 2 },
+    stepNumberText: { color: '#fff', fontWeight: '900', fontSize: 14 },
+    stepTitle: { fontSize: 15, color: '#334155', lineHeight: 22, fontWeight: '500' },
 
     // 컴팩트 공지사항 스타일
     compactNoticeBox: {
