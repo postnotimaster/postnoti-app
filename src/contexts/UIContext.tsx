@@ -50,8 +50,11 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
             // 1. 신규 우편알림 문자 링크 (m=magic_id & p=tenant_id)
             const paramMMatch = decodedUrl.match(/[?&]m=([^&?#]+)/i);
             const paramPMatch = decodedUrl.match(/[?&]p=([^&?#]+)/i);
-            const msgMagicId = paramMMatch ? paramMMatch[1] : null;
-            const tenantId = paramPMatch ? paramPMatch[1] : null;
+            const msgMagicIdRaw = paramMMatch ? paramMMatch[1].trim() : null;
+            const tenantIdRaw = paramPMatch ? paramPMatch[1].trim() : null;
+            
+            const msgMagicId = msgMagicIdRaw === 'undefined' ? null : msgMagicIdRaw;
+            const tenantId = tenantIdRaw === 'undefined' ? null : tenantIdRaw;
 
             console.log('[UIContext] Parsed Params:', { msgMagicId, tenantId });
 
@@ -62,11 +65,11 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
             const slug = slugMatch ? slugMatch[1] : null;
 
             if (magicId) {
-                // magic_id가 있으면 권한 문제 없이 오피스 정보를 조회할 수 있음
-                const { data, error } = await supabase.from('companies').select('*').eq('magic_id', magicId).single();
+                // magicId(company.id)가 있으면 권한 문제 없이 오피스 정보를 조회할 수 있음
+                const { data, error } = await supabase.from('companies').select('*').eq('id', magicId).single();
                 if (data && !error) {
                     setMode('tenant_login');
-                    setBrandingCompany({ ...data, magicId: data.magic_id, targetTenantId: tenantId } as any);
+                    setBrandingCompany({ ...data, magicId: data.id, targetTenantId: tenantId } as any);
                 } else {
                     // DB 조회 실패해도 일단 화면은 띄워주기 (구형 방식 폴백)
                     setMode('tenant_login');
@@ -79,7 +82,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
                     const { data: companyData } = await supabase.from('companies').select('*').eq('id', tenantData.company_id).single();
                     if (companyData) {
                         setMode('tenant_login');
-                        setBrandingCompany({ ...companyData, magicId: companyData.magic_id, targetTenantId: tenantId } as any);
+                        setBrandingCompany({ ...companyData, magicId: companyData.id, targetTenantId: tenantId } as any);
                     }
                 }
             }

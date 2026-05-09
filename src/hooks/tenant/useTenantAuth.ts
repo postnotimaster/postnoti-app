@@ -48,28 +48,46 @@ export const useTenantAuth = ({
             if (targetMagicId) {
                 try {
                     setIdentifying(true);
+                    
+                    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetMagicId);
 
                     // 1. First attempt: search in tenants table (ID based magic link)
-                    console.log(`[useTenantAuth] Attempt 1: Fetching from tenants table (ID: ${targetMagicId})`);
-                    let tenantResult = await tenantsService.getTenantById(targetMagicId);
+                    if (isUUID) {
+                        try {
+                            console.log(`[useTenantAuth] Attempt 1: Fetching from tenants table (ID: ${targetMagicId})`);
+                            // Let's use standard supabase select directly if the RPC is somehow failing
+                            // Wait, RLS prevents standard select for anon, so RPC is required.
+                            let tenantResult = await tenantsService.getTenantById(targetMagicId);
 
-                    if (tenantResult) {
-                        console.log(`[useTenantAuth] SUCCESS: Found in tenants table: ${tenantResult.name}`);
-                        setMyTenant(tenantResult);
-                        setMyProfile(tenantResult);
-                        setTenantProfile(tenantResult);
-                        return;
+                            if (tenantResult) {
+                                console.log(`[useTenantAuth] SUCCESS: Found in tenants table: ${tenantResult.name}`);
+                                setMyTenant(tenantResult);
+                                setMyProfile(tenantResult);
+                                setTenantProfile(tenantResult);
+                                return;
+                            }
+                        } catch (err) {
+                            console.warn(`[useTenantAuth] Attempt 1 failed for ${targetMagicId}:`, err);
+                            showToast({ message: '매직 링크 유효성 확인에 실패했습니다.', type: 'error' });
+                        }
+                    } else {
+                        console.warn(`[useTenantAuth] targetMagicId is NOT a valid UUID: ${targetMagicId}`);
                     }
 
                     // 2. Second attempt: search in profiles table (Legacy/Alternative magic link)
-                    console.log(`[useTenantAuth] Attempt 2: Fetching from profiles table (ID: ${targetMagicId})`);
-                    let profileResult = await profilesService.getProfileById(targetMagicId);
+                    try {
+                        console.log(`[useTenantAuth] Attempt 2: Fetching from profiles table (ID: ${targetMagicId})`);
+                        // Use a fallback RPC or direct query. Note: direct query might fail due to RLS if anon user.
+                        let profileResult = await profilesService.getProfileById(targetMagicId);
 
-                    if (profileResult) {
-                        console.log(`[useTenantAuth] SUCCESS: Found in profiles table: ${profileResult.name}`);
-                        setMyProfile(profileResult);
-                        setTenantProfile(profileResult);
-                        return;
+                        if (profileResult) {
+                            console.log(`[useTenantAuth] SUCCESS: Found in profiles table: ${profileResult.name}`);
+                            setMyProfile(profileResult);
+                            setTenantProfile(profileResult);
+                            return;
+                        }
+                    } catch (err) {
+                        console.warn(`[useTenantAuth] Attempt 2 failed for ${targetMagicId} (possibly RLS):`, err);
                     }
 
                     console.warn(`[useTenantAuth] FAILED: ID ${targetMagicId} not found in neither tenants nor profiles`);

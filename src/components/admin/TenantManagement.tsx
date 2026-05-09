@@ -11,8 +11,10 @@ import {
     Switch,
     BackHandler,
     KeyboardAvoidingView,
-    Platform
+    Platform,
+    Linking
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { tenantsService, Tenant } from '../../services/tenantsService';
 import { PrimaryButton } from '../common/PrimaryButton';
@@ -131,6 +133,34 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
         if (!dateString) return '-';
         const d = new Date(dateString);
         return `${d.getMonth() + 1}/${d.getDate()}`;
+    };
+
+    const handleShareInvite = async (tenant: Tenant) => {
+        const link = `https://postnoti-app-two.vercel.app/view?m=${companyId}&p=${tenant.id}`;
+        const message = `[포스트노티 공유오피스]\n${tenant.name}님, 전용 우편함이 준비되었습니다!\n\n아래 링크를 눌러 로그인 없이 바로 우편물을 확인하고, 알림 앱을 설치해 보세요.\n\n👉 전용 우편함 열기:\n${link}`;
+        
+        Alert.alert('입주자 초대', '어떤 방식으로 전달하시겠습니까?', [
+            {
+                text: '문자(SMS)로 보내기',
+                onPress: async () => {
+                    const separator = Platform.OS === 'ios' ? '&' : '?';
+                    const url = `sms:${tenant.phone}${separator}body=${encodeURIComponent(message)}`;
+                    try {
+                        await Linking.openURL(url);
+                    } catch (e) {
+                        Alert.alert('오류', '문자 앱을 열 수 없습니다.');
+                    }
+                }
+            },
+            {
+                text: '링크만 복사하기',
+                onPress: async () => {
+                    await Clipboard.setStringAsync(message);
+                    Alert.alert('복사 완료', '초대 메시지와 전용 링크가 클립보드에 복사되었습니다. 카카오톡 등에 붙여넣기 하세요.');
+                }
+            },
+            { text: '취소', style: 'cancel' }
+        ]);
     };
 
     const filteredTenants = tenants
@@ -438,12 +468,17 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                                     </View>
                                 </View>
                                 <View style={styles.cardActions}>
-                                    <Pressable onPress={() => { setEditingTenant(t); setIsEditing(true); }} style={styles.editBtn}>
-                                        <Text style={styles.editBtnText}>{'\uc218\uc815'}</Text>
+                                    <Pressable onPress={() => handleShareInvite(t)} style={[styles.editBtn, { marginBottom: 12 }]}>
+                                        <Text style={[styles.editBtnText, { color: '#059669' }]}>{'📩 초대'}</Text>
                                     </Pressable>
-                                    <Pressable onPress={() => handleDelete(t.id!)} style={styles.deleteBtn}>
-                                        <Text style={styles.deleteBtnText}>{'\uc0ad\uc81c'}</Text>
-                                    </Pressable>
+                                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                                        <Pressable onPress={() => { setEditingTenant(t); setIsEditing(true); }} style={styles.editBtn}>
+                                            <Text style={styles.editBtnText}>{'\uc218\uc815'}</Text>
+                                        </Pressable>
+                                        <Pressable onPress={() => handleDelete(t.id!)} style={styles.deleteBtn}>
+                                            <Text style={styles.deleteBtnText}>{'\uc0ad\uc81c'}</Text>
+                                        </Pressable>
+                                    </View>
                                 </View>
                             </Pressable>
                         );

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    View, Text, StyleSheet, SectionList, Image,
+    View, Text, StyleSheet, FlatList, Image,
     ActivityIndicator, TextInput, Alert, Pressable, Modal,
     BackHandler, Platform, Dimensions, ScrollView
 } from 'react-native';
@@ -157,18 +157,171 @@ export const TenantDashboard = ({
         return () => backHandler.remove();
     }, [selectedMailImage, myProfile, onBack, companyId]);
 
-    const renderMailItem = React.useCallback(({ item }: { item: MailLog }) => (
-        <MailItem
-            item={item}
-            onImagePress={(uri) => setSelectedMailImage(uri)}
-            onMarkRead={(id) => setMails(prev => prev.map(m => m.id === id ? { ...m, read_at: new Date().toISOString() } : m))}
-        />
-    ), [setSelectedMailImage, setMails]);
+    const flatData = React.useMemo(() => {
+        const result: any[] = [];
+        
+        // 1. 헤더 (프로필, 공지사항 등)
+        result.push({ type: 'header', id: 'header' });
+        
+        // 2. 컨트롤 (탭 바 - Sticky)
+        result.push({ type: 'controls', id: 'controls' });
+        
+        // 3. 우편물 데이터
+        const groups = getGroupedMails(filter) || [];
+        if (groups.length === 0) {
+            result.push({ type: 'empty', id: 'empty' });
+        } else {
+            groups.forEach((group, gIdx) => {
+                result.push({ type: 'sectionHeader', title: group.title, id: `section-${gIdx}` });
+                group.data.forEach(mail => {
+                    result.push({ type: 'mail', mail, id: `mail-${mail.id}` });
+                });
+            });
+        }
+        
+        return result;
+    }, [getGroupedMails, filter]);
 
-    const sections = React.useMemo(() => [
-        { title: 'CONTROLS', data: [], type: 'controls' },
-        ...(getGroupedMails(filter) || []).map(s => ({ ...s, type: 'mail' }))
-    ], [getGroupedMails, filter]);
+    const renderItem = React.useCallback(({ item }: any) => {
+        if (item.type === 'header') {
+            return (
+                <View>
+                    {/* PWA 설치 유도 배너 */}
+                    {showInstallBanner && !isStandalone && (
+                        <View style={styles.installBanner}>
+                            <View style={{ flex: 1, marginRight: 12 }}>
+                                <Text style={styles.installBannerTitle}>🔔 실시간 알림을 받아보세요</Text>
+                                <Text style={styles.installBannerDesc}>앱으로 등록하면 우편물 도착 시 즉시 알려드립니다.</Text>
+                            </View>
+                            <Pressable style={styles.installButton} onPress={onInstallPress}>
+                                <Text style={styles.installButtonText}>{isIOS ? '등록 방법' : '앱 설치'}</Text>
+                            </Pressable>
+                            <Pressable style={{ marginLeft: 10, padding: 4 }} onPress={() => setShowInstallBanner(false)}>
+                                <Ionicons name="close" size={18} color="#94A3B8" />
+                            </Pressable>
+                        </View>
+                    )}
+
+                    <View style={styles.header}>
+                        <View style={{ flex: 1 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                <Text style={styles.title} numberOfLines={1}>
+                                    {(() => {
+                                        const cName = myProfile?.company_name || '';
+                                        const pName = myProfile?.name || '';
+                                        if (!cName && !pName) return '입주자님';
+                                        if (cName === pName) return `${pName}님`;
+                                        return `${cName} ${pName}님`.trim();
+                                    })()}
+                                </Text>
+                                {unreadCount > 0 && (
+                                    <View style={styles.unreadBadge}>
+                                        <Text style={styles.unreadBadgeText}>+{unreadCount}</Text>
+                                    </View>
+                                )}
+                                <Pressable onPress={() => setIsSettingsVisible(true)} style={{ marginLeft: 4 }}>
+                                    <Ionicons name="settings-outline" size={20} color="#64748B" />
+                                </Pressable>
+                            </View>
+                            <Text style={styles.subtitle}>{companyName} 스마트 우편함</Text>
+                        </View>
+
+                        <View style={{ alignItems: 'flex-end' }}>
+                            <Pressable onPress={() => handleLogout()}>
+                                <Text style={{ color: '#EF4444', fontWeight: '600', fontSize: 13 }}>로그아웃</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+
+                    {/* 공지사항 보드 */}
+                    {announcements && announcements.length > 0 && (
+                        <View style={styles.noticeBoard}>
+                            {announcements.slice(0, 5).map((notice, index) => (
+                                <Pressable
+                                    key={notice.id}
+                                    onPress={() => setIsNoticeVisible(true)}
+                                    style={[
+                                        styles.noticeRow,
+                                        index === 0 && { borderTopWidth: 0 }
+                                    ]}
+                                >
+                                    <Text style={styles.noticeIconText}>📢</Text>
+                                    <Text style={styles.noticeTitleText} numberOfLines={1}>
+                                        {notice.title}
+                                    </Text>
+                                    <Ionicons name="chevron-forward" size={14} color="#CBD5E1" />
+                                </Pressable>
+                            ))}
+                        </View>
+                    )}
+                </View>
+            );
+        }
+
+        if (item.type === 'controls') {
+            return (
+                <View style={styles.tabBarContainer}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.tabButtons}
+                    >
+                        <Pressable style={[styles.tabButton, filter === 'all' && styles.activeTab]} onPress={() => setFilter('all')}>
+                            <Text style={[styles.tabText, filter === 'all' && styles.activeTabText]}>전체</Text>
+                        </Pressable>
+                        <Pressable style={[styles.tabButton, filter === 'unread' && styles.activeTab]} onPress={() => setFilter('unread')}>
+                            <Text style={[styles.tabText, filter === 'unread' && styles.activeTabText]}>안읽음</Text>
+                        </Pressable>
+
+                        <Pressable
+                            style={[styles.tabButton, styles.deliveryTabButton]}
+                            onPress={() => setIsMailDeliveryVisible(true)}
+                        >
+                            <Ionicons name="paper-plane" size={14} color="#fff" />
+                            <Text style={[styles.tabText, { color: '#fff', marginLeft: 4 }]}>전달신청</Text>
+                        </Pressable>
+                    </ScrollView>
+
+                    <Pressable
+                        onPress={() => refreshAnnouncements()}
+                        style={styles.iconRefreshButton}
+                    >
+                        <Ionicons name="refresh" size={18} color="#4F46E5" />
+                    </Pressable>
+                </View>
+            );
+        }
+
+        if (item.type === 'sectionHeader') {
+            return (
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>{item.title}</Text>
+                </View>
+            );
+        }
+
+        if (item.type === 'empty') {
+            return (
+                <View style={{ alignItems: 'center', marginTop: 50 }}>
+                    <Text style={styles.emptyText}>
+                        {filter === 'unread' ? '모두 확인하셨네요! 🎉' : '받은 우편물이 없습니다.'}
+                    </Text>
+                </View>
+            );
+        }
+
+        if (item.type === 'mail') {
+            return (
+                <MailItem
+                    item={item.mail}
+                    onImagePress={(uri) => setSelectedMailImage(uri)}
+                    onMarkRead={(id) => setMails(prev => prev.map(m => m.id === id ? { ...m, read_at: new Date().toISOString() } : m))}
+                />
+            );
+        }
+
+        return null;
+    }, [filter, showInstallBanner, isStandalone, myProfile, unreadCount, companyName, announcements, isIOS]);
 
     // -----------------------------------------------------
     // 렌더링 시작
@@ -251,130 +404,11 @@ export const TenantDashboard = ({
                     <Text style={styles.loadingText}>우편물 데이터를 가져오는 중...</Text>
                 </View>
             ) : (
-                <SectionList
-                    sections={sections}
-                    keyExtractor={(item, index) => item.id || `extra-${index}`}
-                    renderItem={renderMailItem}
-                    renderSectionHeader={React.useCallback(({ section }: any) => {
-                        if ((section as any).type === 'controls') {
-                            return (
-                                <View style={styles.tabBarContainer}>
-                                    <ScrollView
-                                        horizontal
-                                        showsHorizontalScrollIndicator={false}
-                                        contentContainerStyle={styles.tabButtons}
-                                    >
-                                        <Pressable style={[styles.tabButton, filter === 'all' && styles.activeTab]} onPress={() => setFilter('all')}>
-                                            <Text style={[styles.tabText, filter === 'all' && styles.activeTabText]}>전체</Text>
-                                        </Pressable>
-                                        <Pressable style={[styles.tabButton, filter === 'unread' && styles.activeTab]} onPress={() => setFilter('unread')}>
-                                            <Text style={[styles.tabText, filter === 'unread' && styles.activeTabText]}>안읽음</Text>
-                                        </Pressable>
-
-                                        <Pressable
-                                            style={[styles.tabButton, styles.deliveryTabButton]}
-                                            onPress={() => setIsMailDeliveryVisible(true)}
-                                        >
-                                            <Ionicons name="paper-plane" size={14} color="#fff" />
-                                            <Text style={[styles.tabText, { color: '#fff', marginLeft: 4 }]}>전달신청</Text>
-                                        </Pressable>
-                                    </ScrollView>
-
-                                    <Pressable
-                                        onPress={() => refreshAnnouncements()}
-                                        style={styles.iconRefreshButton}
-                                    >
-                                        <Ionicons name="refresh" size={18} color="#4F46E5" />
-                                    </Pressable>
-                                </View>
-                            );
-                        }
-                        return (
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>{section.title}</Text>
-                            </View>
-                        );
-                    }, [filter, refreshAnnouncements])}
-                    stickySectionHeadersEnabled={true}
-                    ListHeaderComponent={
-                        <View>
-                            {/* PWA 설치 유도 배너 (스탠드얼론이 아닐 때만 노출) */}
-                            {showInstallBanner && !isStandalone && (
-                                <View style={styles.installBanner}>
-                                    <View style={{ flex: 1, marginRight: 12 }}>
-                                        <Text style={styles.installBannerTitle}>🔔 실시간 알림을 받아보세요</Text>
-                                        <Text style={styles.installBannerDesc}>앱으로 등록하면 우편물 도착 시 즉시 알려드립니다.</Text>
-                                    </View>
-                                    <Pressable style={styles.installButton} onPress={onInstallPress}>
-                                        <Text style={styles.installButtonText}>{isIOS ? '등록 방법' : '앱 설치'}</Text>
-                                    </Pressable>
-                                    <Pressable style={{ marginLeft: 10, padding: 4 }} onPress={() => setShowInstallBanner(false)}>
-                                        <Ionicons name="close" size={18} color="#94A3B8" />
-                                    </Pressable>
-                                </View>
-                            )}
-
-                            <View style={styles.header}>
-                                <View style={{ flex: 1 }}>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                        <Text style={styles.title} numberOfLines={1}>
-                                            {(() => {
-                                                const cName = myProfile?.company_name || '';
-                                                const pName = myProfile?.name || '';
-                                                if (!cName && !pName) return '입주자님';
-                                                if (cName === pName) return `${pName}님`;
-                                                return `${cName} ${pName}님`.trim();
-                                            })()}
-                                        </Text>
-                                        {unreadCount > 0 && (
-                                            <View style={styles.unreadBadge}>
-                                                <Text style={styles.unreadBadgeText}>+{unreadCount}</Text>
-                                            </View>
-                                        )}
-                                        <Pressable onPress={() => setIsSettingsVisible(true)} style={{ marginLeft: 4 }}>
-                                            <Ionicons name="settings-outline" size={20} color="#64748B" />
-                                        </Pressable>
-                                    </View>
-                                    <Text style={styles.subtitle}>{companyName} 스마트 우편함</Text>
-                                </View>
-
-                                <View style={{ alignItems: 'flex-end' }}>
-                                    <Pressable onPress={() => handleLogout()}>
-                                        <Text style={{ color: '#EF4444', fontWeight: '600', fontSize: 13 }}>로그아웃</Text>
-                                    </Pressable>
-                                </View>
-                            </View>
-
-                            {/* [NEW] 공지사항 보드 - 최대 5개까지 한 줄씩 출력 */}
-                            {announcements && announcements.length > 0 && (
-                                <View style={styles.noticeBoard}>
-                                    {announcements.slice(0, 5).map((notice, index) => (
-                                        <Pressable
-                                            key={notice.id}
-                                            onPress={() => setIsNoticeVisible(true)}
-                                            style={[
-                                                styles.noticeRow,
-                                                index === 0 && { borderTopWidth: 0 }
-                                            ]}
-                                        >
-                                            <Text style={styles.noticeIconText}>📢</Text>
-                                            <Text style={styles.noticeTitleText} numberOfLines={1}>
-                                                {notice.title}
-                                            </Text>
-                                            <Ionicons name="chevron-forward" size={14} color="#CBD5E1" />
-                                        </Pressable>
-                                    ))}
-                                </View>
-                            )}
-                        </View>
-                    }
-                    ListEmptyComponent={
-                        <View style={{ alignItems: 'center', marginTop: 50 }}>
-                            <Text style={styles.emptyText}>
-                                {filter === 'unread' ? '모두 확인하셨네요! 🎉' : '받은 우편물이 없습니다.'}
-                            </Text>
-                        </View>
-                    }
+                <FlatList
+                    data={flatData}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderItem}
+                    stickyHeaderIndices={[1]}
                     contentContainerStyle={{ paddingBottom: 100 }}
                 />
             )}
