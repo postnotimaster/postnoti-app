@@ -22,8 +22,8 @@ export const AdminTabBar = () => {
         <View style={[
             styles.container, 
             { 
-                height: (insets.bottom > 0 ? Math.min(insets.bottom + 60, 90) : 70),
-                paddingBottom: (insets.bottom > 0 ? Math.min(insets.bottom, 25) : 10),
+                height: (insets.bottom > 0 ? 60 + insets.bottom : 75),
+                paddingBottom: (insets.bottom > 0 ? insets.bottom + 4 : 12),
             }
         ]}>
             {tabs.map((tab) => {
