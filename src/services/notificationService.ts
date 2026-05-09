@@ -35,10 +35,12 @@ export const notificationService = {
             }
 
             for (const profile of profiles) {
-                // Native Push
+                let sent = false;
+
+                // 1. Native Push (Expo) 우선 순위
                 if (profile.push_token) {
                     try {
-                        await fetch('https://postnoti-app-two.vercel.app/api/send-expo', {
+                        const response = await fetch('https://postnoti-app-two.vercel.app/api/send-expo', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -50,15 +52,17 @@ export const notificationService = {
                                 data: { ...data, url: `postnoti://view` }
                             })
                         });
+                        if (response.ok) sent = true;
                     } catch (e: any) {
                         console.warn('[NotificationService] Expo fetch error:', e);
                     }
                 }
 
-                // Web Push
-                if (profile.web_push_token) {
+                // 2. Web Push (Firebase) - 네이티브 전송 실패했거나 토큰이 없는 경우만 시도
+                // (한 기기에서 중복 알림이 오는 것을 방지하기 위함)
+                if (!sent && profile.web_push_token) {
                     try {
-                        const response = await fetch('https://postnoti-app-two.vercel.app/api/send-push', {
+                        await fetch('https://postnoti-app-two.vercel.app/api/send-push', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -68,11 +72,8 @@ export const notificationService = {
                                 data: { ...data, url: `https://postnoti-app-two.vercel.app/view` }
                             })
                         });
-                        if (!response.ok) {
-                            console.warn('Web push error', response.status);
-                        }
                     } catch (e: any) {
-                        // ignore web push errors for now
+                        // ignore web push errors
                     }
                 }
             }
