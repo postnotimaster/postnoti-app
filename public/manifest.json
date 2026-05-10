@@ -1,7 +1,7 @@
 {
     "name": "우편알림",
     "short_name": "우편알림",
-    "start_url": "/",
+    "start_url": ".",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#4F46E5",

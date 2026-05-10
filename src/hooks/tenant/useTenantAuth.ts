@@ -213,7 +213,7 @@ export const useTenantAuth = ({
                 await AsyncStorage.removeItem(`tenant_phone_${companyId}`);
                 setMyProfile(null);
                 setMyTenant(null);
-                setName('');
+                // setName(''); // 지점명은 로그아웃해도 그대로 유지되도록 주석 처리
                 setPhoneSuffix('');
             } catch (e) {
                 console.error('Logout failed', e);
