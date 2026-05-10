@@ -236,11 +236,11 @@ export const notificationService = {
         
         if (!tenantId) {
             console.error('[NotificationService] CRITICAL: No ID found in tenant object!');
-            console.log('Available Keys:', Object.keys(tenant || {}));
             return `https://postnoti-app-two.vercel.app/view?m=${company?.id}`;
         }
 
-        const link = `https://postnoti-app-two.vercel.app/view?m=${company?.id}&p=${tenantId}`;
+        // [중요] p 파라미터를 맨 앞으로 배치하여 문자 앱에서의 절단을 방지 (p=...&m=...)
+        const link = `https://postnoti-app-two.vercel.app/view?p=${tenantId}&m=${company?.id}`;
         console.log('[NotificationService] Generated Link:', link);
         console.log('--------------------------------------------------');
         return link;
@@ -249,7 +249,7 @@ export const notificationService = {
     getShareMessage(tenant: any, company: any): string {
         const link = this.generateShareLink(tenant, company);
         const companyLabel = tenant.company_name || tenant.name;
-        // [검증용] 문구 앞에 (새로운 알림) 추가
-        return `[${company.name}] (새로운 알림) ${companyLabel}님, 우편물이 도착했습니다.\n\n사진 확인:\n${link}\n\n--\n포스트노티 공유오피스 스마트 우편알림`;
+        // [긴급 수정] 주소를 맨 앞으로 배치하여 문자 앱에서의 절단을 방지
+        return `[${company.name}] 우편함 확인: ${link}\n\n(신규알림) ${companyLabel}님 우편물이 도착했습니다.\n포스트노티 스마트 우편알림`;
     }
 };

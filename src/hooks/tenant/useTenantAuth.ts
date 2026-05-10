@@ -51,27 +51,33 @@ export const useTenantAuth = ({
                     
                     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetMagicId);
 
-                    // 1. First attempt: search in tenants table (ID based magic link)
+                    // [최우선] 입주사 ID(magicTenantId)로 인증 시도
                     if (isUUID) {
                         try {
-                            console.log(`[useTenantAuth] Attempt 1: Fetching from tenants table (ID: ${targetMagicId})`);
-                            // Let's use standard supabase select directly if the RPC is somehow failing
-                            // Wait, RLS prevents standard select for anon, so RPC is required.
+                            console.log(`[useTenantAuth] Attempting Magic Login (ID: ${targetMagicId})`);
                             let tenantResult = await tenantsService.getTenantById(targetMagicId);
 
                             if (tenantResult) {
-                                console.log(`[useTenantAuth] SUCCESS: Found in tenants table: ${tenantResult.name}`);
+                                console.log(`[useTenantAuth] SUCCESS: Magic Login Complete for ${tenantResult.name}`);
+                                
+                                // 토큰 업데이트 (비동기 처리)
+                                if (tenantResult.id) {
+                                    const updates: any = {};
+                                    if (pushToken) updates.push_token = pushToken;
+                                    if (webPushToken) updates.web_push_token = webPushToken;
+                                    if (Object.keys(updates).length > 0) {
+                                        profilesService.updateProfile(tenantResult.id, updates).catch(e => console.error('Token sync failed:', e));
+                                    }
+                                }
+
                                 setMyTenant(tenantResult);
                                 setMyProfile(tenantResult);
                                 setTenantProfile(tenantResult);
                                 return;
                             }
                         } catch (err) {
-                            console.warn(`[useTenantAuth] Attempt 1 failed for ${targetMagicId}:`, err);
-                            showToast({ message: '매직 링크 유효성 확인에 실패했습니다.', type: 'error' });
+                            console.warn(`[useTenantAuth] Magic Login failed for ${targetMagicId}:`, err);
                         }
-                    } else {
-                        console.warn(`[useTenantAuth] targetMagicId is NOT a valid UUID: ${targetMagicId}`);
                     }
 
                     // 2. Second attempt: search in profiles table (Legacy/Alternative magic link)

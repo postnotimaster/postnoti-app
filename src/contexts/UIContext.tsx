@@ -64,26 +64,24 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
             const slugMatch = decodedUrl.match(/\/branch\/([^\/?#]+)/);
             const slug = slugMatch ? slugMatch[1] : null;
 
-            if (magicId) {
-                // magicId(company.id)가 있으면 권한 문제 없이 오피스 정보를 조회할 수 있음
-                const { data, error } = await supabase.from('companies').select('*').eq('id', magicId).single();
-                if (data && !error) {
-                    setMode('tenant_login');
-                    setBrandingCompany({ ...data, magicId: data.id, targetTenantId: tenantId } as any);
-                } else {
-                    // DB 조회 실패해도 일단 화면은 띄워주기 (구형 방식 폴백)
-                    setMode('tenant_login');
-                    setBrandingCompany({ id: magicId, magicId, slug, targetTenantId: tenantId } as any);
-                }
-            } else if (tenantId) {
-                // 구형 알림 문자 (p=tenant_id 만 있는 경우) - RPC를 통해 RLS 우회하여 조회
+            if (tenantId) {
+                // [강력 보정] 입주사 ID(p)가 있으면 지점 ID(m)가 없어도 역추적해서 인증 진행
+                console.log('[UIContext] P-Parameter detected. Fetching tenant & company info...');
                 const tenantData = await tenantsService.getTenantById(tenantId);
                 if (tenantData?.company_id) {
                     const { data: companyData } = await supabase.from('companies').select('*').eq('id', tenantData.company_id).single();
                     if (companyData) {
+                        console.log('[UIContext] Auto-resolved company from tenant:', companyData.name);
                         setMode('tenant_login');
                         setBrandingCompany({ ...companyData, magicId: companyData.id, targetTenantId: tenantId } as any);
                     }
+                }
+            } else if (magicId) {
+                // 지점 ID(m)만 있는 경우 (기본 로그인 화면)
+                const { data, error } = await supabase.from('companies').select('*').eq('id', magicId).single();
+                if (data && !error) {
+                    setMode('tenant_login');
+                    setBrandingCompany({ ...data, magicId: data.id, targetTenantId: null } as any);
                 }
             }
         } catch (e) {
