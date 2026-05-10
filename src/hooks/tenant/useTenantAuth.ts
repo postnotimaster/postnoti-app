@@ -135,8 +135,11 @@ export const useTenantAuth = ({
                 const storedName = await AsyncStorage.getItem(`tenant_name_${companyId}`);
                 const storedPhone = await AsyncStorage.getItem(`tenant_phone_${companyId}`);
 
-                if (storedName && storedPhone) {
+                if (storedName) {
                     setName(storedName);
+                }
+
+                if (storedName && storedPhone) {
                     setPhoneSuffix(storedPhone);
                     handleIdentify(storedName, storedPhone);
                 }
@@ -209,11 +212,11 @@ export const useTenantAuth = ({
     const handleLogout = async () => {
         const performLogout = async () => {
             try {
-                await AsyncStorage.removeItem(`tenant_name_${companyId}`);
+                // await AsyncStorage.removeItem(`tenant_name_${companyId}`); // 입주사명은 영구 기억
                 await AsyncStorage.removeItem(`tenant_phone_${companyId}`);
                 setMyProfile(null);
                 setMyTenant(null);
-                // setName(''); // 지점명은 로그아웃해도 그대로 유지되도록 주석 처리
+                // setName(''); // 입주사명은 로그아웃해도 그대로 유지되도록 주석 처리
                 setPhoneSuffix('');
             } catch (e) {
                 console.error('Logout failed', e);

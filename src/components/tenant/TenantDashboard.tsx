@@ -67,13 +67,6 @@ export const TenantDashboard = ({
         showToast
     });
     
-    // [추가] 입주사 로그인 편의: 링크를 통해 들어왔을 때 지점명이 전달되면 자동으로 이름 입력칸에 채워넣음
-    useEffect(() => {
-        if (companyName && !name && !myProfile) {
-            setName(companyName);
-        }
-    }, [companyName, name, myProfile]);
-
     // 2. 우편물 데이터 및 실시간 동기화
     const {
         mails,
