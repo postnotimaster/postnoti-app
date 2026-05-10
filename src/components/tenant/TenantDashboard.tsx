@@ -138,8 +138,10 @@ export const TenantDashboard = ({
     // 5. 브라우저 탭 제목(Title) 지점별 맞춤 설정
     useEffect(() => {
         if (Platform.OS === 'web') {
-            const title = companyName ? `${companyName} 스마트우편알림` : '스마트우편알림';
+            const safeCompanyName = companyName || '포스트노티';
+            const title = `${safeCompanyName} 스마트우편알림`;
             document.title = title;
+            console.log(`[TenantDashboard] Setting title to: ${title}`);
         }
     }, [companyName]);
 

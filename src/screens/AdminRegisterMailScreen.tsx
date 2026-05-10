@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable, Image, ActivityIndicator, TextInput, Modal, Alert, Linking, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
 import { notificationService, NotificationResult } from '../services/notificationService';
+import { tenantsService } from '../services/tenantsService';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../contexts/AuthContext';
 import { useUI } from '../contexts/UIContext';
@@ -303,17 +304,23 @@ export const AdminRegisterMailScreen = () => {
                                                             {matchedProfile.name} {matchedProfile.room_number ? `(${matchedProfile.room_number})` : ''}
                                                             {matchedProfile.company_name ? ` - ${matchedProfile.company_name}` : ''}
                                                         </Text>
-                                                        {/* [개선] 이중 체크 기반 배지 표시 */}
-                                                        <View style={{ 
-                                                            backgroundColor: (matchedProfile.profile_id || (matchedProfile.phone && pushStatuses[matchedProfile.phone])) ? '#DBEAFE' : '#F1F5F9', 
-                                                            paddingHorizontal: 6, 
-                                                            paddingVertical: 2, 
-                                                            borderRadius: 6 
-                                                        }}>
-                                                            <Text style={{ fontSize: 9, fontWeight: '900', color: (matchedProfile.profile_id || (matchedProfile.phone && pushStatuses[matchedProfile.phone])) ? '#2563EB' : '#94A3B8' }}>
-                                                                {(matchedProfile.profile_id || (matchedProfile.phone && pushStatuses[matchedProfile.phone])) ? 'APP' : 'SMS'}
-                                                            </Text>
-                                                        </View>
+                                                        {/* [개선] 하이픈 제거 후 숫자만으로 푸시 상태 판별 */}
+                                                        {(() => {
+                                                            const normPhone = matchedProfile.phone ? matchedProfile.phone.replace(/[^0-9]/g, '') : '';
+                                                            const isApp = matchedProfile.profile_id || (normPhone && pushStatuses[normPhone]);
+                                                            return (
+                                                                <View style={{ 
+                                                                    backgroundColor: isApp ? '#DBEAFE' : '#F1F5F9', 
+                                                                    paddingHorizontal: 6, 
+                                                                    paddingVertical: 2, 
+                                                                    borderRadius: 6 
+                                                                }}>
+                                                                    <Text style={{ fontSize: 9, fontWeight: '900', color: isApp ? '#2563EB' : '#94A3B8' }}>
+                                                                        {isApp ? 'APP' : 'SMS'}
+                                                                    </Text>
+                                                                </View>
+                                                            );
+                                                        })()}
                                                     </View>
                                                     {!matchedProfile.is_active && (
                                                         <Text style={{ color: '#DC2626', fontSize: 12, fontWeight: '700', marginTop: 4 }}>

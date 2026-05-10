@@ -8,8 +8,9 @@ interface MailHistoryCardProps {
 }
 
 export const MailHistoryCard: React.FC<MailHistoryCardProps> = ({ log, pushStatuses, onPress }) => {
-    // [핵심] profile_id가 있거나, 현황판에 전화번호가 등록되어 있으면 푸시 가능으로 판별
-    const isPushAvailable = log.tenants?.profile_id || (log.tenants?.phone && pushStatuses?.[log.tenants.phone]);
+    // [개선] 하이픈 제거 후 숫자만으로 푸시 가능 여부 판별 (100% 매칭 보장)
+    const normalizedPhone = log.tenants?.phone ? log.tenants.phone.replace(/[^0-9]/g, '') : null;
+    const isPushAvailable = log.tenants?.profile_id || (normalizedPhone && pushStatuses?.[normalizedPhone]);
 
     return (
         <View style={{ paddingHorizontal: 20, backgroundColor: '#fff' }}>
@@ -75,20 +76,23 @@ export const MailHistoryCard: React.FC<MailHistoryCardProps> = ({ log, pushStatu
                             <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '600' }} numberOfLines={1}>
                                 {log.tenants?.name}
                             </Text>
-                            {/* [개선] 이중 체크 기반 알림 수단 배지 (APP/SMS) */}
-                            <View style={{ 
-                                backgroundColor: isPushAvailable ? '#DBEAFE' : '#F1F5F9', 
-                                paddingHorizontal: 5, 
-                                paddingVertical: 1, 
-                                borderRadius: 4,
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                gap: 2
-                            }}>
-                                <Text style={{ fontSize: 8, fontWeight: '900', color: isPushAvailable ? '#2563EB' : '#94A3B8' }}>
-                                    {isPushAvailable ? 'APP' : 'SMS'}
-                                </Text>
-                            </View>
+                            {/* [개선] 하이픈 제거 후 숫자만으로 푸시 상태 판별 */}
+                            {(() => {
+                                const normPhone = log.tenants?.phone ? log.tenants.phone.replace(/[^0-9]/g, '') : '';
+                                const isApp = log.tenants?.profile_id || (normPhone && pushStatuses?.[normPhone]);
+                                return (
+                                    <View style={{ 
+                                        backgroundColor: isApp ? '#DBEAFE' : '#F1F5F9', 
+                                        paddingHorizontal: 6, 
+                                        paddingVertical: 2, 
+                                        borderRadius: 6 
+                                    }}>
+                                        <Text style={{ fontSize: 9, fontWeight: '900', color: isApp ? '#2563EB' : '#94A3B8' }}>
+                                            {isApp ? 'APP' : 'SMS'}
+                                        </Text>
+                                    </View>
+                                );
+                            })()}
                         </View>
                     </View>
 
