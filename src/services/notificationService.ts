@@ -112,22 +112,17 @@ export const notificationService = {
         const body = customMessage || `${companyLabel}님, ${sender ? `${sender}에서 보낸 ` : ''}${type} 우편물이 도착했습니다.`;
         const shareLink = this.generateShareLink(tenant, company);
 
-        let profile: Profile | null = null;
-        if (tenant.profile_id) {
-            const { data } = await supabase.from('profiles').select('*').eq('id', tenant.profile_id).single();
-            profile = data;
+        // [혁명적 개선] RPC를 사용하여 보안 벽(RLS)을 우회하고 실제 앱 설치 여부를 확인
+        const { data: pushStatus, error: rpcError } = await supabase.rpc('check_tenant_push_status', {
+            p_company_id: tenant.company_id,
+            p_phone: tenant.phone
+        });
+
+        if (rpcError) {
+            console.error('[NotificationService] Push status check failed:', rpcError);
         }
 
-        // [중요 개선] profile_id가 없거나 조회가 안 되었을 경우, 전화번호로 다시 한번 앱 사용자 검색
-        if (!profile) {
-            const { data } = await supabase.from('profiles')
-                .select('*')
-                .eq('company_id', tenant.company_id)
-                .eq('phone', tenant.phone)
-                .eq('role', 'tenant')
-                .maybeSingle();
-            profile = data;
-        }
+        const profile = (pushStatus && pushStatus.length > 0) ? pushStatus[0] : null;
 
         // 1. Native Push (Expo)
         if (profile?.push_token) {

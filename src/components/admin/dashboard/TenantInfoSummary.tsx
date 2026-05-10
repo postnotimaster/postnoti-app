@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, Linking } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { supabase } from '../../services/supabase';
 
 interface TenantInfoSummaryProps {
     tenant: any;
@@ -9,6 +10,28 @@ interface TenantInfoSummaryProps {
 }
 
 export const TenantInfoSummary: React.FC<TenantInfoSummaryProps> = ({ tenant, mailStats, onClose }) => {
+    const [pushAvailable, setPushAvailable] = useState<boolean>(false);
+
+    useEffect(() => {
+        const checkStatus = async () => {
+            if (!tenant?.phone || !tenant?.company_id) return;
+            try {
+                // [핵심] RPC를 통해 보안 벽을 넘어 푸시 토큰 유무 확인
+                const { data } = await supabase.rpc('check_tenant_push_status', {
+                    p_company_id: tenant.company_id,
+                    p_phone: tenant.phone
+                });
+                if (data && data.length > 0 && (data[0].push_token || data[0].web_push_token)) {
+                    setPushAvailable(true);
+                } else {
+                    setPushAvailable(false);
+                }
+            } catch (e) {
+                console.error('Push status check failed:', e);
+            }
+        };
+        checkStatus();
+    }, [tenant]);
     return (
         <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#F1F5F9' }}>
             <View style={{ padding: 16 }}>
@@ -56,7 +79,27 @@ export const TenantInfoSummary: React.FC<TenantInfoSummaryProps> = ({ tenant, ma
                             <Text style={{ fontSize: 16, fontWeight: '800', color: '#334155' }}>
                                 {tenant?.name}
                             </Text>
-                            <View style={{ flexDirection: 'row', gap: 3 }}>
+                            <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center' }}>
+                                {/* 앱 설치 여부 아이콘 */}
+                                <View style={{ 
+                                    flexDirection: 'row', 
+                                    alignItems: 'center', 
+                                    backgroundColor: pushAvailable ? '#DBEAFE' : '#F1F5F9', 
+                                    paddingHorizontal: 6, 
+                                    paddingVertical: 2, 
+                                    borderRadius: 6,
+                                    gap: 3
+                                }}>
+                                    <Ionicons 
+                                        name={pushAvailable ? "notifications" : "notifications-off"} 
+                                        size={10} 
+                                        color={pushAvailable ? "#2563EB" : "#94A3B8"} 
+                                    />
+                                    <Text style={{ fontSize: 9, fontWeight: '900', color: pushAvailable ? "#2563EB" : "#64748B" }}>
+                                        {pushAvailable ? "APP" : "SMS"}
+                                    </Text>
+                                </View>
+
                                 {tenant?.is_premium && (
                                     <View style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4 }}>
                                         <Text style={{ fontSize: 9, color: '#4338CA', fontWeight: '900' }}>P</Text>
