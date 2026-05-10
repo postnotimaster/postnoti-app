@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { supabase } from '../lib/supabase';
 import { Company } from '../services/companiesService';
@@ -87,6 +88,12 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
                     setBrandingCompany({ ...data, magicId: data.id, targetTenantId: null } as any);
                 }
             }
+            
+            // [핵심] PWA를 위해 성공적으로 파싱된 주소 영구 저장
+            if (magicId || tenantId || slug) {
+                await AsyncStorage.setItem('last_tenant_url', url);
+            }
+
         } catch (e) {
             console.error('[UIContext] DeepLink failed:', e);
         } finally {
@@ -117,7 +124,14 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
                 if (initialUrl && (initialUrl.includes('?') || initialUrl.includes('branch') || initialUrl.includes('postnoti://'))) {
                     await handleDeepLink(initialUrl);
                 } else {
-                    setMagicIdResolved(true);
+                    // [핵심] 파라미터가 없는 깡통 주소(/)로 접속 시 과거 저장된 우편함 주소로 자동 리다이렉트
+                    const savedUrl = await AsyncStorage.getItem('last_tenant_url');
+                    if (savedUrl) {
+                        console.log('[UIContext] PWA Auto-Redirect to saved URL:', savedUrl);
+                        await handleDeepLink(savedUrl);
+                    } else {
+                        setMagicIdResolved(true);
+                    }
                 }
             } catch (e) {
                 console.error('[UIContext] Init failed:', e);
