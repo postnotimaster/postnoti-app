@@ -246,9 +246,10 @@ export const notificationService = {
         return link;
     },
 
-    getShareMessage(tenant: Tenant, company: Company): string {
+    getShareMessage(tenant: any, company: any): string {
         const link = this.generateShareLink(tenant, company);
         const companyLabel = tenant.company_name || tenant.name;
-        return `[${company.name}] ${companyLabel}님, 우편물이 도착했습니다.\n\n사진 확인:\n${link}\n\n--\n포스트노티 공유오피스 스마트 우편알림`;
+        // [검증용] 문구 앞에 (새로운 알림) 추가
+        return `[${company.name}] (새로운 알림) ${companyLabel}님, 우편물이 도착했습니다.\n\n사진 확인:\n${link}\n\n--\n포스트노티 공유오피스 스마트 우편알림`;
     }
 };

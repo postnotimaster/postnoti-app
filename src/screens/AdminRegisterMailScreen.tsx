@@ -163,6 +163,9 @@ export const AdminRegisterMailScreen = () => {
         }
 
         let message = notificationService.getShareMessage(matchedProfile, officeInfo);
+        console.log('--------------------------------------------------');
+        console.log('[SMS FINAL MESSAGE]:', message);
+        console.log('--------------------------------------------------');
 
         // 개발 환경/테스트 모드일 때 메시지의 링크를 현재 오리진으로 치환
         if (Platform.OS === 'web') {
