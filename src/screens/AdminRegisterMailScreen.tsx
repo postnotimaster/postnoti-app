@@ -292,11 +292,24 @@ export const AdminRegisterMailScreen = () => {
                                         {matchedProfile ? (
                                             <View style={[appStyles.matchedBox, !matchedProfile.is_active && { backgroundColor: '#FEF2F2', borderColor: '#EF4444' }]}>
                                                 <View>
-                                                    <Text style={[appStyles.matchedText, !matchedProfile.is_active && { color: '#B91C1C' }]}>
-                                                        {!matchedProfile.is_active ? '🚫 ' : '✅ '}
-                                                        {matchedProfile.name} {matchedProfile.room_number ? `(${matchedProfile.room_number})` : ''}
-                                                        {matchedProfile.company_name ? ` - ${matchedProfile.company_name}` : ''}
-                                                    </Text>
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                                        <Text style={[appStyles.matchedText, !matchedProfile.is_active && { color: '#B91C1C' }]}>
+                                                            {!matchedProfile.is_active ? '🚫 ' : '✅ '}
+                                                            {matchedProfile.name} {matchedProfile.room_number ? `(${matchedProfile.room_number})` : ''}
+                                                            {matchedProfile.company_name ? ` - ${matchedProfile.company_name}` : ''}
+                                                        </Text>
+                                                        {/* 알림 수단 배지 추가 */}
+                                                        <View style={{ 
+                                                            backgroundColor: matchedProfile.profile_id ? '#DBEAFE' : '#F1F5F9', 
+                                                            paddingHorizontal: 6, 
+                                                            paddingVertical: 2, 
+                                                            borderRadius: 6 
+                                                        }}>
+                                                            <Text style={{ fontSize: 9, fontWeight: '900', color: matchedProfile.profile_id ? '#2563EB' : '#94A3B8' }}>
+                                                                {matchedProfile.profile_id ? 'APP' : 'SMS'}
+                                                            </Text>
+                                                        </View>
+                                                    </View>
                                                     {!matchedProfile.is_active && (
                                                         <Text style={{ color: '#DC2626', fontSize: 12, fontWeight: '700', marginTop: 4 }}>
                                                             ⚠️ 퇴거된 입주사입니다

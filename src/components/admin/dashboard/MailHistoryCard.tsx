@@ -67,10 +67,24 @@ export const MailHistoryCard: React.FC<MailHistoryCardProps> = ({ log, onPress }
                                 )}
                             </View>
                         </View>
-                        <View style={{ flex: 1 }}>
+                        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                             <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '600' }} numberOfLines={1}>
                                 {log.tenants?.name}
                             </Text>
+                            {/* 알림 수단 배지 (APP/SMS) */}
+                            <View style={{ 
+                                backgroundColor: log.tenants?.profile_id ? '#DBEAFE' : '#F1F5F9', 
+                                paddingHorizontal: 5, 
+                                paddingVertical: 1, 
+                                borderRadius: 4,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 2
+                            }}>
+                                <Text style={{ fontSize: 8, fontWeight: '900', color: log.tenants?.profile_id ? '#2563EB' : '#94A3B8' }}>
+                                    {log.tenants?.profile_id ? 'APP' : 'SMS'}
+                                </Text>
+                            </View>
                         </View>
                     </View>
 
