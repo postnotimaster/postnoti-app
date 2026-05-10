@@ -492,7 +492,9 @@ export const TenantDashboard = ({
             <SettingsModal
                 visible={isSettingsVisible}
                 soundEnabled={soundEnabled}
+                permissionStatus={permissionStatus}
                 onToggleSound={toggleSound}
+                onRequestPermission={requestNotificationPermission}
                 onClose={() => setIsSettingsVisible(false)}
             />
 

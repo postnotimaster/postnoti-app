@@ -7,11 +7,20 @@ import {
 type Props = {
     visible: boolean;
     soundEnabled: boolean;
+    permissionStatus: NotificationPermission | 'default';
     onToggleSound: (val: boolean) => void;
+    onRequestPermission: () => void;
     onClose: () => void;
 };
 
-export const SettingsModal = ({ visible, soundEnabled, onToggleSound, onClose }: Props) => (
+export const SettingsModal = ({ 
+    visible, 
+    soundEnabled, 
+    permissionStatus, 
+    onToggleSound, 
+    onRequestPermission,
+    onClose 
+}: Props) => (
     <Modal
         visible={visible}
         transparent={true}
@@ -21,7 +30,34 @@ export const SettingsModal = ({ visible, soundEnabled, onToggleSound, onClose }:
         <Pressable style={modalStyles.overlay} onPress={onClose}>
             <TouchableWithoutFeedback>
                 <View style={modalStyles.content}>
-                    <Text style={modalStyles.title}>알림 설정</Text>
+                    <Text style={modalStyles.title}>설정</Text>
+
+                    {/* 알림 권한 상태 표시 섹션 */}
+                    <View style={[modalStyles.row, { marginBottom: 24, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }]}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={modalStyles.label}>알림 수신 상태</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                                <View style={{ 
+                                    width: 8, 
+                                    height: 8, 
+                                    borderRadius: 4, 
+                                    backgroundColor: permissionStatus === 'granted' ? '#10B981' : (permissionStatus === 'denied' ? '#EF4444' : '#F59E0B'),
+                                    marginRight: 6 
+                                }} />
+                                <Text style={[modalStyles.sublabel, { color: permissionStatus === 'granted' ? '#059669' : (permissionStatus === 'denied' ? '#DC2626' : '#D97706'), fontWeight: '700' }]}>
+                                    {permissionStatus === 'granted' ? '허용됨 (정상 수신 가능)' : (permissionStatus === 'denied' ? '차단됨 (설정 필요)' : '설정 대기 중')}
+                                </Text>
+                            </View>
+                        </View>
+                        {permissionStatus !== 'granted' && (
+                            <Pressable 
+                                onPress={onRequestPermission}
+                                style={{ backgroundColor: '#4F46E5', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}
+                            >
+                                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>권한 요청</Text>
+                            </Pressable>
+                        )}
+                    </View>
 
                     <View style={modalStyles.row}>
                         <View>
@@ -37,7 +73,7 @@ export const SettingsModal = ({ visible, soundEnabled, onToggleSound, onClose }:
                     </View>
 
                     <Pressable onPress={onClose} style={modalStyles.closeBtn}>
-                        <Text style={modalStyles.closeBtnText}>닫기</Text>
+                        <Text style={modalStyles.closeBtnText}>확인</Text>
                     </Pressable>
                 </View>
             </TouchableWithoutFeedback>

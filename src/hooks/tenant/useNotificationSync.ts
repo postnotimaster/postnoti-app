@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { profilesService } from '../../services/profilesService';
 import { messaging, getToken, VAPID_KEY } from '../../lib/firebase';
