@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, Linking } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { supabase } from '../../services/supabase';
+import { supabase } from '../../../lib/supabase';
 
 interface TenantInfoSummaryProps {
     tenant: any;
