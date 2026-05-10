@@ -112,10 +112,12 @@ export const tenantsService = {
         return stats;
     },
 
-    // [NEW] 지점 내 모든 입주사의 전화번호별 푸시 상태 조회
+    // [NEW] 지점 내 모든 입주사의 전화번호별 푸시 상태 조회 (TEXT 타입 파라미터 사용)
     async getCompanyPushStatuses(companyId: string): Promise<Record<string, boolean>> {
+        if (!companyId) return {};
+        
         const { data, error } = await supabase.rpc('get_company_push_statuses', {
-            p_company_id: companyId
+            p_company_id: companyId.toString() // 명시적 문자열 변환
         });
 
         if (error) {
