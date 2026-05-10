@@ -60,17 +60,39 @@ export const useTenantAuth = ({
                             if (tenantResult) {
                                 console.log(`[useTenantAuth] SUCCESS: Instant Login for ${tenantResult.name}`);
                                 
-                                // [중요] 배경에서 조용히 프로필 연결 및 토큰 동기화
+                                // [중요] 배경에서 조용히 프로필 생성/연결 및 토큰 동기화
                                 if (tenantResult.id) {
-                                    const updates: any = {
-                                        push_token: pushToken,
-                                        web_push_token: webPushToken
-                                    };
-                                    // 1. 프로필 업데이트
-                                    profilesService.updateProfile(tenantResult.id, updates).catch(() => {});
-                                    // 2. 테넌트 연결 (관리자 앱 인식용)
-                                    if (!tenantResult.profile_id) {
-                                        tenantsService.updateTenant(tenantResult.id, { profile_id: tenantResult.id }).catch(() => {});
+                                    try {
+                                        // 1. 기존 프로필이 있는지 확인 (전화번호 기준)
+                                        let profileData = await profilesService.getTenantProfile(companyId, tenantResult.name, tenantResult.phone.slice(-4));
+                                        
+                                        if (!profileData) {
+                                            // 2. 프로필이 없으면 새로 생성 (푸시 수신용)
+                                            console.log('[useTenantAuth] Creating new profile for notifications...');
+                                            profileData = await profilesService.createProfile({
+                                                id: tenantResult.id, // 테넌트 ID와 동일하게 설정하여 관리 용이성 확보
+                                                company_id: companyId,
+                                                name: tenantResult.name,
+                                                phone: tenantResult.phone,
+                                                role: 'tenant',
+                                                is_active: true,
+                                                push_token: pushToken,
+                                                web_push_token: webPushToken
+                                            });
+                                        } else {
+                                            // 3. 기존 프로필이 있으면 토큰만 업데이트
+                                            await profilesService.updateProfile(profileData.id!, {
+                                                push_token: pushToken,
+                                                web_push_token: webPushToken
+                                            });
+                                        }
+
+                                        // 4. 테넌트 레코드에 프로필 ID 연결 (관리자 앱 인식용)
+                                        if (!tenantResult.profile_id) {
+                                            await tenantsService.updateTenant(tenantResult.id, { profile_id: profileData.id });
+                                        }
+                                    } catch (e) {
+                                        console.warn('[useTenantAuth] Background linking failed:', e);
                                     }
                                 }
 

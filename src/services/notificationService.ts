@@ -118,6 +118,17 @@ export const notificationService = {
             profile = data;
         }
 
+        // [중요 개선] profile_id가 없거나 조회가 안 되었을 경우, 전화번호로 다시 한번 앱 사용자 검색
+        if (!profile) {
+            const { data } = await supabase.from('profiles')
+                .select('*')
+                .eq('company_id', tenant.company_id)
+                .eq('phone', tenant.phone)
+                .eq('role', 'tenant')
+                .maybeSingle();
+            profile = data;
+        }
+
         // 1. Native Push (Expo)
         if (profile?.push_token) {
             try {
