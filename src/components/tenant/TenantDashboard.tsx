@@ -401,12 +401,13 @@ export const TenantDashboard = ({
                             <View style={styles.inputContainer}>
                                 <Text style={styles.inputLabel}>입주사명 (상호명)</Text>
                                 <TextInput
-                                    style={styles.premiumInput}
+                                    style={[styles.premiumInput, name ? { backgroundColor: '#F1F5F9', color: '#64748B' } : null]}
                                     value={name}
                                     onChangeText={setName}
                                     placeholder="입주사 이름을 입력하세요"
                                     placeholderTextColor="#94A3B8"
                                     autoCorrect={false}
+                                    editable={!name} // 이름이 이미 있으면 수정 불가
                                 />
                             </View>
 

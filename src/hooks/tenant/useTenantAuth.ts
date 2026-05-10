@@ -54,29 +54,20 @@ export const useTenantAuth = ({
                     // [최우선] 입주사 ID(magicTenantId)로 인증 시도
                     if (isUUID) {
                         try {
-                            console.log(`[useTenantAuth] Attempting Magic Login (ID: ${targetMagicId})`);
-                            let tenantResult = await tenantsService.getTenantById(targetMagicId);
+                            console.log(`[useTenantAuth] Fetching Magic Info (ID: ${targetMagicId})`);
+                            const tenantResult = await tenantsService.getTenantById(targetMagicId);
 
-                            if (tenantResult) {
-                                console.log(`[useTenantAuth] SUCCESS: Magic Login Complete for ${tenantResult.name}`);
+                            if (tenantResult && tenantResult.name) {
+                                // [중요] 이름을 자동으로 채워넣음
+                                setName(tenantResult.name);
+                                console.log(`[useTenantAuth] Name auto-filled: ${tenantResult.name}`);
                                 
-                                // 토큰 업데이트 (비동기 처리)
-                                if (tenantResult.id) {
-                                    const updates: any = {};
-                                    if (pushToken) updates.push_token = pushToken;
-                                    if (webPushToken) updates.web_push_token = webPushToken;
-                                    if (Object.keys(updates).length > 0) {
-                                        profilesService.updateProfile(tenantResult.id, updates).catch(e => console.error('Token sync failed:', e));
-                                    }
-                                }
-
-                                setMyTenant(tenantResult);
-                                setMyProfile(tenantResult);
-                                setTenantProfile(tenantResult);
+                                // 로딩 해제 후 리턴하여 로그인 폼에서 번호 입력을 기다림
+                                setIdentifying(false);
                                 return;
                             }
                         } catch (err) {
-                            console.warn(`[useTenantAuth] Magic Login failed for ${targetMagicId}:`, err);
+                            console.warn(`[useTenantAuth] Magic info fetch failed:`, err);
                         }
                     }
 
@@ -142,13 +133,24 @@ export const useTenantAuth = ({
                 return;
             }
 
-            // 토큰 업데이트
+            // 토큰 및 테넌트 연결 업데이트
             if (profile.id) {
                 const updates: any = {};
                 if (pushToken) updates.push_token = pushToken;
                 if (webPushToken) updates.web_push_token = webPushToken;
                 if (Object.keys(updates).length > 0) {
                     await profilesService.updateProfile(profile.id, updates);
+                }
+
+                // [중요] 테넌트 테이블과 프로필 연결 (관리자 앱에서 푸시 가능 여부 판단용)
+                try {
+                    const tenantMatch = await tenantsService.findTenantByNameAndPhone(companyId, targetName.trim(), targetPhone);
+                    if (tenantMatch && !tenantMatch.profile_id) {
+                        console.log(`[useTenantAuth] Linking profile ${profile.id} to tenant ${tenantMatch.id}`);
+                        await tenantsService.updateTenant(tenantMatch.id, { profile_id: profile.id });
+                    }
+                } catch (e) {
+                    console.error('[useTenantAuth] Failed to link tenant profile:', e);
                 }
             }
 
