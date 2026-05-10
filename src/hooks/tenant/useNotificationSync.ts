@@ -16,8 +16,19 @@ export const useNotificationSync = ({
     showToast,
     setLoading
 }: UseNotificationSyncProps) => {
-    // 토큰 변경 시 즉시 동기화 (관리자 앱 인식용)
+    const [permissionStatus, setPermissionStatus] = useState<NotificationPermission | 'default'>(
+        typeof Notification !== 'undefined' ? Notification.permission : 'default'
+    );
+
+    // 토큰 변경 및 권한 상태 동기화
     useEffect(() => {
+        const syncStatus = () => {
+            if (typeof Notification !== 'undefined') {
+                setPermissionStatus(Notification.permission);
+            }
+        };
+        syncStatus();
+        
         const syncToken = async () => {
             if (profileId && webPushToken) {
                 console.log(`[NotificationSync] Syncing token for profile: ${profileId}`);
@@ -83,6 +94,7 @@ export const useNotificationSync = ({
     };
 
     return {
-        requestNotificationPermission
+        requestNotificationPermission,
+        permissionStatus
     };
 };

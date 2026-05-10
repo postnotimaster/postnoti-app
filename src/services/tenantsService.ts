@@ -110,5 +110,23 @@ export const tenantsService = {
             };
         }
         return stats;
+    },
+
+    // [NEW] 지점 내 모든 입주사의 전화번호별 푸시 상태 조회
+    async getCompanyPushStatuses(companyId: string): Promise<Record<string, boolean>> {
+        const { data, error } = await supabase.rpc('get_company_push_statuses', {
+            p_company_id: companyId
+        });
+
+        if (error) {
+            console.error('getCompanyPushStatuses RPC error:', error);
+            return {};
+        }
+
+        const statuses: Record<string, boolean> = {};
+        (data || []).forEach((row: any) => {
+            if (row.phone) statuses[row.phone] = row.has_push;
+        });
+        return statuses;
     }
 };

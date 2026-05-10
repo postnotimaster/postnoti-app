@@ -3,10 +3,14 @@ import { View, Text, Pressable, Image } from 'react-native';
 
 interface MailHistoryCardProps {
     log: any;
+    pushStatuses?: Record<string, boolean>; // [추가] 전체 푸시 현황판
     onPress: (tenant: any) => void;
 }
 
-export const MailHistoryCard: React.FC<MailHistoryCardProps> = ({ log, onPress }) => {
+export const MailHistoryCard: React.FC<MailHistoryCardProps> = ({ log, pushStatuses, onPress }) => {
+    // [핵심] profile_id가 있거나, 현황판에 전화번호가 등록되어 있으면 푸시 가능으로 판별
+    const isPushAvailable = log.tenants?.profile_id || (log.tenants?.phone && pushStatuses?.[log.tenants.phone]);
+
     return (
         <View style={{ paddingHorizontal: 20, backgroundColor: '#fff' }}>
             <Pressable
@@ -71,9 +75,9 @@ export const MailHistoryCard: React.FC<MailHistoryCardProps> = ({ log, onPress }
                             <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '600' }} numberOfLines={1}>
                                 {log.tenants?.name}
                             </Text>
-                            {/* 알림 수단 배지 (APP/SMS) */}
+                            {/* [개선] 이중 체크 기반 알림 수단 배지 (APP/SMS) */}
                             <View style={{ 
-                                backgroundColor: log.tenants?.profile_id ? '#DBEAFE' : '#F1F5F9', 
+                                backgroundColor: isPushAvailable ? '#DBEAFE' : '#F1F5F9', 
                                 paddingHorizontal: 5, 
                                 paddingVertical: 1, 
                                 borderRadius: 4,
@@ -81,8 +85,8 @@ export const MailHistoryCard: React.FC<MailHistoryCardProps> = ({ log, onPress }
                                 alignItems: 'center',
                                 gap: 2
                             }}>
-                                <Text style={{ fontSize: 8, fontWeight: '900', color: log.tenants?.profile_id ? '#2563EB' : '#94A3B8' }}>
-                                    {log.tenants?.profile_id ? 'APP' : 'SMS'}
+                                <Text style={{ fontSize: 8, fontWeight: '900', color: isPushAvailable ? '#2563EB' : '#94A3B8' }}>
+                                    {isPushAvailable ? 'APP' : 'SMS'}
                                 </Text>
                             </View>
                         </View>

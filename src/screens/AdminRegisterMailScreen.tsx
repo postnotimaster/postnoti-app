@@ -47,6 +47,7 @@ export const AdminRegisterMailScreen = () => {
     const [selectedPreset, setSelectedPreset] = React.useState<string | null>(null);
     const [resultModalVisible, setResultModalVisible] = React.useState(false);
     const [lastNotifResult, setLastNotifResult] = React.useState<NotificationResult | null>(null);
+    const [pushStatuses, setPushStatuses] = React.useState<Record<string, boolean>>({}); // [NEW] 푸시 상태 현황판
 
     const prevOcrLoading = React.useRef(ocrLoading);
 
@@ -97,8 +98,12 @@ export const AdminRegisterMailScreen = () => {
     ]);
 
     React.useEffect(() => {
-        if (officeInfo?.settings?.notification_presets) {
-            setPresets(officeInfo.settings.notification_presets);
+        if (officeInfo?.id) {
+            // 프리셋 로드 및 푸시 상태 전수 조사 병렬 실행
+            if (officeInfo.settings?.notification_presets) {
+                setPresets(officeInfo.settings.notification_presets);
+            }
+            tenantsService.getCompanyPushStatuses(officeInfo.id).then(setPushStatuses);
         }
     }, [officeInfo]);
 
@@ -298,15 +303,15 @@ export const AdminRegisterMailScreen = () => {
                                                             {matchedProfile.name} {matchedProfile.room_number ? `(${matchedProfile.room_number})` : ''}
                                                             {matchedProfile.company_name ? ` - ${matchedProfile.company_name}` : ''}
                                                         </Text>
-                                                        {/* 알림 수단 배지 추가 */}
+                                                        {/* [개선] 이중 체크 기반 배지 표시 */}
                                                         <View style={{ 
-                                                            backgroundColor: matchedProfile.profile_id ? '#DBEAFE' : '#F1F5F9', 
+                                                            backgroundColor: (matchedProfile.profile_id || (matchedProfile.phone && pushStatuses[matchedProfile.phone])) ? '#DBEAFE' : '#F1F5F9', 
                                                             paddingHorizontal: 6, 
                                                             paddingVertical: 2, 
                                                             borderRadius: 6 
                                                         }}>
-                                                            <Text style={{ fontSize: 9, fontWeight: '900', color: matchedProfile.profile_id ? '#2563EB' : '#94A3B8' }}>
-                                                                {matchedProfile.profile_id ? 'APP' : 'SMS'}
+                                                            <Text style={{ fontSize: 9, fontWeight: '900', color: (matchedProfile.profile_id || (matchedProfile.phone && pushStatuses[matchedProfile.phone])) ? '#2563EB' : '#94A3B8' }}>
+                                                                {(matchedProfile.profile_id || (matchedProfile.phone && pushStatuses[matchedProfile.phone])) ? 'APP' : 'SMS'}
                                                             </Text>
                                                         </View>
                                                     </View>

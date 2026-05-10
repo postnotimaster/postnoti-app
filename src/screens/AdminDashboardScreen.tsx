@@ -46,6 +46,7 @@ export const AdminDashboardScreen = ({ route }: any) => {
     const [loadingMore, setLoadingMore] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
     const [mailStats, setMailStats] = useState<Record<string, { total: number; read: number; lastSentAt: string | null }>>({});
+    const [pushStatuses, setPushStatuses] = useState<Record<string, boolean>>({}); // [NEW] 전화번호별 푸시 상태
     const [isSearchFocused, setIsSearchFocused] = useState(false);
 
     const sectionListRef = useRef<any>(null);
@@ -84,10 +85,14 @@ export const AdminDashboardScreen = ({ route }: any) => {
             setMailLogs(result.data);
             setHasMore(result.hasMore);
             setPage(0);
-            // 통계도 함께 로드
+            // 통계 및 푸시 상태도 함께 로드
             try {
-                const stats = await tenantsService.getMailStatsByCompany(officeInfo!.id);
+                const [stats, statuses] = await Promise.all([
+                    tenantsService.getMailStatsByCompany(officeInfo!.id),
+                    tenantsService.getCompanyPushStatuses(officeInfo!.id)
+                ]);
                 setMailStats(stats);
+                setPushStatuses(statuses);
             } catch (e) { }
         } catch (e) {
             console.error('Failed to load mail logs:', e);
@@ -228,6 +233,7 @@ export const AdminDashboardScreen = ({ route }: any) => {
                         return (
                             <MailHistoryCard
                                 log={item}
+                                pushStatuses={pushStatuses} // 현황판 전달
                                 onPress={(tenant) => {
                                     setSelectedProfileForHistory(tenant);
                                     setIsHistoryVisible(true);

@@ -109,7 +109,8 @@ export const TenantDashboard = ({
 
     // 4. 알림 동기화 관리
     const {
-        requestNotificationPermission
+        requestNotificationPermission,
+        permissionStatus
     } = useNotificationSync({
         profileId: myProfile?.id,
         webPushToken,
@@ -133,6 +134,14 @@ export const TenantDashboard = ({
         companyId,
         tenantId: myProfile?.tenant_id || myProfile?.id
     });
+
+    // 5. 브라우저 탭 제목(Title) 지점별 맞춤 설정
+    useEffect(() => {
+        if (Platform.OS === 'web') {
+            const title = companyName ? `${companyName} 스마트우편알림` : '스마트우편알림';
+            document.title = title;
+        }
+    }, [companyName]);
 
     // 설정 로드 및 동기화
     useEffect(() => {
@@ -219,8 +228,27 @@ export const TenantDashboard = ({
         if (item.type === 'header') {
             return (
                 <View>
-                    {/* PWA 설치 유도 배너 - 더욱 친절한 안내 */}
-                    {showInstallBanner && !isStandalone && (
+                    {/* 1. 알림 권한 거부 안내 배너 (앱 설치자 중 알림 꺼둔 사람용) */}
+                    {isStandalone && permissionStatus === 'denied' && (
+                        <View style={[styles.premiumInstallBanner, { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }]}>
+                            <View style={[styles.installIconBox, { backgroundColor: '#FEF3C7' }]}>
+                                <Ionicons name="notifications-off" size={32} color="#D97706" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.installBannerTitle, { color: '#92400E' }]}>알림이 꺼져 있습니다! 🔔</Text>
+                                <Text style={styles.installBannerDesc}>우편물 도착 소식을 실시간으로 받으려면 브라우저 설정에서 알림을 허용해 주세요.</Text>
+                                <Pressable 
+                                    style={[styles.premiumInstallButton, { backgroundColor: '#D97706' }]} 
+                                    onPress={() => Alert.alert('알림 켜는 방법', '1. 아이폰/안드로이드 설정\n2. 브라우저(사파리/크롬) 선택\n3. 알림 메뉴에서 허용 선택')}
+                                >
+                                    <Text style={styles.premiumInstallButtonText}>설정 방법 보기</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    )}
+
+                    {/* 2. PWA 설치 유도 배너 (앱 미설치자에게만 노출) */}
+                    {showInstallBanner && !isStandalone && !myProfile?.web_push_token && !myProfile?.push_token && (
                         <View style={styles.premiumInstallBanner}>
                             <View style={styles.installIconBox}>
                                 <Ionicons name="apps" size={32} color="#4F46E5" />
@@ -369,7 +397,7 @@ export const TenantDashboard = ({
         }
 
         return null;
-    }, [filter, showInstallBanner, isStandalone, myProfile, unreadCount, companyName, announcements, isIOS]);
+    }, [filter, showInstallBanner, isStandalone, myProfile, unreadCount, companyName, announcements, isIOS, permissionStatus]);
 
     // -----------------------------------------------------
     // 렌더링 시작
