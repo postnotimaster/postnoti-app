@@ -129,7 +129,7 @@ export const notificationService = {
                         sound: 'default',
                         title,
                         body,
-                        data: { url: `postnoti://view` }
+                        data: { url: shareLink } // [수정] 긴 주소로 변경
                     })
                 });
                 if (response.ok) return { success: true, method: 'native', shareLink };
@@ -148,7 +148,7 @@ export const notificationService = {
                         token: profile.web_push_token,
                         title,
                         body,
-                        data: { company_id: company.id, url: `https://postnoti-app-two.vercel.app/view` }
+                        data: { company_id: company.id, url: shareLink } // [수정] 긴 주소로 변경
                     })
                 });
                 if (response.ok) return { success: true, method: 'pwa', shareLink };
@@ -225,8 +225,25 @@ export const notificationService = {
         await this.sendPushNotification([profileId], title, body, { type: 'mail_delivery' });
     },
 
-    generateShareLink(tenant: Tenant, company: Company): string {
-        return `https://postnoti-app-two.vercel.app/view?m=${company.id}&p=${tenant.id}`;
+    generateShareLink(tenant: any, company: any): string {
+        // [긴급 진단] 들어온 데이터의 정체를 파악하기 위한 로그
+        console.log('--------------------------------------------------');
+        console.log('[NotificationService] Target Tenant Object:', JSON.stringify(tenant));
+        console.log('[NotificationService] Company ID:', company?.id);
+        
+        // 모든 가능한 ID 필드 체크
+        const tenantId = tenant?.id || tenant?.tenant_id || tenant?.profile_id || tenant?.uid;
+        
+        if (!tenantId) {
+            console.error('[NotificationService] CRITICAL: No ID found in tenant object!');
+            console.log('Available Keys:', Object.keys(tenant || {}));
+            return `https://postnoti-app-two.vercel.app/view?m=${company?.id}`;
+        }
+
+        const link = `https://postnoti-app-two.vercel.app/view?m=${company?.id}&p=${tenantId}`;
+        console.log('[NotificationService] Generated Link:', link);
+        console.log('--------------------------------------------------');
+        return link;
     },
 
     getShareMessage(tenant: Tenant, company: Company): string {

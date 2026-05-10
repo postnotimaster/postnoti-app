@@ -70,7 +70,10 @@ export const useOCR = (profiles: Tenant[], masterSenders: string[]) => {
 
         // 점수 기준 하향 (15 -> 12) 및 정렬
         const filtered = candidates.filter(c => c.score >= 12).sort((a, b) => b.score - a.score);
-        console.log('🧐 Match Candidates Top 3:', filtered.slice(0, 3).map(f => `${f.profile.name}(${f.score})`));
+        if (filtered.length > 0) {
+            const best = filtered[0].profile;
+            console.log(`[useOCR] SUCCESS Match: ${best.name} (ID: ${best.id}, Score: ${filtered[0].score})`);
+        }
         return filtered.length > 0 ? filtered[0].profile : null;
     };
 
