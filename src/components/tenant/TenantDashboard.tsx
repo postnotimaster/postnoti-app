@@ -257,7 +257,7 @@ export const TenantDashboard = ({
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.installBannerTitle}>매번 링크 찾기 힘드시죠? 🏠</Text>
-                                <Text style={styles.installBannerDesc}>우편함 앱을 홈 화면에 꺼내두면:</Text>
+                                <Text style={styles.installBannerDesc}>지금 바로 <Text style={{fontWeight:'bold'}}>{companyName || '스마트'}</Text> 우편함을 홈 화면에 추가하세요! 1초면 설치가 완료되며, 언제든 앱처럼 빠르게 우편물을 확인할 수 있습니다.</Text>
                                 <View style={{ marginVertical: 8, gap: 4 }}>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                         <Ionicons name="checkmark-circle" size={14} color="#10B981" />

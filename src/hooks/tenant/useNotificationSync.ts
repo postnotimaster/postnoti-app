@@ -35,8 +35,7 @@ export const useNotificationSync = ({
                 try {
                     await profilesService.updateProfile(profileId, { 
                         web_push_token: webPushToken,
-                        last_accessed_at: new Date().toISOString(),
-                        pwa_installed: true // 앱 설치 상태 기록
+                        last_accessed_at: new Date().toISOString()
                     });
                 } catch (e) {
                     console.warn('[NotificationSync] Token sync failed:', e);
@@ -61,8 +60,7 @@ export const useNotificationSync = ({
                 const token = await getToken(messaging!, { vapidKey: VAPID_KEY });
                 if (token && profileId) {
                     await profilesService.updateProfile(profileId, { 
-                        web_push_token: token,
-                        pwa_installed: true
+                        web_push_token: token
                     });
                 }
             } catch (e) {
@@ -80,8 +78,7 @@ export const useNotificationSync = ({
                 const token = await getToken(messaging!, { vapidKey: VAPID_KEY });
                 if (token && profileId) {
                     await profilesService.updateProfile(profileId, { 
-                        web_push_token: token,
-                        pwa_installed: true
+                        web_push_token: token
                     });
                     showToast({ message: '알림 설정이 완료되었습니다! 🔔', type: 'success' });
                 }

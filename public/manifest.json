@@ -1,6 +1,6 @@
 {
-    "name": "포스트노티",
-    "short_name": "포스트노티",
+    "name": "우편알림",
+    "short_name": "우편알림",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",
