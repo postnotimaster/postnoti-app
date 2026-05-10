@@ -225,25 +225,16 @@ export const notificationService = {
         await this.sendPushNotification([profileId], title, body, { type: 'mail_delivery' });
     },
 
+    /**
+     * [절대 수정 금지] 입주사 전용 우편함 다이렉트 링크 생성 로직
+     * - p(입주사ID)가 m(지점ID)보다 반드시 앞에 와야 함 (문자 앱 주소 절단 방지용)
+     * - 이 순서를 바꾸면 안드로이드/iOS 특정 기종에서 로그인 없이 바로 열기 기능이 깨짐
+     */
     generateShareLink(tenant: any, company: any): string {
-        // [긴급 진단] 들어온 데이터의 정체를 파악하기 위한 로그
-        console.log('--------------------------------------------------');
-        console.log('[NotificationService] Target Tenant Object:', JSON.stringify(tenant));
-        console.log('[NotificationService] Company ID:', company?.id);
-        
-        // 모든 가능한 ID 필드 체크
         const tenantId = tenant?.id || tenant?.tenant_id || tenant?.profile_id || tenant?.uid;
-        
-        if (!tenantId) {
-            console.error('[NotificationService] CRITICAL: No ID found in tenant object!');
-            return `https://postnoti-app-two.vercel.app/view?m=${company?.id}`;
-        }
+        if (!tenantId) return `https://postnoti-app-two.vercel.app/view?m=${company?.id}`;
 
-        // [중요] p 파라미터를 맨 앞으로 배치하여 문자 앱에서의 절단을 방지 (p=...&m=...)
-        const link = `https://postnoti-app-two.vercel.app/view?p=${tenantId}&m=${company?.id}`;
-        console.log('[NotificationService] Generated Link:', link);
-        console.log('--------------------------------------------------');
-        return link;
+        return `https://postnoti-app-two.vercel.app/view?p=${tenantId}&m=${company?.id}`;
     },
 
     getShareMessage(tenant: any, company: any): string {

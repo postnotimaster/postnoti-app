@@ -64,20 +64,23 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
             const slugMatch = decodedUrl.match(/\/branch\/([^\/?#]+)/);
             const slug = slugMatch ? slugMatch[1] : null;
 
+            /**
+             * [절대 수정 금지] 딥링크 파싱 및 인증 역추적 로직
+             * 1. p(입주사 ID)가 있으면 지점 정보(m)가 없어도 역추적하여 즉시 인증 진행
+             * 2. p가 m보다 우선순위가 높아야 문자 앱 주소 절단 시에도 작동함
+             */
             if (tenantId) {
-                // [강력 보정] 입주사 ID(p)가 있으면 지점 ID(m)가 없어도 역추적해서 인증 진행
                 console.log('[UIContext] P-Parameter detected. Fetching tenant & company info...');
                 const tenantData = await tenantsService.getTenantById(tenantId);
                 if (tenantData?.company_id) {
                     const { data: companyData } = await supabase.from('companies').select('*').eq('id', tenantData.company_id).single();
                     if (companyData) {
-                        console.log('[UIContext] Auto-resolved company from tenant:', companyData.name);
                         setMode('tenant_login');
                         setBrandingCompany({ ...companyData, magicId: companyData.id, targetTenantId: tenantId } as any);
                     }
                 }
             } else if (magicId) {
-                // 지점 ID(m)만 있는 경우 (기본 로그인 화면)
+                // p가 없고 m(지점 ID)만 있는 경우 (기본 로그인 화면 노출)
                 const { data, error } = await supabase.from('companies').select('*').eq('id', magicId).single();
                 if (data && !error) {
                     setMode('tenant_login');
