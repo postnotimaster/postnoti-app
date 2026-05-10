@@ -51,23 +51,36 @@ export const useTenantAuth = ({
                     
                     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetMagicId);
 
-                    // [최우선] 입주사 ID(magicTenantId)로 인증 시도
+                    // [최우선] 입주사 ID(magicTenantId)로 인증 시도 (즉시 로그인)
                     if (isUUID) {
                         try {
-                            console.log(`[useTenantAuth] Fetching Magic Info (ID: ${targetMagicId})`);
+                            console.log(`[useTenantAuth] Attempting Instant Magic Login (ID: ${targetMagicId})`);
                             const tenantResult = await tenantsService.getTenantById(targetMagicId);
 
-                            if (tenantResult && tenantResult.name) {
-                                // [중요] 이름을 자동으로 채워넣음
-                                setName(tenantResult.name);
-                                console.log(`[useTenantAuth] Name auto-filled: ${tenantResult.name}`);
+                            if (tenantResult) {
+                                console.log(`[useTenantAuth] SUCCESS: Instant Login for ${tenantResult.name}`);
                                 
-                                // 로딩 해제 후 리턴하여 로그인 폼에서 번호 입력을 기다림
-                                setIdentifying(false);
+                                // [중요] 배경에서 조용히 프로필 연결 및 토큰 동기화
+                                if (tenantResult.id) {
+                                    const updates: any = {
+                                        push_token: pushToken,
+                                        web_push_token: webPushToken
+                                    };
+                                    // 1. 프로필 업데이트
+                                    profilesService.updateProfile(tenantResult.id, updates).catch(() => {});
+                                    // 2. 테넌트 연결 (관리자 앱 인식용)
+                                    if (!tenantResult.profile_id) {
+                                        tenantsService.updateTenant(tenantResult.id, { profile_id: tenantResult.id }).catch(() => {});
+                                    }
+                                }
+
+                                setMyTenant(tenantResult);
+                                setMyProfile(tenantResult);
+                                setTenantProfile(tenantResult); // [즉시 로그인 실행]
                                 return;
                             }
                         } catch (err) {
-                            console.warn(`[useTenantAuth] Magic info fetch failed:`, err);
+                            console.warn(`[useTenantAuth] Magic login failed:`, err);
                         }
                     }
 
