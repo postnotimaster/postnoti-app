@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, Alert, ActivityIndicator, Pressable, Image, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, ScrollView, Alert, ActivityIndicator, Pressable, Image, KeyboardAvoidingView, Platform, SafeAreaView, BackHandler } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { companiesService } from '../services/companiesService';
 import { profilesService } from '../services/profilesService';
@@ -14,6 +14,19 @@ export const AdminSignupScreen = () => {
 
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const onBackAction = () => {
+            if (step === 2) {
+                setStep(1);
+                return true;
+            }
+            return false; // step 1일 때는 전역 핸들러에서 landing으로 이동하도록 false 반환
+        };
+
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackAction);
+        return () => backHandler.remove();
+    }, [step]);
 
     // Step 1: Account
     const [email, setEmail] = useState('');

@@ -4,7 +4,7 @@
  * Final fix for blank screen: Restoring NavigationContainer while keeping simple state-based logic.
  */
 import React from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator, Alert, BackHandler } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
@@ -33,6 +33,59 @@ function AppContent() {
   const { isInitializing: authLoading } = useAuth();
   const { mode, setMode, magicIdResolved, isInitializing: uiLoading, brandingCompany, setBrandingCompany } = useUI();
   const { expoPushToken, webPushToken } = useNotifications();
+
+  React.useEffect(() => {
+    const handleBackButton = () => {
+      // 1. 입주자 대시보드 화면은 자체 백핸들러가 최우선 작동하므로 이 핸들러는 무시되도록 함
+      if (mode === 'tenant_dashboard') {
+        return false;
+      }
+
+      // 2. 관리자/기타 모드별 백핸들링 정의
+      switch (mode) {
+        case 'admin_signup':
+        case 'tenant_login':
+          setMode('landing');
+          return true;
+
+        case 'admin_settings':
+        case 'admin_notification_settings':
+        case 'admin_senders':
+          setMode('admin_menu');
+          return true;
+
+        case 'admin_register_mail':
+          setMode('admin_dashboard');
+          return true;
+
+        case 'admin_tenants':
+        case 'admin_delivery':
+        case 'admin_announcements':
+        case 'admin_menu':
+          setMode('admin_dashboard');
+          return true;
+
+        case 'admin_dashboard':
+        case 'landing':
+          Alert.alert(
+            '앱 종료',
+            '포스트노티 앱을 종료하시겠습니까?',
+            [
+              { text: '취소', style: 'cancel' },
+              { text: '종료', onPress: () => BackHandler.exitApp() }
+            ],
+            { cancelable: true }
+          );
+          return true;
+
+        default:
+          return false;
+      }
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackButton);
+    return () => backHandler.remove();
+  }, [mode]);
 
   const isSystemInitializing = authLoading || uiLoading;
 

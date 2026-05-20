@@ -130,10 +130,15 @@ export const AdminDashboardScreen = ({ route }: any) => {
                 });
                 return true;
             }
-            if (isHistoryVisible || isManualSearchVisible) {
-                return false; 
+            if (isHistoryVisible) {
+                setIsHistoryVisible(false);
+                return true;
             }
-            Alert.alert("앱 종료", "정말 앱을 종료하시겠습니까?", [
+            if (isManualSearchVisible) {
+                setIsManualSearchVisible(false);
+                return true;
+            }
+            Alert.alert("앱 종료", "포스트노티 앱을 종료하시겠습니까?", [
                 { text: "취소", style: "cancel" },
                 { text: "종료", onPress: () => BackHandler.exitApp() }
             ]);

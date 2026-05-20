@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { View, Switch } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, Switch, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { AdminTabBar } from '../components/admin/AdminTabBar';
@@ -12,8 +12,17 @@ export const AdminTenantsScreen = () => {
     const { officeInfo, setProfiles } = useAuth();
     const tenantMgmtRef = useRef<any>(null);
 
-    // 탭 버튼 클릭 시 항상 리스트로 복귀하도록 리스너 대신 useEffect로 관리 가능하지만 
-    // 여기서는 단순화하여 처리
+    useEffect(() => {
+        const onBackPress = () => {
+            if (tenantMgmtRef.current && tenantMgmtRef.current.handleBack()) {
+                return true; // TenantManagement에서 편집 모드 취소를 처리함
+            }
+            return false; // 전역 백핸들러로 제어권 넘김
+        };
+
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+        return () => backHandler.remove();
+    }, []);
 
     if (!officeInfo) return null;
 

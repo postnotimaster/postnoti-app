@@ -530,6 +530,7 @@ export const AdminRegisterMailScreen = () => {
                     visible={resultModalVisible}
                     animationType="fade"
                     transparent
+                    onRequestClose={handleSuccessFinish}
                 >
                     <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
                         <View style={{ backgroundColor: '#fff', width: '100%', borderRadius: 20, padding: 25, alignItems: 'center' }}>
