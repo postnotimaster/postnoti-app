@@ -57,7 +57,6 @@ export const tenantsService = {
     },
 
     async findTenantByNameAndPhone(companyId: string, name: string, phoneSuffix: string) {
-        // 보안 강화를 위해 RLS 우회 RPC 사용 (이름과 전화번호 뒷자리가 일치하는 건만 조회)
         const { data, error } = await supabase.rpc('find_tenant_by_name_and_phone_secure', {
             p_company_id: companyId,
             p_name: name,
@@ -66,6 +65,22 @@ export const tenantsService = {
 
         if (error) {
             console.error('findTenantByNameAndPhone RPC error:', error);
+            throw error;
+        }
+
+        if (!data || data.length === 0) return null;
+        return data[0] as Tenant;
+    },
+
+    async findTenantByPhone(companyId: string, phone: string) {
+        // 보안 강화를 위해 RLS 우회 RPC 사용 (전화번호만으로 입주자 명부 조회)
+        const { data, error } = await supabase.rpc('find_tenant_by_phone_secure', {
+            p_company_id: companyId,
+            p_phone: phone
+        });
+
+        if (error) {
+            console.error('findTenantByPhone RPC error:', error);
             throw error;
         }
 

@@ -160,7 +160,27 @@ export const useTenantAuth = ({
 
         setIdentifying(true);
         try {
-            const profile = await profilesService.getTenantProfileByPhone(companyId, fullPhone);
+            let profile = await profilesService.getTenantProfileByPhone(companyId, fullPhone);
+            
+            if (!profile) {
+                const tenantMatch = await tenantsService.findTenantByPhone(companyId, fullPhone);
+                if (tenantMatch) {
+                    console.log('[useTenantAuth] Found tenant without profile, auto-creating profile...');
+                    profile = await profilesService.createProfile({
+                        id: tenantMatch.id,
+                        company_id: companyId,
+                        name: tenantMatch.name,
+                        phone: tenantMatch.phone,
+                        role: 'tenant',
+                        is_active: true,
+                        push_token: pushToken,
+                        web_push_token: webPushToken
+                    });
+                    // 레코드 연결
+                    await tenantsService.updateTenant(tenantMatch.id, { profile_id: profile.id });
+                }
+            }
+
             if (!profile) {
                 if (!inputPhone) showToast({ message: '등록되지 않은 전화번호이거나 지점 정보가 일치하지 않습니다.', type: 'error' });
                 return;
