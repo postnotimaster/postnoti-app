@@ -81,7 +81,14 @@ export const profilesService = {
         if (error) throw error;
         if (!data || data.length === 0) return null;
 
-        const match = data.find(p => p.phone && p.phone.replace(/[^0-9]/g, '') === cleanTargetPhone);
+        const match = data.find(p => {
+            if (!p.phone) return false;
+            const cleanDbPhone = p.phone.replace(/[^0-9]/g, '');
+            // DB에 저장된 번호가 +82 등 다른 형식이거나 010이 누락되었을 가능성을 대비하여 
+            // 입력된 번호의 핵심인 뒤 8자리(또는 7자리)가 일치하는지 확인합니다.
+            const targetSuffix = cleanTargetPhone.length >= 8 ? cleanTargetPhone.slice(-8) : cleanTargetPhone;
+            return cleanDbPhone.endsWith(targetSuffix);
+        });
         return match || null;
     },
 
