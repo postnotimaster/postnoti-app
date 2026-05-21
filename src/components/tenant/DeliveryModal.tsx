@@ -260,7 +260,12 @@ export const DeliveryModal = ({
 
     if (step === 'success') {
         return (
-            <Modal visible={visible} transparent animationType="fade">
+            <Modal
+                visible={visible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => { setStep('form'); onClose(); }}
+            >
                 <View style={styles.overlay}>
                     <View style={[styles.content, { alignItems: 'center', paddingVertical: 40 }]}>
                         <View style={styles.successIconCircle}>

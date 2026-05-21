@@ -186,20 +186,63 @@ export const TenantDashboard = ({
     // 하드웨어 뒤로가기 제어
     useEffect(() => {
         const backAction = () => {
+            // 1. 열려있는 팝업/모달이 있으면 해당 모달만 순차적으로 닫음
             if (selectedMailImage) {
                 setSelectedMailImage(null);
                 return true;
             }
-            if (myProfile) {
-                handleLogout();
+            if (isMailDeliveryVisible) {
+                setIsMailDeliveryVisible(false);
                 return true;
             }
+            if (isSettingsVisible) {
+                setIsSettingsVisible(false);
+                return true;
+            }
+            if (isNoticeVisible) {
+                setIsNoticeVisible(false);
+                return true;
+            }
+            if (isIOSGuideVisible) {
+                setIsIOSGuideVisible(false);
+                return true;
+            }
+            if (isAndroidGuideVisible) {
+                setIsAndroidGuideVisible(false);
+                return true;
+            }
+
+            // 2. 메인 대시보드 상태일 때
+            if (myProfile) {
+                // 로그인을 유지한 채 앱만 안전하게 종료할 수 있도록 팝업 안내
+                Alert.alert(
+                    '앱 종료',
+                    '포스트노티 앱을 종료하시겠습니까?',
+                    [
+                        { text: '취소', style: 'cancel' },
+                        { text: '종료', onPress: () => BackHandler.exitApp() }
+                    ],
+                    { cancelable: true }
+                );
+                return true;
+            }
+
+            // 로그인하지 않은 상태(로그인 화면)인 경우: Landing 화면으로 복귀
             onBack();
             return true;
         };
         const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
         return () => backHandler.remove();
-    }, [selectedMailImage, myProfile, onBack, companyId]);
+    }, [
+        selectedMailImage,
+        isMailDeliveryVisible,
+        isSettingsVisible,
+        isNoticeVisible,
+        isIOSGuideVisible,
+        isAndroidGuideVisible,
+        myProfile,
+        onBack
+    ]);
 
     const flatData = React.useMemo(() => {
         const result: any[] = [];

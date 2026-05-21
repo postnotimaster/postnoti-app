@@ -20,6 +20,14 @@ export const AnnouncementModal = ({ visible, announcements, onClose }: Props) =>
         onClose();
     };
 
+    const handleRequestClose = () => {
+        if (selectedNotice) {
+            setSelectedNotice(null);
+        } else {
+            handleClose();
+        }
+    };
+
     const formatDate = (dateStr: string) => {
         const d = new Date(dateStr);
         return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
@@ -30,7 +38,7 @@ export const AnnouncementModal = ({ visible, announcements, onClose }: Props) =>
             visible={visible}
             transparent={true}
             animationType="slide"
-            onRequestClose={handleClose}
+            onRequestClose={handleRequestClose}
         >
             <View style={styles.overlay}>
                 <View style={styles.content}>
