@@ -165,19 +165,24 @@ export const useTenantAuth = ({
             if (!profile) {
                 const tenantMatch = await tenantsService.findTenantByPhone(companyId, fullPhone);
                 if (tenantMatch) {
-                    console.log('[useTenantAuth] Found tenant without profile, auto-creating profile...');
-                    profile = await profilesService.createProfile({
-                        id: tenantMatch.id,
-                        company_id: companyId,
-                        name: tenantMatch.name,
-                        phone: tenantMatch.phone,
-                        role: 'tenant',
-                        is_active: true,
-                        push_token: pushToken,
-                        web_push_token: webPushToken
-                    });
-                    // 레코드 연결
-                    await tenantsService.updateTenant(tenantMatch.id, { profile_id: profile.id });
+                    try {
+                        console.log('[useTenantAuth] Found tenant without profile, auto-creating profile...');
+                        profile = await profilesService.createProfile({
+                            id: tenantMatch.id,
+                            company_id: companyId,
+                            name: tenantMatch.name,
+                            phone: tenantMatch.phone,
+                            role: 'tenant',
+                            is_active: true,
+                            push_token: pushToken,
+                            web_push_token: webPushToken
+                        });
+                        // 레코드 연결
+                        await tenantsService.updateTenant(tenantMatch.id, { profile_id: profile.id });
+                    } catch (e) {
+                        console.warn('[useTenantAuth] Auto-creating profile failed (likely RLS), using tenant data as fallback:', e);
+                        profile = tenantMatch as any; // 로그인이라도 성공시키기 위해 폴백 적용
+                    }
                 }
             }
 
