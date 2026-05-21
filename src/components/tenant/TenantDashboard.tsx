@@ -68,15 +68,32 @@ export const TenantDashboard = ({
     });
 
     const handlePhoneChange = (text: string) => {
-        const cleaned = text.replace(/[^0-9]/g, '');
+        let cleaned = text.replace(/[^0-9]/g, '');
+        
+        if (cleaned.length === 0) {
+            setPhoneSuffix('');
+            return;
+        }
+
+        // 항상 010으로 시작하도록 보정 (사용자가 010을 안치고 뒷자리만 치거나 붙여넣었을 때)
+        if (!cleaned.startsWith('010') && cleaned.length > 0) {
+            if (cleaned.startsWith('01') || cleaned.startsWith('0')) {
+                // 사용자가 0, 01 을 치는 중이라면 그냥 둔다.
+            } else {
+                cleaned = '010' + cleaned;
+            }
+        }
+
         let formatted = '';
         if (cleaned.length <= 3) {
             formatted = cleaned;
         } else if (cleaned.length <= 7) {
             formatted = `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+        } else if (cleaned.length <= 10) {
+            formatted = `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
         } else {
-            const truncated = cleaned.slice(0, 8);
-            formatted = `${truncated.slice(0, 4)}-${truncated.slice(4)}`;
+            const truncated = cleaned.slice(0, 11);
+            formatted = `${truncated.slice(0, 3)}-${truncated.slice(3, 7)}-${truncated.slice(7)}`;
         }
         setPhoneSuffix(formatted);
     };
@@ -487,18 +504,15 @@ export const TenantDashboard = ({
                         <View style={styles.formGroup}>
                             <View style={styles.inputContainer}>
                                 <Text style={styles.inputLabel}>등록된 휴대전화 번호</Text>
-                                <View style={styles.phoneInputWrapper}>
-                                    <Text style={styles.phonePrefixText}>010 -</Text>
-                                    <TextInput
-                                        style={styles.phoneInputField}
-                                        value={phoneSuffix}
-                                        onChangeText={handlePhoneChange}
-                                        placeholder="전화번호 입력"
-                                        placeholderTextColor="#94A3B8"
-                                        keyboardType="number-pad"
-                                        maxLength={9} // "XXXX-XXXX" -> 9글자
-                                    />
-                                </View>
+                                <TextInput
+                                    style={styles.premiumInput}
+                                    value={phoneSuffix}
+                                    onChangeText={handlePhoneChange}
+                                    placeholder="010-0000-0000"
+                                    placeholderTextColor="#94A3B8"
+                                    keyboardType="number-pad"
+                                    maxLength={13} // "010-XXXX-XXXX" -> 13글자
+                                />
                             </View>
 
                             <PrimaryButton
@@ -845,28 +859,5 @@ const styles = StyleSheet.create({
         backgroundColor: '#EEF2FF',
         justifyContent: 'center',
         alignItems: 'center'
-    },
-    phoneInputWrapper: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F8FAFC',
-        borderWidth: 1,
-        borderColor: '#E2E8F0',
-        borderRadius: 16,
-        paddingHorizontal: 18,
-        height: 56,
-    },
-    phonePrefixText: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#1E293B',
-        marginRight: 10,
-    },
-    phoneInputField: {
-        flex: 1,
-        fontSize: 16,
-        color: '#1E293B',
-        padding: 0,
-        fontWeight: '600',
     },
 });
