@@ -132,16 +132,11 @@ export const useTenantAuth = ({
 
             // 저장된 자격 증명 확인
             try {
-                const storedName = await AsyncStorage.getItem(`tenant_name_${companyId}`);
                 const storedPhone = await AsyncStorage.getItem(`tenant_phone_${companyId}`);
 
-                if (storedName) {
-                    setName(storedName);
-                }
-
-                if (storedName && storedPhone) {
+                if (storedPhone) {
                     setPhoneSuffix(storedPhone);
-                    handleIdentify(storedName, storedPhone);
+                    handleIdentify(storedPhone);
                 }
             } catch (e) {
                 console.log('Auto login failed', e);
@@ -150,24 +145,24 @@ export const useTenantAuth = ({
         checkAutoLogin();
     }, [companyId, magicProfileId, magicTenantId]);
 
-    const handleIdentify = async (inputName?: string, inputPhone?: string) => {
-        const targetName = inputName || name;
+    const handleIdentify = async (inputPhone?: string) => {
         const targetPhone = inputPhone || phoneSuffix;
 
-        if (!targetName.trim()) {
-            showToast({ message: '입주사 명칭을 입력해주세요.', type: 'error' });
-            return;
+        let fullPhone = targetPhone.replace(/[^0-9]/g, '');
+        if (fullPhone.length > 0 && !fullPhone.startsWith('010')) {
+            fullPhone = '010' + fullPhone;
         }
-        if (targetPhone.length !== 4) {
-            showToast({ message: '전화번호 뒷자리 4자리를 정확히 입력해주세요.', type: 'error' });
+
+        if (fullPhone.length < 10 || fullPhone.length > 11) {
+            showToast({ message: '올바른 휴대전화 번호를 입력해주세요.', type: 'error' });
             return;
         }
 
         setIdentifying(true);
         try {
-            const profile = await profilesService.getTenantProfile(companyId, targetName.trim(), targetPhone);
+            const profile = await profilesService.getTenantProfileByPhone(companyId, fullPhone);
             if (!profile) {
-                if (!inputName) showToast({ message: '입주사 정보가 일치하지 않습니다.', type: 'error' });
+                if (!inputPhone) showToast({ message: '등록되지 않은 전화번호이거나 지점 정보가 일치하지 않습니다.', type: 'error' });
                 return;
             }
 
@@ -182,7 +177,7 @@ export const useTenantAuth = ({
 
                 // [중요] 테넌트 테이블과 프로필 연결 (관리자 앱에서 푸시 가능 여부 판단용)
                 try {
-                    const tenantMatch = await tenantsService.findTenantByNameAndPhone(companyId, targetName.trim(), targetPhone);
+                    const tenantMatch = await tenantsService.findTenantByNameAndPhone(companyId, profile.name, profile.phone);
                     if (tenantMatch && !tenantMatch.profile_id) {
                         console.log(`[useTenantAuth] Linking profile ${profile.id} to tenant ${tenantMatch.id}`);
                         await tenantsService.updateTenant(tenantMatch.id, { profile_id: profile.id });
@@ -192,11 +187,10 @@ export const useTenantAuth = ({
                 }
             }
 
-            await AsyncStorage.setItem(`tenant_name_${companyId}`, targetName.trim());
             await AsyncStorage.setItem(`tenant_phone_${companyId}`, targetPhone);
 
             const finalProfile = profile;
-            console.log(`[useTenantAuth] Identification success for ${targetName}`);
+            console.log(`[useTenantAuth] Identification success for phone: ${fullPhone}`);
             setMyProfile(finalProfile);
             setTenantProfile(finalProfile); // [중요] 전역 상태 업데이트
             setMyTenant(null);

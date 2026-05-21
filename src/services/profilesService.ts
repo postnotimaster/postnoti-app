@@ -70,6 +70,21 @@ export const profilesService = {
         return data;
     },
 
+    async getTenantProfileByPhone(companyId: string, phone: string) {
+        const cleanTargetPhone = phone.replace(/[^0-9]/g, '');
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('company_id', companyId)
+            .eq('role', 'tenant');
+
+        if (error) throw error;
+        if (!data || data.length === 0) return null;
+
+        const match = data.find(p => p.phone && p.phone.replace(/[^0-9]/g, '') === cleanTargetPhone);
+        return match || null;
+    },
+
     async getTenantProfile(companyId: string, name: string, phoneSuffix: string) {
         // 해당 지점의 입주자 중 이름이 일치하는 데이터들을 먼저 가져옴
         const { data, error } = await supabase

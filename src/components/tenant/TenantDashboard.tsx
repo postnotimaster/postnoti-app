@@ -66,6 +66,20 @@ export const TenantDashboard = ({
         webPushToken,
         showToast
     });
+
+    const handlePhoneChange = (text: string) => {
+        const cleaned = text.replace(/[^0-9]/g, '');
+        let formatted = '';
+        if (cleaned.length <= 3) {
+            formatted = cleaned;
+        } else if (cleaned.length <= 7) {
+            formatted = `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+        } else {
+            const truncated = cleaned.slice(0, 8);
+            formatted = `${truncated.slice(0, 4)}-${truncated.slice(4)}`;
+        }
+        setPhoneSuffix(formatted);
+    };
     
     // 2. 우편물 데이터 및 실시간 동기화
     const {
@@ -472,29 +486,19 @@ export const TenantDashboard = ({
 
                         <View style={styles.formGroup}>
                             <View style={styles.inputContainer}>
-                                <Text style={styles.inputLabel}>입주사명 (상호명)</Text>
-                                <TextInput
-                                    style={styles.premiumInput}
-                                    value={name}
-                                    onChangeText={setName}
-                                    placeholder="입주사 이름을 입력하세요"
-                                    placeholderTextColor="#94A3B8"
-                                    autoCorrect={false}
-                                />
-                            </View>
-
-                            <View style={styles.inputContainer}>
-                                <Text style={styles.inputLabel}>전화번호 뒷 4자리</Text>
-                                <TextInput
-                                    style={styles.premiumInput}
-                                    value={phoneSuffix}
-                                    onChangeText={setPhoneSuffix}
-                                    placeholder="0000"
-                                    placeholderTextColor="#94A3B8"
-                                    keyboardType="number-pad"
-                                    maxLength={4}
-                                    secureTextEntry={true}
-                                />
+                                <Text style={styles.inputLabel}>등록된 휴대전화 번호</Text>
+                                <View style={styles.phoneInputWrapper}>
+                                    <Text style={styles.phonePrefixText}>010 -</Text>
+                                    <TextInput
+                                        style={styles.phoneInputField}
+                                        value={phoneSuffix}
+                                        onChangeText={handlePhoneChange}
+                                        placeholder="전화번호 입력"
+                                        placeholderTextColor="#94A3B8"
+                                        keyboardType="number-pad"
+                                        maxLength={9} // "XXXX-XXXX" -> 9글자
+                                    />
+                                </View>
                             </View>
 
                             <PrimaryButton
@@ -841,5 +845,28 @@ const styles = StyleSheet.create({
         backgroundColor: '#EEF2FF',
         justifyContent: 'center',
         alignItems: 'center'
+    },
+    phoneInputWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F8FAFC',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 16,
+        paddingHorizontal: 18,
+        height: 56,
+    },
+    phonePrefixText: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#1E293B',
+        marginRight: 10,
+    },
+    phoneInputField: {
+        flex: 1,
+        fontSize: 16,
+        color: '#1E293B',
+        padding: 0,
+        fontWeight: '600',
     },
 });
