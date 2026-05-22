@@ -62,6 +62,7 @@ export const useTenantAuth = ({
                                 console.log(`[useTenantAuth] SUCCESS: Instant Login for ${tenantResult.name}`);
                                 
                                 // [중요] 배경에서 조용히 프로필 생성/연결 및 토큰 동기화
+                                let linkedProfileData: any = null;
                                 if (tenantResult.id) {
                                     try {
                                         console.log('[useTenantAuth] Syncing profile and tokens via secure RPC (Auto)...');
@@ -75,11 +76,11 @@ export const useTenantAuth = ({
                                         });
 
                                         if (upsertErr) throw upsertErr;
-                                        const profileData = (Array.isArray(upsertData) ? upsertData[0] : upsertData) || tenantResult;
+                                        linkedProfileData = (Array.isArray(upsertData) ? upsertData[0] : upsertData) || null;
 
-                                        // 4. 테넌트 레코드에 프로필 ID 연결 (관리자 앱 인식용)
-                                        if (!tenantResult.profile_id && profileData?.id) {
-                                            await tenantsService.updateTenant(tenantResult.id, { profile_id: profileData.id });
+                                        // 테넌트 레코드에 프로필 ID 연결 (관리자 앱 인식용)
+                                        if (!tenantResult.profile_id && linkedProfileData?.id) {
+                                            await tenantsService.updateTenant(tenantResult.id, { profile_id: linkedProfileData.id });
                                         }
                                     } catch (e) {
                                         console.warn('[useTenantAuth] Background linking failed:', e);
@@ -87,8 +88,13 @@ export const useTenantAuth = ({
                                 }
 
                                 setMyTenant(tenantResult);
-                                setMyProfile(tenantResult);
-                                setTenantProfile(tenantResult); // [즉시 로그인 실행]
+                                // linkedProfileData(profiles 테이블 행)가 있으면 그것을 사용하되, tenant_id를 보존
+                                const finalProfile = linkedProfileData 
+                                    ? { ...linkedProfileData, tenant_id: tenantResult.id }
+                                    : { ...tenantResult, tenant_id: tenantResult.id, profile_id: tenantResult.profile_id || tenantResult.id };
+                                console.log(`[useTenantAuth] Setting myProfile with id=${finalProfile.id}, profile_id=${finalProfile.profile_id}, tenant_id=${finalProfile.tenant_id}`);
+                                setMyProfile(finalProfile);
+                                setTenantProfile(finalProfile);
                                 return;
                             }
                         } catch (err) {
@@ -184,10 +190,12 @@ export const useTenantAuth = ({
 
             await AsyncStorage.setItem(`tenant_phone_${companyId}`, targetPhone);
 
-            const finalProfile = profile || resolvedTenant;
-            console.log(`[useTenantAuth] Identification success for phone: ${fullPhone}`);
+            const rawProfile = profile || resolvedTenant;
+            // tenant_id를 보존하여 useNotificationSync가 올바른 profile ID를 사용할 수 있도록 함
+            const finalProfile = { ...rawProfile, tenant_id: resolvedTenant?.id || rawProfile?.id };
+            console.log(`[useTenantAuth] Identification success. id=${finalProfile?.id}, profile_id=${finalProfile?.profile_id}, tenant_id=${finalProfile?.tenant_id}`);
             setMyProfile(finalProfile as any);
-            setTenantProfile(finalProfile as any); // [중요] 전역 상태 업데이트
+            setTenantProfile(finalProfile as any);
             setMyTenant(resolvedTenant); // [중요] myTenant를 반드시 설정하여 메일 조회 시 tenant_id가 쓰이게 함!
             return finalProfile;
         } catch (err) {
