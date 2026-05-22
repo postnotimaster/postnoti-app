@@ -97,6 +97,7 @@ export const useNotificationSync = ({
         setLoading(true);
         try {
             const permission = await Notification.requestPermission();
+            setPermissionStatus(permission);
 
             if (permission === 'granted') {
                 const token = await getToken(messaging!, { vapidKey: VAPID_KEY });
