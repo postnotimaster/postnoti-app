@@ -108,34 +108,36 @@ export const AdminRegisterMailScreen = () => {
         }
     }, [officeInfo]);
 
-    const onSubmit = async () => {
+    const onSubmit = () => {
+        if (!matchedProfile) return;
+        setResultModalVisible(true);
+    };
+
+    const confirmAndSend = async (fallbackToSms: boolean) => {
         try {
-            // [수정] 기본 메시지 로직 적용
             const defaultMsg = officeInfo?.settings?.default_message || "안녕하세요. 우편물이 도착했습니다.";
             const finalMessage = selectedPreset || customMessage || defaultMsg;
             
             const result = await handleRegisterMail(
                 matchedProfile,
                 selectedImage,
-                '일반', // 우편 종류 고정 (UI 삭제됨)
-                '',     // 발신처 비움 (UI 삭제됨)
+                '일반',
+                '',
                 extraImages,
                 finalMessage
             );
 
             if (result) {
                 setLastNotifResult(result);
-                if (result.success) {
-                    // [개선] 앱 설치 사용자는 알럿 없이 즉시 성공 처리 (토스트 피드백)
+                if (result.success || !fallbackToSms) {
                     showToast({ message: '알림이 성공적으로 전송되었습니다 🔔', type: 'success' });
                     handleSuccessFinish();
                 } else {
-                    // 앱 미설치 시에만 문자 발송 유도 팝업 노출
-                    setResultModalVisible(true);
+                    handleSmsFallback(result);
                 }
             }
         } catch (e: any) {
-            console.error('[AdminRegisterMail] onSubmit error:', e);
+            console.error('[AdminRegisterMail] confirmSend error:', e);
             Alert.alert('등록 오류', `문제가 발생했습니다: ${e.message}`);
         }
     };
@@ -148,7 +150,8 @@ export const AdminRegisterMailScreen = () => {
         setMode('admin_dashboard');
     };
 
-    const handleSmsFallback = async () => {
+    const handleSmsFallback = async (result?: NotificationResult) => {
+        const notifResult = result || lastNotifResult;
         if (!officeInfo) {
             showToast({ message: '오피스 지점 정보가 없습니다.', type: 'error' });
             return;
@@ -157,29 +160,23 @@ export const AdminRegisterMailScreen = () => {
             showToast({ message: '입주사 정보가 없습니다.', type: 'error' });
             return;
         }
-        if (!lastNotifResult) {
+        if (!notifResult) {
             showToast({ message: '알림 전송 결과 데이터가 없습니다.', type: 'error' });
             return;
         }
 
-        const phone = lastNotifResult.targetPhone || matchedProfile.phone;
+        const phone = notifResult.targetPhone || matchedProfile.phone;
         if (!phone) {
             showToast({ message: '입주사의 전화번호가 없습니다.', type: 'error' });
             return;
         }
 
         let message = notificationService.getShareMessage(matchedProfile, officeInfo);
-        console.log('--------------------------------------------------');
-        console.log('[SMS FINAL MESSAGE]:', message);
-        console.log('--------------------------------------------------');
-
-        // 개발 환경/테스트 모드일 때 메시지의 링크를 현재 오리진으로 치환
         if (Platform.OS === 'web') {
             const currentOrigin = window.location.origin;
             message = message.replace('https://postnoti-app-two.vercel.app', currentOrigin);
         }
 
-        // Android와 iOS의 SMS URL 구분자 처리 (? vs &)
         const separator = Platform.OS === 'ios' ? '&' : '?';
         const url = `sms:${phone}${separator}body=${encodeURIComponent(message)}`;
 
@@ -188,7 +185,6 @@ export const AdminRegisterMailScreen = () => {
             if (canOpen) {
                 await Linking.openURL(url);
             } else {
-                // 대체 방법: 번호만 넣어서 열기
                 await Linking.openURL(`sms:${phone}`);
             }
             handleSuccessFinish();
@@ -530,67 +526,53 @@ export const AdminRegisterMailScreen = () => {
                     visible={resultModalVisible}
                     animationType="fade"
                     transparent
-                    onRequestClose={handleSuccessFinish}
+                    onRequestClose={() => setResultModalVisible(false)}
                 >
                     <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
                         <View style={{ backgroundColor: '#fff', width: '100%', borderRadius: 20, padding: 25, alignItems: 'center' }}>
-                            <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
-                                <Text style={{ fontSize: 30 }}>⚠️</Text>
-                            </View>
-
-                            <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 10 }}>앱 미설치 입주사</Text>
-                            <Text style={{ fontSize: 15, color: '#64748B', textAlign: 'center', lineHeight: 22, marginBottom: 25 }}>
-                                해당 입주사는 아직 앱을 설치하지 않았습니다.{"\n"}
-                                우편물 확인을 위해{"\n"}
-                                <Text style={{ fontWeight: '700', color: '#4F46E5' }}>문자(SMS)로 안내 링크를 보내주세요.</Text>
-                            </Text>
-
-                            <PrimaryButton
-                                label="📱 문자로 링크 전송하기"
-                                onPress={handleSmsFallback}
-                                style={{ width: '100%', marginBottom: 12, backgroundColor: '#4F46E5', alignSelf: 'stretch', alignItems: 'center', paddingVertical: 15 }}
-                                textStyle={{ fontSize: 16, fontWeight: '700' }}
-                            />
-
-                            {/* 테스트용 직접 열기 버튼 추가 */}
-                            <Pressable
-                                onPress={async () => {
-                                    if (lastNotifResult?.shareLink) {
-                                        let link = lastNotifResult.shareLink;
-                                        if (Platform.OS === 'web') {
-                                            const currentOrigin = window.location.origin;
-                                            link = link.replace('https://postnoti-app-two.vercel.app', currentOrigin);
-                                            window.location.href = link;
-                                        } else {
-                                            // 모바일에서는 앱 스키마를 우선 시도하여 더 강력하게 앱을 호출
-                                            const nativeLink = link.replace('https://postnoti-app-two.vercel.app/', 'postnoti://');
-                                            try {
-                                                await Linking.openURL(nativeLink);
-                                            } catch (e) {
-                                                await Linking.openURL(link);
-                                            }
-                                        }
-                                    }
-                                }}
-                                style={{
-                                    width: '100%',
-                                    paddingVertical: 12,
-                                    borderRadius: 12,
-                                    borderWidth: 1,
-                                    borderColor: '#E2E8F0',
-                                    alignItems: 'center',
-                                    backgroundColor: '#F8FAFC',
-                                    marginBottom: 20
-                                }}
-                            >
-                                <Text style={{ color: '#444', fontWeight: '600' }}>🔍 링크 직접 열기 (테스트용)</Text>
-                            </Pressable>
+                            {matchedProfile && pushStatuses[matchedProfile.id!] ? (
+                                <>
+                                    <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#DCFCE7', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
+                                        <Text style={{ fontSize: 30 }}>📱</Text>
+                                    </View>
+                                    <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 10 }}>앱 설치 입주사</Text>
+                                    <Text style={{ fontSize: 15, color: '#64748B', textAlign: 'center', lineHeight: 22, marginBottom: 25 }}>
+                                        해당 입주사는 이미 앱을 설치했습니다.{"\n"}
+                                        아래 버튼을 누르면 즉시{"\n"}
+                                        <Text style={{ fontWeight: '700', color: '#166534' }}>앱 푸시 알림이 발송됩니다.</Text>
+                                    </Text>
+                                    <PrimaryButton
+                                        label="🚀 바로 보내기"
+                                        onPress={() => confirmAndSend(false)}
+                                        style={{ width: '100%', marginBottom: 12, backgroundColor: '#16A34A', alignSelf: 'stretch', alignItems: 'center', paddingVertical: 15 }}
+                                        textStyle={{ fontSize: 16, fontWeight: '700' }}
+                                    />
+                                </>
+                            ) : (
+                                <>
+                                    <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
+                                        <Text style={{ fontSize: 30 }}>⚠️</Text>
+                                    </View>
+                                    <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 10 }}>앱 미설치 입주사</Text>
+                                    <Text style={{ fontSize: 15, color: '#64748B', textAlign: 'center', lineHeight: 22, marginBottom: 25 }}>
+                                        해당 입주사는 아직 앱을 설치하지 않았습니다.{"\n"}
+                                        우편물 확인을 위해{"\n"}
+                                        <Text style={{ fontWeight: '700', color: '#4F46E5' }}>문자(SMS)로 안내 링크를 보내주세요.</Text>
+                                    </Text>
+                                    <PrimaryButton
+                                        label="📱 문자로 링크 전송하기"
+                                        onPress={() => confirmAndSend(true)}
+                                        style={{ width: '100%', marginBottom: 12, backgroundColor: '#4F46E5', alignSelf: 'stretch', alignItems: 'center', paddingVertical: 15 }}
+                                        textStyle={{ fontSize: 16, fontWeight: '700' }}
+                                    />
+                                </>
+                            )}
 
                             <Pressable
                                 style={{ padding: 10 }}
-                                onPress={handleSuccessFinish}
+                                onPress={() => setResultModalVisible(false)}
                             >
-                                <Text style={{ color: '#94A3B8', fontWeight: '600' }}>나중에 하기</Text>
+                                <Text style={{ color: '#94A3B8', fontWeight: '600' }}>취소</Text>
                             </Pressable>
                         </View>
                     </View>
