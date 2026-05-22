@@ -120,7 +120,7 @@ export const TenantDashboard = ({
         handleInstallPrompt,
         isIOS,
         isStandalone
-    } = usePWAInstall(myProfile?.id);
+    } = usePWAInstall(myProfile?.profile_id || myProfile?.id);
 
     const [isIOSGuideVisible, setIsIOSGuideVisible] = useState(false);
     const [isAndroidGuideVisible, setIsAndroidGuideVisible] = useState(false);
@@ -143,7 +143,7 @@ export const TenantDashboard = ({
         requestNotificationPermission,
         permissionStatus
     } = useNotificationSync({
-        profileId: myProfile?.id,
+        profileId: myProfile?.profile_id || myProfile?.id,
         pushToken,
         webPushToken,
         showToast,
@@ -152,14 +152,14 @@ export const TenantDashboard = ({
 
     // [추가] 앱(스탠드얼론)으로 접속했을 때 알림 권한이 없으면 자동 요청
     useEffect(() => {
-        if (isStandalone && myProfile?.id && !myProfile.web_push_token && !myProfile.push_token) {
+        if (isStandalone && (myProfile?.profile_id || myProfile?.id) && !myProfile.web_push_token && !myProfile.push_token) {
             // 약간의 지연을 주어 화면이 뜬 후 팝업이 나오게 함
             const timer = setTimeout(() => {
                 requestNotificationPermission();
             }, 1500);
             return () => clearTimeout(timer);
         }
-    }, [isStandalone, myProfile?.id, myProfile?.web_push_token, myProfile?.push_token]);
+    }, [isStandalone, myProfile?.profile_id, myProfile?.id, myProfile?.web_push_token, myProfile?.push_token]);
 
     // 5. 공지사항 관리
     const { announcements, refreshAnnouncements } = useAnnouncements({
@@ -572,7 +572,7 @@ export const TenantDashboard = ({
                 visible={isMailDeliveryVisible}
                 onClose={() => setIsMailDeliveryVisible(false)}
                 companyId={companyId}
-                profileId={myProfile?.id || ''}
+                profileId={myProfile?.profile_id || myProfile?.id || ''}
                 initialName={myProfile?.name || ''}
                 initialPhone={myProfile?.phone || ''}
             />

@@ -66,7 +66,7 @@ export const useTenantAuth = ({
                                     try {
                                         console.log('[useTenantAuth] Syncing profile and tokens via secure RPC (Auto)...');
                                         const { data: upsertData, error: upsertErr } = await supabase.rpc('upsert_tenant_profile_secure', {
-                                            p_id: tenantResult.id,
+                                            p_id: tenantResult.profile_id || tenantResult.id,
                                             p_company_id: companyId,
                                             p_name: tenantResult.name,
                                             p_phone: tenantResult.phone,
@@ -157,7 +157,7 @@ export const useTenantAuth = ({
                 try {
                     console.log('[useTenantAuth] Syncing profile and tokens via secure RPC (Manual)...');
                     const { data: upsertData, error: upsertErr } = await supabase.rpc('upsert_tenant_profile_secure', {
-                        p_id: resolvedTenant.id,
+                        p_id: resolvedTenant.profile_id || resolvedTenant.id,
                         p_company_id: companyId,
                         p_name: resolvedTenant.name,
                         p_phone: resolvedTenant.phone,
