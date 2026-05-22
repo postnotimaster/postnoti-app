@@ -131,11 +131,26 @@ export const AdminRegisterMailScreen = () => {
 
             if (result) {
                 setLastNotifResult(result);
-                if (result.success || !fallbackToSms) {
+                
+                if (fallbackToSms) {
+                    // 명시적으로 문자 전송을 누른 경우 -> 바로 문자 앱 실행
+                    handleSmsFallback(result);
+                } else if (result.success) {
+                    // 앱 푸시 성공
                     showToast({ message: '알림이 성공적으로 전송되었습니다 🔔', type: 'success' });
                     handleSuccessFinish();
                 } else {
-                    handleSmsFallback(result);
+                    // 앱 푸시 실패 (등록된 토큰 없음 등) -> 경고 후 문자로 전환
+                    Alert.alert(
+                        '푸시 알림 전송 불가',
+                        '입주사가 앱을 설치하지 않았거나 알림이 꺼져 있어 푸시를 보낼 수 없습니다. 문자 전송으로 전환합니다.',
+                        [
+                            {
+                                text: '확인',
+                                onPress: () => handleSmsFallback(result)
+                            }
+                        ]
+                    );
                 }
             }
         } catch (e: any) {
