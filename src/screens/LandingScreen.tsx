@@ -16,7 +16,7 @@ export const LandingScreen = () => {
     const { setMode, setBrandingCompany } = useUI();
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     
-    // 입주자 글로벌 로그인 상태
+    // ?�주??글로벌 로그???�태
     const [isTenantLogin, setIsTenantLogin] = useState(false);
     const [tenantPhone, setTenantPhone] = useState('');
     const [isSearching, setIsSearching] = useState(false);
@@ -63,7 +63,7 @@ export const LandingScreen = () => {
     const handleGlobalTenantLogin = async () => {
         const fullPhone = tenantPhone.replace(/[^0-9]/g, '');
         if (fullPhone.length < 10) {
-            Alert.alert('알림', '정확한 휴대전화 번호를 입력해주세요.');
+            Alert.alert('?�림', '?�확???��??�화 번호�??�력?�주?�요.');
             return;
         }
 
@@ -71,15 +71,15 @@ export const LandingScreen = () => {
         try {
             const match = await tenantsService.globalFindTenantByPhone(fullPhone);
             if (!match) {
-                Alert.alert('알림', '등록되지 않은 번호입니다.\n관리자에게 초대를 요청해주세요.');
+                Alert.alert('?�림', '?�록?��? ?��? 번호?�니??\n관리자?�게 초�?�??�청?�주?�요.');
                 return;
             }
 
-            // PWA 홈 화면 복귀를 대비해 저장
-            const magicUrl = `https://postnoti-app-two.vercel.app/view?m=${match.company_id}&p=${match.tenant_id}`;
+            // PWA ???�면 복�?�??�비해 ?�??
+            const magicUrl = `https://postnoti-app.vercel.app/view?m=${match.company_id}&p=${match.tenant_id}`;
             await AsyncStorage.setItem('last_tenant_url', magicUrl);
 
-            // UI Context 업데이트 후 입주자 화면으로 전환
+            // UI Context ?�데?�트 ???�주???�면?�로 ?�환
             setBrandingCompany({
                 id: match.company_id,
                 name: match.company_name,
@@ -90,7 +90,7 @@ export const LandingScreen = () => {
 
         } catch (e) {
             console.error(e);
-            Alert.alert('오류', '조회 중 문제가 발생했습니다.');
+            Alert.alert('?�류', '조회 �?문제가 발생?�습?�다.');
         } finally {
             setIsSearching(false);
         }
@@ -116,8 +116,8 @@ export const LandingScreen = () => {
                             borderBottomColor: '#F87171'
                         }}>
                             <Text style={{ color: '#991B1B', fontWeight: '700', fontSize: 13, textAlign: 'center' }}>
-                                ⚠️ 카카오톡 브라우저에서는 알림이 작동하지 않습니다.{"\n"}
-                                오른쪽 위 [···] 버튼 클릭 후 [다른 브라우저로 열기]를 해주세요!
+                                ?�️ 카카?�톡 브라?��??�서???�림???�동?��? ?�습?�다.{"\n"}
+                                ?�른�???[···] 버튼 ?�릭 ??[?�른 브라?��?�??�기]�??�주?�요!
                             </Text>
                         </View>
                     )}
@@ -132,7 +132,7 @@ export const LandingScreen = () => {
                                 }}
                                 resizeMode="contain"
                             />
-                            <Text style={{ fontSize: 16, color: '#475569', fontWeight: '800', marginTop: 15 }}>스마트우편알림 - 포스트노티</Text>
+                            <Text style={{ fontSize: 16, color: '#475569', fontWeight: '800', marginTop: 15 }}>?�마?�우?�알�?- ?�스?�노??/Text>
                         </View>
 
                         <View style={appStyles.actionSection}>
@@ -150,9 +150,9 @@ export const LandingScreen = () => {
                             }]}>
                                 {isTenantLogin ? (
                                     <View>
-                                        <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 20, textAlign: 'center' }}>입주자 빠른 로그인</Text>
+                                        <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 20, textAlign: 'center' }}>?�주??빠른 로그??/Text>
                                         <View style={{ marginBottom: 20 }}>
-                                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#64748B', marginBottom: 8 }}>등록된 휴대전화 번호</Text>
+                                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#64748B', marginBottom: 8 }}>?�록???��??�화 번호</Text>
                                             <TextInput
                                                 style={{
                                                     backgroundColor: '#F8FAFC',
@@ -173,13 +173,13 @@ export const LandingScreen = () => {
                                             />
                                         </View>
                                         <PrimaryButton
-                                            label={isSearching ? "확인 중..." : "우편물 확인하기"}
+                                            label={isSearching ? "?�인 �?.." : "?�편�??�인?�기"}
                                             onPress={handleGlobalTenantLogin}
                                             loading={isSearching}
                                             style={{ backgroundColor: '#4F46E5', borderRadius: 16, height: 56 }}
                                         />
                                         <Pressable onPress={() => setIsTenantLogin(false)} style={{ marginTop: 20, alignItems: 'center', padding: 10 }}>
-                                            <Text style={{ color: '#64748B', fontWeight: '600' }}>관리자이신가요? <Text style={{ color: '#4F46E5' }}>관리자 로그인</Text></Text>
+                                            <Text style={{ color: '#64748B', fontWeight: '600' }}>관리자?�신가?? <Text style={{ color: '#4F46E5' }}>관리자 로그??/Text></Text>
                                         </Pressable>
                                     </View>
                                 ) : (
@@ -193,7 +193,7 @@ export const LandingScreen = () => {
                                             isEmbedded={true}
                                         />
                                         <Pressable onPress={() => setIsTenantLogin(true)} style={{ marginTop: 20, alignItems: 'center', padding: 10, backgroundColor: '#EEF2FF', borderRadius: 12 }}>
-                                            <Text style={{ color: '#4F46E5', fontWeight: '700' }}>혹시 입주자이신가요? 번호로 간편 로그인 👉</Text>
+                                            <Text style={{ color: '#4F46E5', fontWeight: '700' }}>?�시 ?�주?�이?��??? 번호�?간편 로그???��</Text>
                                         </Pressable>
                                     </View>
                                 )}
@@ -205,8 +205,8 @@ export const LandingScreen = () => {
                                     style={{ marginTop: 40, alignItems: 'center' }}
                                 >
                                     <Text style={{ fontSize: 16, color: '#64748B' }}>
-                                        아직 계정이 없으신가요?{' '}
-                                        <Text style={{ color: '#6366F1', fontWeight: '700', textDecorationLine: 'underline' }}>오피스 등록하기</Text>
+                                        ?�직 계정???�으?��???{' '}
+                                        <Text style={{ color: '#6366F1', fontWeight: '700', textDecorationLine: 'underline' }}>?�피???�록?�기</Text>
                                     </Text>
                                 </Pressable>
                             )}

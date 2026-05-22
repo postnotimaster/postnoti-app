@@ -50,7 +50,7 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
             }
         } catch (error) {
             console.error(error);
-            Alert.alert('오류', '이력을 불러오지 못했습니다.');
+            Alert.alert('?�류', '?�력??불러?��? 못했?�니??');
         } finally {
             setLoading(false);
         }
@@ -74,9 +74,9 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
             const optimized = await optimizeImage(localUri);
             const publicUrl = await storageService.uploadImage(optimized);
 
-            if (!publicUrl) throw new Error('파일 업로드에 실패했습니다.');
+            if (!publicUrl) throw new Error('?�일 ?�로?�에 ?�패?�습?�다.');
 
-            // 현재 메일의 extra_images 가져오기
+            // ?�재 메일??extra_images 가?�오�?
             const currentMail = mails.find(m => m.id === mailId);
             let currentExtras: string[] = [];
             if (Array.isArray(currentMail.extra_images)) {
@@ -86,36 +86,36 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
             }
 
             const updatedExtras = [...currentExtras, publicUrl];
-            console.log('📸 Updating Extra Photos:', { mailId, currentExtras: currentExtras.length, updated: updatedExtras.length });
+            console.log('?�� Updating Extra Photos:', { mailId, currentExtras: currentExtras.length, updated: updatedExtras.length });
             const { error } = await mailService.updateMailExtraImages(mailId, updatedExtras);
 
             if (error) {
-                console.error('❌ updateMailExtraImages Error:', error);
+                console.error('??updateMailExtraImages Error:', error);
                 throw error;
             }
 
-            // 로컬 상태 업데이트
+            // 로컬 ?�태 ?�데?�트
             setMails(prev => prev.map(m => m.id === mailId ? { ...m, extra_images: updatedExtras } : m));
 
-            // 푸시 알람 발송 (지점 정보가 있을 경우에만)
+            // ?�시 ?�람 발송 (지???�보가 ?�을 경우?�만)
             if (officeInfo) {
-                const title = `[${officeInfo.name}] 추가 촬영 완료 📸`;
-                const body = `${tenant.company_name || tenant.name}님, 요청하신 우편물의 추가 상세 사진이 등록되었습니다.`;
+                const title = `[${officeInfo.name}] 추�? 촬영 ?�료 ?��`;
+                const body = `${tenant.company_name || tenant.name}?? ?�청?�신 ?�편물의 추�? ?�세 ?�진???�록?�었?�니??`;
 
                 notificationService.sendMailArrivalPush(
                     tenant,
                     officeInfo,
-                    '시스템',
-                    '추가촬영',
+                    '?�스??,
+                    '추�?촬영',
                     body
                 ).catch(e => console.warn('Extra photo push failed:', e));
             }
 
-            Alert.alert('성공', '추가 사진이 등록되었습니다.');
+            Alert.alert('?�공', '추�? ?�진???�록?�었?�니??');
 
         } catch (e: any) {
             console.error('Failed to add photo:', e);
-            Alert.alert('오류', e.message || '사진 등록 중 오류가 발생했습니다.');
+            Alert.alert('?�류', e.message || '?�진 ?�록 �??�류가 발생?�습?�다.');
         } finally {
             setIsUploading(false);
         }
@@ -133,26 +133,26 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                                 <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
                                     {mail.read_at ? (
                                         <View style={[styles.badge, { backgroundColor: '#DCFCE7', borderColor: '#BBF7D0' }]}>
-                                            <Text style={[styles.badgeText, { color: '#15803D' }]}>읽음</Text>
+                                            <Text style={[styles.badgeText, { color: '#15803D' }]}>?�음</Text>
                                         </View>
                                     ) : (
                                         <View style={[styles.badge, { backgroundColor: '#F1F5F9', borderColor: '#E2E8F0' }]}>
-                                            <Text style={[styles.badgeText, { color: '#94A3B8' }]}>안읽음</Text>
+                                            <Text style={[styles.badgeText, { color: '#94A3B8' }]}>?�읽??/Text>
                                         </View>
                                     )}
                                     {!isTenantMode && (
                                         <Pressable
                                             style={[styles.resendBtn, { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }]}
                                             onPress={async () => {
-                                                const link = `https://postnoti-app-two.vercel.app/view?p=${tenant.id}`;
+                                                const link = `https://postnoti-app.vercel.app/view?p=${tenant.id}`;
 
                                                 if (!tenant.profile_id) {
-                                                    Alert.alert('회원 미연동', '이 입주사는 앱 계정이 연결되어 있지 않습니다. 아래 전용 링크를 문자로 보내시겠습니까?', [
+                                                    Alert.alert('?�원 미연??, '???�주?�는 ??계정???�결?�어 ?��? ?�습?�다. ?�래 ?�용 링크�?문자�?보내?�겠?�니�?', [
                                                         { text: '취소', style: 'cancel' },
                                                         {
-                                                            text: '문자 보내기',
+                                                            text: '문자 보내�?,
                                                             onPress: () => {
-                                                                const message = `[Postnoti] ${tenant.company_name || tenant.name}님, 도착한 우편물을 확인하세요.\n\n확인링크: ${link}`;
+                                                                const message = `[Postnoti] ${tenant.company_name || tenant.name}?? ?�착???�편물을 ?�인?�세??\n\n?�인링크: ${link}`;
                                                                 Linking.openURL(`sms:${tenant.phone}?body=${encodeURIComponent(message)}`);
                                                             }
                                                         }
@@ -160,7 +160,7 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                                                     return;
                                                 }
 
-                                                // RLS 우회를 위해 check_tenant_push_status RPC 호출
+                                                // RLS ?�회�??�해 check_tenant_push_status RPC ?�출
                                                 const { data: pushStatuses } = await supabase.rpc('check_tenant_push_status', {
                                                     p_company_id: tenant.company_id,
                                                     p_phone: tenant.phone
@@ -169,12 +169,12 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                                                 const pushStatus = (pushStatuses && pushStatuses.length > 0) ? pushStatuses[0] : null;
 
                                                 if (!pushStatus?.push_token && !pushStatus?.web_push_token) {
-                                                    Alert.alert('알림 불가', '이 입주민은 알림 수신 설정이 되어있지 않습니다. 문자로 전용 링크를 보내시겠습니까?', [
+                                                    Alert.alert('?�림 불�?', '???�주민�? ?�림 ?�신 ?�정???�어?��? ?�습?�다. 문자�??�용 링크�?보내?�겠?�니�?', [
                                                         { text: '취소', style: 'cancel' },
                                                         {
-                                                            text: '문자 보내기',
+                                                            text: '문자 보내�?,
                                                             onPress: () => {
-                                                                const message = `[Postnoti] ${tenant.company_name || tenant.name}님, 도착한 우편물을 확인하세요.\n\n확인링크: ${link}`;
+                                                                const message = `[Postnoti] ${tenant.company_name || tenant.name}?? ?�착???�편물을 ?�인?�세??\n\n?�인링크: ${link}`;
                                                                 Linking.openURL(`sms:${tenant.phone}?body=${encodeURIComponent(message)}`);
                                                             }
                                                         }
@@ -182,30 +182,30 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                                                     return;
                                                 }
 
-                                                Alert.alert('알림 재발송', `${tenant.name}님께 앱 푸시 알림을 다시 보내시겠습니까?`, [
+                                                Alert.alert('?�림 ?�발??, `${tenant.name}?�께 ???�시 ?�림???�시 보내?�겠?�니�?`, [
                                                     { text: '취소', style: 'cancel' },
                                                     {
-                                                        text: '푸시 보내기',
+                                                        text: '?�시 보내�?,
                                                         onPress: async () => {
-                                                            const body = `새로운 우편물이 도착했습니다. 터치하여 확인하세요.`;
+                                                            const body = `?�로???�편물이 ?�착?�습?�다. ?�치?�여 ?�인?�세??`;
 
                                                             const res = await notificationService.sendMailArrivalPush(
                                                                 tenant,
                                                                 officeInfo!,
                                                                 tenant.name,
-                                                                '일반',
+                                                                '?�반',
                                                                 body
                                                             );
 
-                                                            if (res.success) Alert.alert('성공', '알림이 재발송되었습니다.');
-                                                            else Alert.alert('실패', '알림 발송 중 오류가 발생했습니다. 문자로 보내보세요.');
+                                                            if (res.success) Alert.alert('?�공', '?�림???�발?�되?�습?�다.');
+                                                            else Alert.alert('?�패', '?�림 발송 �??�류가 발생?�습?�다. 문자�?보내보세??');
                                                         }
                                                     }
                                                 ]);
                                             }}
                                         >
                                             <Ionicons name="notifications-outline" size={14} color="#4F46E5" style={{ marginRight: 4 }} />
-                                            <Text style={[styles.resendBtnText, { fontSize: 12 }]}>재발송</Text>
+                                            <Text style={[styles.resendBtnText, { fontSize: 12 }]}>?�발??/Text>
                                         </Pressable>
                                     )}
                                 </View>
@@ -229,7 +229,7 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
 
                                     <View style={styles.zoomHint}>
                                         <Text style={styles.zoomHintText}>
-                                            {isTenantMode && !mail.read_at ? '📩 터치하여 확인(읽음처리)' : '🔍 터치하여 확대'}
+                                            {isTenantMode && !mail.read_at ? '?�� ?�치?�여 ?�인(?�음처리)' : '?�� ?�치?�여 ?��?'}
                                         </Text>
                                     </View>
                                 </Pressable>
@@ -237,11 +237,11 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                                 <View style={[styles.image, styles.noImage, { padding: 20 }]}>
                                     <Ionicons name="document-text-outline" size={32} color="#CBD5E1" style={{ marginBottom: 10 }} />
                                     <Text style={{ color: '#64748B', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
-                                        보관 기간 만료 (사진 삭제)
+                                        보�? 기간 만료 (?�진 ??��)
                                     </Text>
                                     <View style={{ marginTop: 15, backgroundColor: '#fff', padding: 12, borderRadius: 10, width: '100%', borderWidth: 1, borderColor: '#E2E8F0' }}>
                                         <Text style={{ color: '#1E293B', fontSize: 14, fontWeight: '800', textAlign: 'center' }} numberOfLines={3}>
-                                            {mail.ocr_content || '내용 없음'}
+                                            {mail.ocr_content || '?�용 ?�음'}
                                         </Text>
                                     </View>
                                 </View>
@@ -253,19 +253,19 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                                 </Text>
                             </View>
 
-                            {/* 프리미엄 추가 촬영 이미지들/등록 버튼 */}
+                            {/* ?�리미엄 추�? 촬영 ?��?지???�록 버튼 */}
                             {(mail.extra_images && mail.extra_images.length > 0) || (!isTenantMode && tenant.is_premium) ? (
                                 <View style={{ padding: 15, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F8FAFC' }}>
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                                         <Text style={{ fontSize: 13, fontWeight: '700', color: '#6366F1' }}>
-                                            📄 상세 페이지 {mail.extra_images?.length > 0 ? `(${mail.extra_images.length})` : ''}
+                                            ?�� ?�세 ?�이지 {mail.extra_images?.length > 0 ? `(${mail.extra_images.length})` : ''}
                                         </Text>
                                         {!isTenantMode && tenant.is_premium && (
                                             <Pressable
                                                 onPress={() => {
-                                                    Alert.alert('이미지 추가', '어디서 사진을 가져올까요?', [
-                                                        { text: '📷 촬영하기', onPress: () => handleAddPhoto(mail.id, true) },
-                                                        { text: '🖼️ 앨범에서 선택', onPress: () => handleAddPhoto(mail.id, false) },
+                                                    Alert.alert('?��?지 추�?', '?�디???�진??가?�올까요?', [
+                                                        { text: '?�� 촬영?�기', onPress: () => handleAddPhoto(mail.id, true) },
+                                                        { text: '?���??�범?�서 ?�택', onPress: () => handleAddPhoto(mail.id, false) },
                                                         { text: '취소', style: 'cancel' }
                                                     ]);
                                                 }}
@@ -277,7 +277,7 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                                                 ) : (
                                                     <>
                                                         <Ionicons name="add-circle-outline" size={14} color="#4F46E5" style={{ marginRight: 4 }} />
-                                                        <Text style={{ fontSize: 12, color: '#4F46E5', fontWeight: '700' }}>추가 촬영</Text>
+                                                        <Text style={{ fontSize: 12, color: '#4F46E5', fontWeight: '700' }}>추�? 촬영</Text>
                                                     </>
                                                 )}
                                             </Pressable>
@@ -311,7 +311,7 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                                                         ))}
                                                         {!isTenantMode && tenant.is_premium && displayImages.length === 0 && (
                                                             <View style={{ width: 100, height: 130, borderRadius: 8, borderStyle: 'dotted', borderWidth: 2, borderColor: '#CBD5E1', justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
-                                                                <Text style={{ color: '#94A3B8', fontSize: 10 }}>대기중</Text>
+                                                                <Text style={{ color: '#94A3B8', fontSize: 10 }}>?�기중</Text>
                                                             </View>
                                                         )}
                                                     </>
@@ -325,26 +325,26 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                         </View>
                     ))}
                     {mails.length === 0 && (
-                        <Text style={styles.emptyText}>우편물 수령 내역이 없습니다.</Text>
+                        <Text style={styles.emptyText}>?�편�??�령 ?�역???�습?�다.</Text>
                     )}
                 </ScrollView>
             )}
 
-            {/* 전체 화면 이미지 확대 */}
+            {/* ?�체 ?�면 ?��?지 ?��? */}
             {!!selectedFullImage && (
                 <View style={[styles.fullImageContainer, StyleSheet.absoluteFill, { zIndex: 9999 }]}>
                     <Pressable
                         style={styles.closeArea}
                         onPress={() => setSelectedFullImage(null)}
                     >
-                        <Text style={styles.closeText}>✕ 닫기</Text>
+                        <Text style={styles.closeText}>???�기</Text>
                     </Pressable>
 
                     <Pressable
                         style={styles.rotateArea}
                         onPress={() => setImageRotation(r => r + 90)}
                     >
-                        <Text style={styles.rotateText}>↻ 회전</Text>
+                        <Text style={styles.rotateText}>???�전</Text>
                     </Pressable>
 
                     <ReactNativeZoomableView
@@ -361,7 +361,7 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                         />
                     </ReactNativeZoomableView>
                     <View style={styles.zoomFooter}>
-                        <Text style={styles.zoomFooterText}>💡 두 손가락으로 벌려 확대할 수 있습니다</Text>
+                        <Text style={styles.zoomFooterText}>?�� ???��??�으�?벌려 ?��??????�습?�다</Text>
                     </View>
                 </View>
             )}
