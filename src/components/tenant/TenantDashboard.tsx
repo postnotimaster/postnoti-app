@@ -323,7 +323,7 @@ export const TenantDashboard = ({
                                     style={[styles.premiumInstallButton, { backgroundColor: '#D97706' }]} 
                                     onPress={() => {
                                         if (Platform.OS === 'web') {
-                                            Alert.alert('알림 켜는 방법', '📱 갤럭시(안드로이드):\n1. 크롬 주소창 왼쪽 🔒 아이콘 터치\n2. "알림" → 허용으로 변경\n\n🍎 아이폰:\n1. 설정 → Safari → 알림 허용\n2. 또는 설정 → 이 웹앱 → 알림 허용');
+                                            alert('📱 갤럭시(안드로이드):\n1. 크롬 주소창 왼쪽 🔒 아이콘 터치\n2. "알림" → 허용으로 변경\n\n🍎 아이폰:\n1. 설정 → Safari → 알림 허용\n2. 또는 설정 → 이 웹앱 → 알림 허용');
                                         } else {
                                             Linking.openSettings();
                                         }
