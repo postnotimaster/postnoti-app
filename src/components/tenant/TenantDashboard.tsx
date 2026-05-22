@@ -335,6 +335,25 @@ export const TenantDashboard = ({
                         </View>
                     )}
 
+                    {/* 1.1 알림 권한 미정(default) 안내 배너 (웹/PWA 접속자 중 알림 비활성 상태) */}
+                    {Platform.OS === 'web' && typeof Notification !== 'undefined' && permissionStatus === 'default' && (!isIOS || isStandalone) && (
+                        <View style={[styles.premiumInstallBanner, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }]}>
+                            <View style={[styles.installIconBox, { backgroundColor: '#E0E7FF' }]}>
+                                <Ionicons name="notifications" size={32} color="#4F46E5" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.installBannerTitle, { color: '#3730A3' }]}>실시간 알림을 받아보세요! 🔔</Text>
+                                <Text style={styles.installBannerDesc}>우편물이 도착하면 실시간 푸시 알림으로 알려드립니다. 아래 버튼을 눌러 알림을 허용해 주세요.</Text>
+                                <Pressable 
+                                    style={[styles.premiumInstallButton, { backgroundColor: '#4F46E5' }]} 
+                                    onPress={requestNotificationPermission}
+                                >
+                                    <Text style={styles.premiumInstallButtonText}>실시간 알림 켜기</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    )}
+
                     {/* 1.5 새 우편물 도착 알림 배너 */}
                     {newMailAlert && (
                         <Pressable 
