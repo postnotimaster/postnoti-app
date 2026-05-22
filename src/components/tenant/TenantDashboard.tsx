@@ -144,6 +144,7 @@ export const TenantDashboard = ({
         permissionStatus
     } = useNotificationSync({
         profileId: myProfile?.id,
+        pushToken,
         webPushToken,
         showToast,
         setLoading

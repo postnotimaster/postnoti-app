@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { profilesService } from '../../services/profilesService';
+import { supabase } from '../../lib/supabase';
 import { messaging, getToken, VAPID_KEY } from '../../lib/firebase';
 
 interface UseNotificationSyncProps {
     profileId?: string;
+    pushToken?: string;
     webPushToken?: string;
     showToast: (params: { message: string; type: 'success' | 'error' | 'info' }) => void;
     setLoading: (loading: boolean) => void;
@@ -12,6 +14,7 @@ interface UseNotificationSyncProps {
 
 export const useNotificationSync = ({
     profileId,
+    pushToken,
     webPushToken,
     showToast,
     setLoading
@@ -30,20 +33,22 @@ export const useNotificationSync = ({
         syncStatus();
         
         const syncToken = async () => {
-            if (profileId && webPushToken) {
-                console.log(`[NotificationSync] Syncing token for profile: ${profileId}`);
+            if (profileId && (pushToken || webPushToken)) {
+                console.log(`[NotificationSync] Syncing tokens for profile: ${profileId}`);
                 try {
-                    await profilesService.updateProfile(profileId, { 
-                        web_push_token: webPushToken,
-                        last_accessed_at: new Date().toISOString()
+                    const { error } = await supabase.rpc('update_tenant_push_token_secure', {
+                        p_profile_id: profileId,
+                        p_push_token: pushToken || null,
+                        p_web_push_token: webPushToken || null
                     });
+                    if (error) throw error;
                 } catch (e) {
                     console.warn('[NotificationSync] Token sync failed:', e);
                 }
             }
         };
         syncToken();
-    }, [profileId, webPushToken]);
+    }, [profileId, pushToken, webPushToken]);
 
     const requestNotificationPermission = async () => {
         // 웹 환경이 아니면 무시
@@ -59,9 +64,12 @@ export const useNotificationSync = ({
             try {
                 const token = await getToken(messaging!, { vapidKey: VAPID_KEY });
                 if (token && profileId) {
-                    await profilesService.updateProfile(profileId, { 
-                        web_push_token: token
+                    const { error } = await supabase.rpc('update_tenant_push_token_secure', {
+                        p_profile_id: profileId,
+                        p_push_token: null,
+                        p_web_push_token: token
                     });
+                    if (error) throw error;
                 }
             } catch (e) {
                 console.warn('[NotificationSync] Silent token refresh failed');
@@ -77,9 +85,12 @@ export const useNotificationSync = ({
             if (permission === 'granted') {
                 const token = await getToken(messaging!, { vapidKey: VAPID_KEY });
                 if (token && profileId) {
-                    await profilesService.updateProfile(profileId, { 
-                        web_push_token: token
+                    const { error } = await supabase.rpc('update_tenant_push_token_secure', {
+                        p_profile_id: profileId,
+                        p_push_token: null,
+                        p_web_push_token: token
                     });
+                    if (error) throw error;
                     showToast({ message: '알림 설정이 완료되었습니다! 🔔', type: 'success' });
                 }
             }

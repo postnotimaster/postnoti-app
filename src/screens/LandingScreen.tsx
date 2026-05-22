@@ -5,12 +5,14 @@ import { PrimaryButton } from '../components/common/PrimaryButton';
 import { appStyles } from '../styles/appStyles';
 import { useAuth } from '../contexts/AuthContext';
 import { useUI } from '../contexts/UIContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import { isKakaoTalk, redirectToExternalBrowser } from '../utils/browserDetection';
 import { tenantsService } from '../services/tenantsService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const LandingScreen = () => {
     const { handleLoginSuccess } = useAuth();
+    const { expoPushToken, webPushToken } = useNotifications();
     const { setMode, setBrandingCompany } = useUI();
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     
@@ -184,7 +186,7 @@ export const LandingScreen = () => {
                                     <View>
                                         <LoginScreen
                                             onLoginSuccess={async (profile) => {
-                                                await handleLoginSuccess(profile);
+                                                await handleLoginSuccess(profile, expoPushToken, webPushToken);
                                                 setMode('admin_dashboard');
                                             }}
                                             onBack={() => { }}

@@ -76,11 +76,14 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             try {
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session?.user?.id) {
+                    console.log(`[NotificationContext] Saving admin token: ${tokenToSave} for user: ${session.user.id}`);
                     await profilesService.updateProfile(session.user.id, {
                         [isWeb ? 'web_push_token' : 'push_token']: tokenToSave
                     });
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error('[NotificationContext] Failed to save admin token:', e);
+            }
         }
     };
 

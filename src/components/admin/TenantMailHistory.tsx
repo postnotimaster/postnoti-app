@@ -102,7 +102,7 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                 const title = `[${officeInfo.name}] 추가 촬영 완료 📸`;
                 const body = `${tenant.company_name || tenant.name}님, 요청하신 우편물의 추가 상세 사진이 등록되었습니다.`;
 
-                notificationService.sendPushNotification(
+                notificationService.sendMailArrivalPush(
                     tenant,
                     officeInfo,
                     '시스템',
@@ -160,13 +160,15 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                                                     return;
                                                 }
 
-                                                const { data: profile } = await supabase
-                                                    .from('profiles')
-                                                    .select('*')
-                                                    .eq('id', tenant.profile_id)
-                                                    .single();
+                                                // RLS 우회를 위해 check_tenant_push_status RPC 호출
+                                                const { data: pushStatuses } = await supabase.rpc('check_tenant_push_status', {
+                                                    p_company_id: tenant.company_id,
+                                                    p_phone: tenant.phone
+                                                });
 
-                                                if (!profile?.push_token && !profile?.web_push_token) {
+                                                const pushStatus = (pushStatuses && pushStatuses.length > 0) ? pushStatuses[0] : null;
+
+                                                if (!pushStatus?.push_token && !pushStatus?.web_push_token) {
                                                     Alert.alert('알림 불가', '이 입주민은 알림 수신 설정이 되어있지 않습니다. 문자로 전용 링크를 보내시겠습니까?', [
                                                         { text: '취소', style: 'cancel' },
                                                         {
@@ -187,7 +189,7 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                                                         onPress: async () => {
                                                             const body = `새로운 우편물이 도착했습니다. 터치하여 확인하세요.`;
 
-                                                            const success = await notificationService.sendPushNotification(
+                                                            const res = await notificationService.sendMailArrivalPush(
                                                                 tenant,
                                                                 officeInfo!,
                                                                 tenant.name,
@@ -195,7 +197,7 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                                                                 body
                                                             );
 
-                                                            if (success) Alert.alert('성공', '알림이 재발송되었습니다.');
+                                                            if (res.success) Alert.alert('성공', '알림이 재발송되었습니다.');
                                                             else Alert.alert('실패', '알림 발송 중 오류가 발생했습니다. 문자로 보내보세요.');
                                                         }
                                                     }

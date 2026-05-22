@@ -64,32 +64,21 @@ export const useTenantAuth = ({
                                 // [중요] 배경에서 조용히 프로필 생성/연결 및 토큰 동기화
                                 if (tenantResult.id) {
                                     try {
-                                        // 1. 기존 프로필이 있는지 확인 (전화번호 기준)
-                                        let profileData = await profilesService.getTenantProfile(companyId, tenantResult.name, tenantResult.phone.slice(-4));
-                                        
-                                        if (!profileData) {
-                                            // 2. 프로필이 없으면 새로 생성 (푸시 수신용)
-                                            console.log('[useTenantAuth] Creating new profile for notifications...');
-                                            profileData = await profilesService.createProfile({
-                                                id: tenantResult.id, // 테넌트 ID와 동일하게 설정하여 관리 용이성 확보
-                                                company_id: companyId,
-                                                name: tenantResult.name,
-                                                phone: tenantResult.phone,
-                                                role: 'tenant',
-                                                is_active: true,
-                                                push_token: pushToken,
-                                                web_push_token: webPushToken
-                                            });
-                                        } else {
-                                            // 3. 기존 프로필이 있으면 토큰만 업데이트
-                                            await profilesService.updateProfile(profileData.id!, {
-                                                push_token: pushToken,
-                                                web_push_token: webPushToken
-                                            });
-                                        }
+                                        console.log('[useTenantAuth] Syncing profile and tokens via secure RPC (Auto)...');
+                                        const { data: upsertData, error: upsertErr } = await supabase.rpc('upsert_tenant_profile_secure', {
+                                            p_id: tenantResult.id,
+                                            p_company_id: companyId,
+                                            p_name: tenantResult.name,
+                                            p_phone: tenantResult.phone,
+                                            p_push_token: pushToken || null,
+                                            p_web_push_token: webPushToken || null
+                                        });
+
+                                        if (upsertErr) throw upsertErr;
+                                        const profileData = (Array.isArray(upsertData) ? upsertData[0] : upsertData) || tenantResult;
 
                                         // 4. 테넌트 레코드에 프로필 ID 연결 (관리자 앱 인식용)
-                                        if (!tenantResult.profile_id) {
+                                        if (!tenantResult.profile_id && profileData?.id) {
                                             await tenantsService.updateTenant(tenantResult.id, { profile_id: profileData.id });
                                         }
                                     } catch (e) {
@@ -164,53 +153,33 @@ export const useTenantAuth = ({
             let profile = await profilesService.getTenantProfileByPhone(companyId, fullPhone);
             let resolvedTenant = await tenantsService.findTenantByPhone(companyId, fullPhone);
             
-            if (!profile) {
-                if (resolvedTenant) {
-                    try {
-                        console.log('[useTenantAuth] Found tenant without profile, auto-creating profile...');
-                        profile = await profilesService.createProfile({
-                            id: resolvedTenant.id,
-                            company_id: companyId,
-                            name: resolvedTenant.name,
-                            phone: resolvedTenant.phone,
-                            role: 'tenant',
-                            is_active: true,
-                            push_token: pushToken,
-                            web_push_token: webPushToken
-                        });
-                        // 레코드 연결
+            if (resolvedTenant) {
+                try {
+                    console.log('[useTenantAuth] Syncing profile and tokens via secure RPC (Manual)...');
+                    const { data: upsertData, error: upsertErr } = await supabase.rpc('upsert_tenant_profile_secure', {
+                        p_id: resolvedTenant.id,
+                        p_company_id: companyId,
+                        p_name: resolvedTenant.name,
+                        p_phone: resolvedTenant.phone,
+                        p_push_token: pushToken || null,
+                        p_web_push_token: webPushToken || null
+                    });
+                    if (upsertErr) throw upsertErr;
+                    profile = (Array.isArray(upsertData) ? upsertData[0] : upsertData) || resolvedTenant;
+
+                    // 테넌트 레코드에 프로필 ID 연결
+                    if (!resolvedTenant.profile_id && profile?.id) {
                         await tenantsService.updateTenant(resolvedTenant.id, { profile_id: profile.id });
-                    } catch (e) {
-                        console.warn('[useTenantAuth] Auto-creating profile failed (likely RLS), using tenant data as fallback:', e);
-                        profile = resolvedTenant as any; // 로그인이라도 성공시키기 위해 폴백 적용
                     }
+                } catch (e) {
+                    console.warn('[useTenantAuth] Upserting profile failed, falling back:', e);
+                    profile = profile || resolvedTenant as any;
                 }
             }
 
             if (!profile && !resolvedTenant) {
                 if (!inputPhone) showToast({ message: '등록되지 않은 전화번호이거나 지점 정보가 일치하지 않습니다.', type: 'error' });
                 return;
-            }
-
-            // 토큰 및 테넌트 연결 업데이트
-            if (profile && profile.id && typeof profile.id === 'string' && profile.id.length > 10) {
-                if (pushToken || webPushToken) {
-                    // [개선] RLS를 우회하는 보안 RPC 함수를 호출하여 익명 상태에서도 토큰이 유실되지 않도록 함
-                    supabase.rpc('update_tenant_push_token_secure', {
-                        p_profile_id: profile.id,
-                        p_push_token: pushToken || null,
-                        p_web_push_token: webPushToken || null
-                    }).catch((e) => console.error('[useTenantAuth] Token update RPC error:', e));
-                }
-
-                // [중요] 테넌트 테이블과 프로필 연결
-                if (resolvedTenant && !resolvedTenant.profile_id) {
-                    try {
-                        await tenantsService.updateTenant(resolvedTenant.id, { profile_id: profile.id });
-                    } catch (e) {
-                        console.error('[useTenantAuth] Failed to link tenant profile:', e);
-                    }
-                }
             }
 
             await AsyncStorage.setItem(`tenant_phone_${companyId}`, targetPhone);
