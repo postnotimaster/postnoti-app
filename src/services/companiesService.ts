@@ -10,6 +10,7 @@ export type Company = {
     tenant_limit?: number;
     mail_quota?: number;
     current_usage?: number;
+    settings?: any;
 };
 
 export const companiesService = {
