@@ -9,6 +9,7 @@ interface UseMailLogsProps {
     soundEnabled: boolean;
     playSound: () => void;
     showToast: (params: { message: string; type: 'success' | 'error' | 'info' }) => void;
+    onNewMailArrival?: (info: { sender: string; type: string; time: string }) => void;
 }
 
 export const useMailLogs = ({
@@ -16,7 +17,8 @@ export const useMailLogs = ({
     myTenantId,
     soundEnabled,
     playSound,
-    showToast
+    showToast,
+    onNewMailArrival
 }: UseMailLogsProps) => {
     const [mails, setMails] = useState<MailLog[]>([]);
     const [loading, setLoading] = useState(false);
@@ -65,6 +67,14 @@ export const useMailLogs = ({
                     if (soundEnabled) playSound();
                     setMails(prev => [payload.new as MailLog, ...prev]);
                     showToast({ message: '📬 방금 새로운 우편물이 도착했습니다!', type: 'success' });
+                    if (onNewMailArrival) {
+                        const newMail = payload.new as any;
+                        onNewMailArrival({
+                            sender: newMail.sender || '발신처 미확인',
+                            type: newMail.mail_type || '일반',
+                            time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+                        });
+                    }
                 }
             )
             .subscribe();

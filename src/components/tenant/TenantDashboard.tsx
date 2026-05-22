@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, FlatList, Image,
     ActivityIndicator, TextInput, Alert, Pressable, Modal,
-    BackHandler, Platform, Dimensions, ScrollView
+    BackHandler, Platform, Dimensions, ScrollView, Linking, Vibration
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PrimaryButton } from '../common/PrimaryButton';
@@ -48,6 +48,7 @@ export const TenantDashboard = ({
     const [isNoticeVisible, setIsNoticeVisible] = useState(false);
     const [isMailDeliveryVisible, setIsMailDeliveryVisible] = useState(false);
     const [soundEnabled, setSoundEnabled] = useState(true);
+    const [newMailAlert, setNewMailAlert] = useState<{sender: string; type: string; time: string} | null>(null);
 
     // 1. 인증 및 세션 관리
     const {
@@ -110,7 +111,11 @@ export const TenantDashboard = ({
         myTenantId: myTenant ? myTenant.id : (myProfile?.tenant_id || (myProfile?.id && !myProfile.tenant_id ? undefined : myProfile?.id)),
         soundEnabled,
         playSound,
-        showToast
+        showToast,
+        onNewMailArrival: (info) => {
+            try { Vibration.vibrate([0, 300, 200, 300]); } catch(e) {}
+            setNewMailAlert(info);
+        }
     });
 
     // 3. PWA 설치 관리
@@ -316,12 +321,45 @@ export const TenantDashboard = ({
                                 <Text style={styles.installBannerDesc}>우편물 도착 소식을 실시간으로 받으려면 브라우저 설정에서 알림을 허용해 주세요.</Text>
                                 <Pressable 
                                     style={[styles.premiumInstallButton, { backgroundColor: '#D97706' }]} 
-                                    onPress={() => Alert.alert('알림 켜는 방법', '1. 아이폰/안드로이드 설정\n2. 브라우저(사파리/크롬) 선택\n3. 알림 메뉴에서 허용 선택')}
+                                    onPress={() => {
+                                        if (Platform.OS === 'web') {
+                                            Alert.alert('알림 켜는 방법', '📱 갤럭시(안드로이드):\n1. 크롬 주소창 왼쪽 🔒 아이콘 터치\n2. "알림" → 허용으로 변경\n\n🍎 아이폰:\n1. 설정 → Safari → 알림 허용\n2. 또는 설정 → 이 웹앱 → 알림 허용');
+                                        } else {
+                                            Linking.openSettings();
+                                        }
+                                    }}
                                 >
                                     <Text style={styles.premiumInstallButtonText}>설정 방법 보기</Text>
                                 </Pressable>
                             </View>
                         </View>
+                    )}
+
+                    {/* 1.5 새 우편물 도착 알림 배너 */}
+                    {newMailAlert && (
+                        <Pressable 
+                            style={[styles.premiumInstallBanner, { backgroundColor: '#ECFDF5', borderColor: '#6EE7B7', borderWidth: 2 }]}
+                            onPress={() => {
+                                setNewMailAlert(null);
+                                setFilter('unread');
+                            }}
+                        >
+                            <View style={[styles.installIconBox, { backgroundColor: '#D1FAE5' }]}>
+                                <Ionicons name="mail-unread" size={32} color="#059669" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.installBannerTitle, { color: '#065F46' }]}>📬 새 우편물이 도착했습니다!</Text>
+                                <Text style={[styles.installBannerDesc, { color: '#047857' }]}>
+                                    {newMailAlert.sender}에서 보낸 {newMailAlert.type} 우편물이 방금 접수되었습니다. ({newMailAlert.time})
+                                </Text>
+                                <View style={[styles.premiumInstallButton, { backgroundColor: '#059669', marginTop: 8 }]}>
+                                    <Text style={styles.premiumInstallButtonText}>확인하기</Text>
+                                </View>
+                            </View>
+                            <Pressable style={styles.closeBannerBtn} onPress={() => setNewMailAlert(null)}>
+                                <Ionicons name="close" size={20} color="#6EE7B7" />
+                            </Pressable>
+                        </Pressable>
                     )}
 
                     {/* 2. PWA 설치 유도 배너 (앱 미설치자에게만 노출) */}
