@@ -46,6 +46,7 @@ export const AdminRegisterMailScreen = () => {
 
     const [customMessage, setCustomMessage] = React.useState('');
     const [selectedPreset, setSelectedPreset] = React.useState<string | null>(null);
+    const [dropdownVisible, setDropdownVisible] = React.useState(false);
     const [resultModalVisible, setResultModalVisible] = React.useState(false);
     const [lastNotifResult, setLastNotifResult] = React.useState<NotificationResult | null>(null);
     const [pushStatuses, setPushStatuses] = React.useState<Record<string, boolean>>({}); // [NEW] 푸시 상태 현황판
@@ -145,6 +146,7 @@ export const AdminRegisterMailScreen = () => {
     const handleSuccessFinish = () => {
         setCustomMessage('');
         setSelectedPreset(null);
+        setDropdownVisible(false);
         setResultModalVisible(false);
         if (resetOCR) resetOCR(); // 화면을 나갈 때 초기화
         setMode('admin_dashboard');
@@ -349,33 +351,94 @@ export const AdminRegisterMailScreen = () => {
                             </SectionCard>
 
                             <SectionCard title="💬 알림 메시지 선택">
-                                <Text style={[appStyles.label, { marginBottom: 12 }]}>빠른 메시지 선택</Text>
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-                                    {presets.map(p => (
-                                        <Pressable
-                                            key={p}
-                                            style={[
-                                                appStyles.profileChip,
-                                                { marginBottom: 0, marginRight: 10 },
-                                                selectedPreset === p && { backgroundColor: '#4F46E5', borderColor: '#4F46E5' }
-                                            ]}
-                                            onPress={() => {
-                                                if (selectedPreset === p) {
-                                                    setSelectedPreset(null);
-                                                } else {
-                                                    setSelectedPreset(p);
-                                                    setCustomMessage('');
-                                                }
+                                <View style={{ backgroundColor: '#F8FAFC', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 15 }}>
+                                    <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '700', marginBottom: 4 }}>📋 기본 알림 메시지 (미선택 시 발송)</Text>
+                                    <Text style={{ fontSize: 13, color: '#475569', fontWeight: '600' }}>
+                                        "{officeInfo?.settings?.default_message || "안녕하세요. 우편물이 도착했습니다."}"
+                                    </Text>
+                                </View>
+
+                                <Text style={[appStyles.label, { marginBottom: 8 }]}>빠른 메시지 선택</Text>
+                                <View style={{ position: 'relative', marginBottom: 10 }}>
+                                    <Pressable
+                                        onPress={() => setDropdownVisible(!dropdownVisible)}
+                                        style={{
+                                            flexDirection: 'row',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            backgroundColor: '#F8FAFC',
+                                            borderWidth: 1,
+                                            borderColor: '#E2E8F0',
+                                            borderRadius: 12,
+                                            paddingHorizontal: 15,
+                                            height: 50,
+                                        }}
+                                    >
+                                        <Text style={{ fontSize: 15, color: selectedPreset ? '#1E293B' : '#94A3B8', flex: 1, marginRight: 30 }} numberOfLines={1}>
+                                            {selectedPreset || '알림 메시지를 선택하세요...'}
+                                        </Text>
+                                        <Text style={{ color: '#64748B', fontSize: 12 }}>▼</Text>
+                                    </Pressable>
+                                    {selectedPreset && (
+                                        <Pressable 
+                                            onPress={() => setSelectedPreset(null)} 
+                                            style={{ 
+                                                position: 'absolute', 
+                                                right: 35, 
+                                                top: 0, 
+                                                bottom: 0, 
+                                                justifyContent: 'center', 
+                                                paddingHorizontal: 10 
                                             }}
                                         >
-                                            <Text style={[appStyles.profileChipText, selectedPreset === p && { color: '#fff' }]}>
-                                                {p}
-                                            </Text>
+                                            <Text style={{ color: '#94A3B8', fontWeight: '800', fontSize: 16 }}>✕</Text>
                                         </Pressable>
-                                    ))}
-                                </ScrollView>
+                                    )}
+                                </View>
 
-                                <Text style={appStyles.label}>직접 입력 (위 항목 미선택 시)</Text>
+                                {dropdownVisible && (
+                                    <View style={{
+                                        backgroundColor: '#fff',
+                                        borderWidth: 1,
+                                        borderColor: '#E2E8F0',
+                                        borderRadius: 12,
+                                        overflow: 'hidden',
+                                        marginBottom: 15,
+                                        elevation: 2,
+                                        shadowColor: '#000',
+                                        shadowOffset: { width: 0, height: 2 },
+                                        shadowOpacity: 0.05,
+                                        shadowRadius: 4
+                                    }}>
+                                        {presets.map((p, idx) => (
+                                            <Pressable
+                                                key={p}
+                                                onPress={() => {
+                                                    setSelectedPreset(p);
+                                                    setCustomMessage('');
+                                                    setDropdownVisible(false);
+                                                }}
+                                                style={{
+                                                    paddingVertical: 14,
+                                                    paddingHorizontal: 15,
+                                                    borderBottomWidth: idx === presets.length - 1 ? 0 : 1,
+                                                    borderBottomColor: '#F1F5F9',
+                                                    backgroundColor: selectedPreset === p ? '#F1F5F9' : '#fff'
+                                                }}
+                                            >
+                                                <Text style={{
+                                                    fontSize: 14,
+                                                    color: selectedPreset === p ? '#4F46E5' : '#1E293B',
+                                                    fontWeight: selectedPreset === p ? '700' : '500'
+                                                }}>
+                                                    {p}
+                                                </Text>
+                                            </Pressable>
+                                        ))}
+                                    </View>
+                                )}
+
+                                <Text style={appStyles.label}>직접 입력 (선택한 메시지 대신 사용됨)</Text>
                                 <TextInput
                                     style={[appStyles.input, selectedPreset && { opacity: 0.5, backgroundColor: '#F1F5F9' }]}
                                     value={customMessage}
