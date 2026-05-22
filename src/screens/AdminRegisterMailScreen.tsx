@@ -530,7 +530,10 @@ export const AdminRegisterMailScreen = () => {
                 >
                     <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
                         <View style={{ backgroundColor: '#fff', width: '100%', borderRadius: 20, padding: 25, alignItems: 'center' }}>
-                            {matchedProfile && pushStatuses[matchedProfile.id!] ? (
+                            {matchedProfile && (
+                                matchedProfile.profile_id || 
+                                (matchedProfile.phone && pushStatuses[matchedProfile.phone.replace(/[^0-9]/g, '')])
+                            ) ? (
                                 <>
                                     <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#DCFCE7', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
                                         <Text style={{ fontSize: 30 }}>📱</Text>

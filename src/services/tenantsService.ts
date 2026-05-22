@@ -155,10 +155,19 @@ export const tenantsService = {
             return {};
         }
 
+        // 결과를 { cleansedPhone: has_push } 구조로 매핑
         const statuses: Record<string, boolean> = {};
-        (data || []).forEach((row: any) => {
-            if (row.phone) statuses[row.phone] = row.has_push;
-        });
+        for (const row of (data || [])) {
+            if (row.phone) {
+                const cleanPhone = row.phone.replace(/[^0-9]/g, '');
+                // 만약 단 하나라도 true가 있으면 true로 유지
+                if (row.has_push) {
+                    statuses[cleanPhone] = true;
+                } else if (statuses[cleanPhone] === undefined) {
+                    statuses[cleanPhone] = false;
+                }
+            }
+        }
         return statuses;
     }
 };
