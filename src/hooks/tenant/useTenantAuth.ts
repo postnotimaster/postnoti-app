@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../../lib/supabase';
 import { profilesService } from '../../services/profilesService';
 import { tenantsService, Tenant } from '../../services/tenantsService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -193,12 +194,13 @@ export const useTenantAuth = ({
 
             // 토큰 및 테넌트 연결 업데이트
             if (profile && profile.id && typeof profile.id === 'string' && profile.id.length > 10) {
-                const updates: any = {};
-                if (pushToken) updates.push_token = pushToken;
-                if (webPushToken) updates.web_push_token = webPushToken;
-                if (Object.keys(updates).length > 0) {
-                    // ignore RLS error on update for anon
-                    profilesService.updateProfile(profile.id, updates).catch(() => {});
+                if (pushToken || webPushToken) {
+                    // [개선] RLS를 우회하는 보안 RPC 함수를 호출하여 익명 상태에서도 토큰이 유실되지 않도록 함
+                    supabase.rpc('update_tenant_push_token_secure', {
+                        p_profile_id: profile.id,
+                        p_push_token: pushToken || null,
+                        p_web_push_token: webPushToken || null
+                    }).catch((e) => console.error('[useTenantAuth] Token update RPC error:', e));
                 }
 
                 // [중요] 테넌트 테이블과 프로필 연결
