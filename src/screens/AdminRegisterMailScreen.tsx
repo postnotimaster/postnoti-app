@@ -602,15 +602,20 @@ export const AdminRegisterMailScreen = () => {
                                         <Text style={{ fontSize: 30 }}>📱</Text>
                                     </View>
                                     <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 10 }}>앱 설치 입주사</Text>
-                                    <Text style={{ fontSize: 15, color: '#64748B', textAlign: 'center', lineHeight: 22, marginBottom: 25 }}>
-                                        해당 입주사는 이미 앱을 설치했습니다.{"\n"}
-                                        아래 버튼을 누르면 즉시{"\n"}
-                                        <Text style={{ fontWeight: '700', color: '#166534' }}>앱 푸시 알림이 발송됩니다.</Text>
+                                    <Text style={{ fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 20, marginBottom: 25 }}>
+                                        해당 입주사는 앱이 설치된 상태입니다.{"\n"}
+                                        원하시는 알림 발송 방식을 선택해 주세요.
                                     </Text>
                                     <PrimaryButton
-                                        label="🚀 바로 보내기"
+                                        label="🚀 바로 보내기 (앱 푸시)"
                                         onPress={() => confirmAndSend(false)}
-                                        style={{ width: '100%', marginBottom: 12, backgroundColor: '#16A34A', alignSelf: 'stretch', alignItems: 'center', paddingVertical: 15 }}
+                                        style={{ width: '100%', marginBottom: 10, backgroundColor: '#16A34A', alignSelf: 'stretch', alignItems: 'center', paddingVertical: 15 }}
+                                        textStyle={{ fontSize: 16, fontWeight: '700' }}
+                                    />
+                                    <PrimaryButton
+                                        label="📱 문자로 링크 전송하기"
+                                        onPress={() => confirmAndSend(true)}
+                                        style={{ width: '100%', marginBottom: 12, backgroundColor: '#4F46E5', alignSelf: 'stretch', alignItems: 'center', paddingVertical: 15 }}
                                         textStyle={{ fontSize: 16, fontWeight: '700' }}
                                     />
                                 </>
@@ -620,17 +625,31 @@ export const AdminRegisterMailScreen = () => {
                                         <Text style={{ fontSize: 30 }}>⚠️</Text>
                                     </View>
                                     <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 10 }}>앱 미설치 입주사</Text>
-                                    <Text style={{ fontSize: 15, color: '#64748B', textAlign: 'center', lineHeight: 22, marginBottom: 25 }}>
+                                    <Text style={{ fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 20, marginBottom: 25 }}>
                                         해당 입주사는 아직 앱을 설치하지 않았습니다.{"\n"}
-                                        우편물 확인을 위해{"\n"}
-                                        <Text style={{ fontWeight: '700', color: '#4F46E5' }}>문자(SMS)로 안내 링크를 보내주세요.</Text>
+                                        문자로 우편물 확인 링크를 전송해 주세요.
                                     </Text>
                                     <PrimaryButton
                                         label="📱 문자로 링크 전송하기"
                                         onPress={() => confirmAndSend(true)}
-                                        style={{ width: '100%', marginBottom: 12, backgroundColor: '#4F46E5', alignSelf: 'stretch', alignItems: 'center', paddingVertical: 15 }}
+                                        style={{ width: '100%', marginBottom: 10, backgroundColor: '#4F46E5', alignSelf: 'stretch', alignItems: 'center', paddingVertical: 15 }}
                                         textStyle={{ fontSize: 16, fontWeight: '700' }}
                                     />
+                                    <Pressable
+                                        onPress={() => confirmAndSend(false)}
+                                        style={{ 
+                                            width: '100%', 
+                                            paddingVertical: 12, 
+                                            borderRadius: 12, 
+                                            borderWidth: 1, 
+                                            borderColor: '#E2E8F0', 
+                                            alignItems: 'center', 
+                                            backgroundColor: '#F8FAFC',
+                                            marginBottom: 10
+                                        }}
+                                    >
+                                        <Text style={{ color: '#64748B', fontWeight: '600' }}>🚀 그래도 앱 푸시 발송 시도</Text>
+                                    </Pressable>
                                 </>
                             )}
 
