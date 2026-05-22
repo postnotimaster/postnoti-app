@@ -21,7 +21,7 @@ export const AdminSignupScreen = () => {
                 setStep(1);
                 return true;
             }
-            return false; // step 1???�는 ?�역 ?�들?�에??landing?�로 ?�동?�도�?false 반환
+            return false; // step 1일 때는 전역 핸들러에서 landing으로 이동하도록 false 반환
         };
 
         const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackAction);
@@ -59,7 +59,7 @@ export const AdminSignupScreen = () => {
 
     const handleCheckSlug = async () => {
         if (!slug || slug.length < 2) {
-            Alert.alert('?�림', '?�용 주소�?2???�상 ?�력?�주?�요.');
+            Alert.alert('알림', '전용 주소를 2자 이상 입력해주세요.');
             return;
         }
         setIsSlugChecking(true);
@@ -67,13 +67,13 @@ export const AdminSignupScreen = () => {
             const isUnique = await companiesService.checkSlugUnique(slug);
             if (isUnique) {
                 setIsSlugChecked(true);
-                Alert.alert('?�인 ?�료', '?�용 가?�한 주소?�니??');
+                Alert.alert('확인 완료', '사용 가능한 주소입니다.');
             } else {
                 setIsSlugChecked(false);
-                Alert.alert('중복 주소', '?��? ?�용 중인 주소?�니?? ?�른 주소�??�력?�주?�요.');
+                Alert.alert('중복 주소', '이미 사용 중인 주소입니다. 다른 주소를 입력해주세요.');
             }
         } catch (error) {
-            Alert.alert('?�류', '주소 중복 ?�인 �?문제가 발생?�습?�다.');
+            Alert.alert('오류', '주소 중복 확인 중 문제가 발생했습니다.');
         } finally {
             setIsSlugChecking(false);
         }
@@ -82,15 +82,15 @@ export const AdminSignupScreen = () => {
     const handleNextStep = async () => {
         if (step === 1) {
             if (!email || !password || !confirmPassword) {
-                Alert.alert('?�림', '?�메?�과 비�?번호 ?�보�?모두 ?�력?�주?�요.');
+                Alert.alert('알림', '이메일과 비밀번호 정보를 모두 입력해주세요.');
                 return;
             }
             if (password !== confirmPassword) {
-                Alert.alert('?�림', '비�?번호가 ?�치?��? ?�습?�다.');
+                Alert.alert('알림', '비밀번호가 일치하지 않습니다.');
                 return;
             }
             if (password.length < 6) {
-                Alert.alert('?�림', '비�?번호??최소 6?�리 ?�상?�어???�니??');
+                Alert.alert('알림', '비밀번호는 최소 6자리 이상이어야 합니다.');
                 return;
             }
             setStep(2);
@@ -99,38 +99,38 @@ export const AdminSignupScreen = () => {
 
     const handleSignup = async () => {
         if (!companyName || !businessNumber || !managerName || !phone || !slug) {
-            Alert.alert('?�림', '?�피???�보?� 관리자 ?�보�?모두 ?�력?�주?�요.');
+            Alert.alert('알림', '오피스 정보와 관리자 정보를 모두 입력해주세요.');
             return;
         }
 
         if (!isSlugChecked) {
-            Alert.alert('?�림', '?�피???�용 주소 중복 ?�인??먼�? 진행?�주?�요.');
+            Alert.alert('알림', '오피스 전용 주소 중복 확인을 먼저 진행해주세요.');
             return;
         }
 
         setLoading(true);
         try {
-            // 2�?체크 (?�시 검�???그새 ?��? ?�을 ?�도 ?�으??
+            // 2중 체크 (혹시 검증 후 그새 누가 썼을 수도 있으니)
             const isUnique = await companiesService.checkSlugUnique(slug);
             if (!isUnique) {
                 setIsSlugChecked(false);
-                Alert.alert('중복 주소', '�??�이 주소가 ?�용?�었?�니?? ?�른 주소�?변경해주세??');
+                Alert.alert('중복 주소', '그 사이 주소가 사용되었습니다. 다른 주소로 변경해주세요.');
                 setLoading(false);
                 return;
             }
 
-            // 2. Auth ?�원가??
+            // 2. Auth 회원가입
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email,
                 password,
             });
             if (authError) throw authError;
-            if (!authData.user) throw new Error('계정 ?�성???�패?�습?�다.');
+            if (!authData.user) throw new Error('계정 생성에 실패했습니다.');
 
-            // 3. ?�피??Company) ?�성
+            // 3. 오피스(Company) 생성
             const company = await companiesService.createCompany(companyName, '', slug, businessNumber);
 
-            // 4. 관리자 ?�로??Profile) ?�성
+            // 4. 관리자 프로필(Profile) 생성
             await profilesService.createProfile({
                 id: authData.user.id,
                 company_id: company.id,
@@ -140,13 +140,13 @@ export const AdminSignupScreen = () => {
                 is_active: true
             });
 
-            // 5. ?�료 처리
+            // 5. 완료 처리
             setOfficeInfo(company);
             setMode('admin_dashboard');
-            Alert.alert('가???�료', '?�스?�노???�피??가?�이 ?�료?�었?�니??');
+            Alert.alert('가입 완료', '포스트노티 오피스 가입이 완료되었습니다!');
 
         } catch (error: any) {
-            Alert.alert('가???�패', error.message);
+            Alert.alert('가입 실패', error.message);
         } finally {
             setLoading(false);
         }
@@ -164,9 +164,9 @@ export const AdminSignupScreen = () => {
                     keyboardShouldPersistTaps="handled"
                 >
                     <View style={{ marginBottom: 40 }}>
-                        <Text style={{ fontSize: 28, fontWeight: '800', color: '#1E293B', textAlign: 'center' }}>?�피???�록?�기</Text>
+                        <Text style={{ fontSize: 28, fontWeight: '800', color: '#1E293B', textAlign: 'center' }}>오피스 등록하기</Text>
                         <Text style={{ fontSize: 15, color: '#64748B', marginTop: 8, textAlign: 'center' }}>
-                            {step === 1 ? '관리자 계정??먼�? ?�성??주세?? : '?�영?�실 ?�피???�보�??�력??주세??}
+                            {step === 1 ? '관리자 계정을 먼저 생성해 주세요' : '운영하실 오피스 정보를 입력해 주세요'}
                         </Text>
 
                         <View style={{ flexDirection: 'row', gap: 12, marginTop: 24, paddingHorizontal: 40 }}>
@@ -188,7 +188,7 @@ export const AdminSignupScreen = () => {
                             marginHorizontal: 4
                         }]}>
                             <View style={appStyles.inputGroup}>
-                                <Text style={appStyles.label}>?�메??주소</Text>
+                                <Text style={appStyles.label}>이메일 주소</Text>
                                 <TextInput
                                     style={appStyles.input}
                                     value={email}
@@ -199,7 +199,7 @@ export const AdminSignupScreen = () => {
                                 />
                             </View>
                             <View style={appStyles.inputGroup}>
-                                <Text style={appStyles.label}>비�?번호 (6?�리 ?�상)</Text>
+                                <Text style={appStyles.label}>비밀번호 (6자리 이상)</Text>
                                 <TextInput
                                     style={appStyles.input}
                                     value={password}
@@ -209,17 +209,17 @@ export const AdminSignupScreen = () => {
                                 />
                             </View>
                             <View style={appStyles.inputGroup}>
-                                <Text style={appStyles.label}>비�?번호 ?�인</Text>
+                                <Text style={appStyles.label}>비밀번호 확인</Text>
                                 <TextInput
                                     style={appStyles.input}
                                     value={confirmPassword}
                                     onChangeText={setConfirmPassword}
-                                    placeholder="비�?번호�???�????�력?�세??
+                                    placeholder="비밀번호를 한 번 더 입력하세요"
                                     secureTextEntry
                                 />
                             </View>
                             <PrimaryButton
-                                label="?�음 ?�계�?(?�피???�보 ?�력)"
+                                label="다음 단계로 (오피스 정보 입력)"
                                 onPress={handleNextStep}
                                 style={{ marginTop: 20, width: '100%', height: 56, backgroundColor: '#6366F1' }}
                             />
@@ -237,16 +237,16 @@ export const AdminSignupScreen = () => {
                             marginHorizontal: 4
                         }]}>
                             <View style={appStyles.inputGroup}>
-                                <Text style={appStyles.label}>?�피??명칭 (?? ?�스?�노??종로??</Text>
+                                <Text style={appStyles.label}>오피스 명칭 (예: 포스트노티 종로점)</Text>
                                 <TextInput
                                     style={appStyles.input}
                                     value={companyName}
                                     onChangeText={setCompanyName}
-                                    placeholder="?�피???�름???�력?�세??
+                                    placeholder="오피스 이름을 입력하세요"
                                 />
                             </View>
                             <View style={appStyles.inputGroup}>
-                                <Text style={appStyles.label}>?�업???�록 번호</Text>
+                                <Text style={appStyles.label}>사업자 등록 번호</Text>
                                 <TextInput
                                     style={appStyles.input}
                                     value={businessNumber}
@@ -258,17 +258,17 @@ export const AdminSignupScreen = () => {
                             </View>
 
                             <View style={appStyles.inputGroup}>
-                                <Text style={appStyles.label}>관리자 ?�함 (?�명)</Text>
+                                <Text style={appStyles.label}>관리자 성함 (실명)</Text>
                                 <TextInput
                                     style={appStyles.input}
                                     value={managerName}
                                     onChangeText={setManagerName}
-                                    placeholder="?�길??
+                                    placeholder="홍길동"
                                 />
                             </View>
 
                             <View style={appStyles.inputGroup}>
-                                <Text style={appStyles.label}>관리자 ?�락�?/Text>
+                                <Text style={appStyles.label}>관리자 연락처</Text>
                                 <TextInput
                                     style={appStyles.input}
                                     value={phone}
@@ -281,14 +281,14 @@ export const AdminSignupScreen = () => {
 
                             <View style={appStyles.inputGroup}>
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                    <Text style={appStyles.label}>?�피???�용 ?�속 주소 (?�문/?�자)</Text>
+                                    <Text style={appStyles.label}>오피스 전용 접속 주소 (영문/숫자)</Text>
                                     <Pressable
                                         onPress={handleCheckSlug}
                                         style={{ backgroundColor: isSlugChecked ? '#10B981' : '#6366F1', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 6 }}
                                         disabled={isSlugChecking}
                                     >
                                         <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>
-                                            {isSlugChecking ? '?�인 �?..' : isSlugChecked ? '?�인 ?�료' : '중복 ?�인'}
+                                            {isSlugChecking ? '확인 중...' : isSlugChecked ? '확인 완료' : '중복 확인'}
                                         </Text>
                                     </Pressable>
                                 </View>
@@ -301,20 +301,20 @@ export const AdminSignupScreen = () => {
                                     borderWidth: 1,
                                     borderColor: isSlugChecked ? '#10B981' : 'transparent'
                                 }}>
-                                    <Text style={{ color: '#94A3B8', fontSize: 13 }}>postnoti-app.vercel.app/</Text>
+                                    <Text style={{ color: '#94A3B8', fontSize: 13 }}>postnoti-app-two.vercel.app/</Text>
                                     <TextInput
                                         style={[appStyles.input, { flex: 1, backgroundColor: 'transparent', borderWidth: 0 }]}
                                         value={slug}
                                         onChangeText={(t) => {
                                             setSlug(t.toLowerCase().replace(/[^a-z0-9-]/g, ''));
-                                            setIsSlugChecked(false); // 주소 바뀌면 ?�시 체크?�야 ??
+                                            setIsSlugChecked(false); // 주소 바뀌면 다시 체크해야 함
                                         }}
-                                        placeholder="지?�명 (?? seocho)"
+                                        placeholder="지점명 (예: seocho)"
                                         autoCapitalize="none"
                                     />
                                 </View>
                                 {isSlugChecked && (
-                                    <Text style={{ fontSize: 11, color: '#10B981', marginTop: 4 }}>?�용 가?�한 주소?�니??</Text>
+                                    <Text style={{ fontSize: 11, color: '#10B981', marginTop: 4 }}>사용 가능한 주소입니다.</Text>
                                 )}
                             </View>
 
@@ -323,12 +323,12 @@ export const AdminSignupScreen = () => {
                             ) : (
                                 <View style={{ gap: 12, marginTop: 24 }}>
                                     <PrimaryButton
-                                        label="?�피??가???�료"
+                                        label="오피스 가입 완료"
                                         onPress={handleSignup}
                                         style={{ width: '100%', height: 56, backgroundColor: '#1E293B' }}
                                     />
                                     <Pressable onPress={() => setStep(1)} style={{ alignItems: 'center', padding: 10 }}>
-                                        <Text style={{ color: '#94A3B8', fontWeight: '600' }}>?�전 ?�계�??�아가�?/Text>
+                                        <Text style={{ color: '#94A3B8', fontWeight: '600' }}>이전 단계로 돌아가기</Text>
                                     </Pressable>
                                 </View>
                             )}
@@ -339,7 +339,7 @@ export const AdminSignupScreen = () => {
                         onPress={() => setMode('landing')}
                         style={{ marginTop: 40, alignItems: 'center' }}
                     >
-                        <Text style={{ color: '#94A3B8', fontSize: 14 }}>?��? 가?�하?�나?? 로그?�하�?/Text>
+                        <Text style={{ color: '#94A3B8', fontSize: 14 }}>이미 가입하셨나요? 로그인하기</Text>
                     </Pressable>
                 </ScrollView>
             </KeyboardAvoidingView>

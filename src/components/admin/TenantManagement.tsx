@@ -55,15 +55,15 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
         phone: '',
         is_active: true,
         is_premium: false,
-        retention_days: 14 // 기본�?2�?
+        retention_days: 14 // 기본값 2주
     });
 
     useEffect(() => {
         loadTenants();
     }, []);
 
-    // BackHandler 로직?� Parent 컴포?�트?�서 useImperativeHandle(ref)�??�해
-    // handleBack ?�수�?직접 ?�출?�도�??��???(리스??중복/충돌 방�?)
+    // BackHandler 로직은 Parent 컴포넌트에서 useImperativeHandle(ref)를 통해
+    // handleBack 함수를 직접 호출하도록 이관됨 (리스너 중복/충돌 방지)
 
     const loadTenants = async () => {
         try {
@@ -90,12 +90,12 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
         try {
             setLoading(true);
 
-            // ?�태값에 ?�른 is_active 강제 ?�기??(?�위 ?�환???��?)
+            // 상태값에 따른 is_active 강제 동기화 (하위 호환성 유지)
             const finalTenant = { ...editingTenant };
             if (!finalTenant.status) {
-                finalTenant.status = finalTenant.is_active ? '?�주' : '?�거';
+                finalTenant.status = finalTenant.is_active ? '입주' : '퇴거';
             }
-            finalTenant.is_active = finalTenant.status === '?�주';
+            finalTenant.is_active = finalTenant.status === '입주';
 
             if (finalTenant.id) {
                 await tenantsService.updateTenant(finalTenant.id, finalTenant);
@@ -136,27 +136,27 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
     };
 
     const handleShareInvite = async (tenant: Tenant) => {
-        const link = `https://postnoti-app.vercel.app/view?m=${companyId}&p=${tenant.id}`;
-        const message = `[?�스?�노??공유?�피??\n${tenant.name}?? ?�용 ?�편?�이 준비되?�습?�다!\n\n?�래 링크�??�러 로그???�이 바로 ?�편물을 ?�인?�고, ?�림 ?�을 ?�치??보세??\n\n?�� ?�용 ?�편???�기:\n${link}`;
+        const link = `https://postnoti-app-two.vercel.app/view?m=${companyId}&p=${tenant.id}`;
+        const message = `[포스트노티 공유오피스]\n${tenant.name}님, 전용 우편함이 준비되었습니다!\n\n아래 링크를 눌러 로그인 없이 바로 우편물을 확인하고, 알림 앱을 설치해 보세요.\n\n👉 전용 우편함 열기:\n${link}`;
         
-        Alert.alert('?�주??초�?', '?�떤 방식?�로 ?�달?�시겠습?�까?', [
+        Alert.alert('입주자 초대', '어떤 방식으로 전달하시겠습니까?', [
             {
-                text: '문자(SMS)�?보내�?,
+                text: '문자(SMS)로 보내기',
                 onPress: async () => {
                     const separator = Platform.OS === 'ios' ? '&' : '?';
                     const url = `sms:${tenant.phone}${separator}body=${encodeURIComponent(message)}`;
                     try {
                         await Linking.openURL(url);
                     } catch (e) {
-                        Alert.alert('?�류', '문자 ?�을 ?????�습?�다.');
+                        Alert.alert('오류', '문자 앱을 열 수 없습니다.');
                     }
                 }
             },
             {
-                text: '링크�?복사?�기',
+                text: '링크만 복사하기',
                 onPress: async () => {
                     await Clipboard.setStringAsync(message);
-                    Alert.alert('복사 ?�료', '초�? 메시지?� ?�용 링크가 ?�립보드??복사?�었?�니?? 카카?�톡 ?�에 붙여?�기 ?�세??');
+                    Alert.alert('복사 완료', '초대 메시지와 전용 링크가 클립보드에 복사되었습니다. 카카오톡 등에 붙여넣기 하세요.');
                 }
             },
             { text: '취소', style: 'cancel' }
@@ -198,42 +198,42 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
             >
                 <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
                     <Text style={{ fontSize: 16, fontWeight: '800', color: '#1E293B' }}>
-                        {editingTenant.id ? '?�보 ?�정' : '?�규 ?�록'}
+                        {editingTenant.id ? '정보 수정' : '신규 등록'}
                     </Text>
                     <Pressable onPress={() => setIsEditing(false)} style={{ marginLeft: 'auto', padding: 5 }}>
-                        <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '700' }}>{'리스?�로 복�?'}</Text>
+                        <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '700' }}>{'리스트로 복귀'}</Text>
                     </Pressable>
                 </View>
                 <ScrollView contentContainerStyle={styles.editForm}>
                     <View style={styles.compactInputGroup}>
-                        <Text style={styles.compactLabel}>?�사�?/Text>
+                        <Text style={styles.compactLabel}>회사명</Text>
                         <TextInput
                             style={styles.compactInput}
                             value={editingTenant.company_name}
                             onChangeText={t => setEditingTenant({ ...editingTenant, company_name: t })}
-                            placeholder="?�사�??�력"
+                            placeholder="회사명 입력"
                         />
                     </View>
                     <View style={styles.compactInputGroup}>
-                        <Text style={styles.compactLabel}>?�름</Text>
+                        <Text style={styles.compactLabel}>이름</Text>
                         <TextInput
                             style={styles.compactInput}
                             value={editingTenant.name}
                             onChangeText={t => setEditingTenant({ ...editingTenant, name: t })}
-                            placeholder="?�름 ?�력"
+                            placeholder="이름 입력"
                         />
                     </View>
                     <View style={styles.compactInputGroup}>
-                        <Text style={styles.compactLabel}>?�실</Text>
+                        <Text style={styles.compactLabel}>호실</Text>
                         <TextInput
                             style={styles.compactInput}
                             value={editingTenant.room_number}
                             onChangeText={t => setEditingTenant({ ...editingTenant, room_number: t })}
-                            placeholder="?�실 ?�력"
+                            placeholder="호실 입력"
                         />
                     </View>
                     <View style={styles.compactInputGroup}>
-                        <Text style={styles.compactLabel}>?�화번호</Text>
+                        <Text style={styles.compactLabel}>전화번호</Text>
                         <TextInput
                             style={styles.compactInput}
                             value={editingTenant.phone}
@@ -244,10 +244,10 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                     </View>
 
                     <View style={{ marginTop: 8, marginBottom: 10 }}>
-                        <Text style={[styles.compactLabel, { marginBottom: 6, width: '100%' }]}>?�� ?�주 ?�태</Text>
+                        <Text style={[styles.compactLabel, { marginBottom: 6, width: '100%' }]}>📋 입주 상태</Text>
                         <View style={{ flexDirection: 'row', gap: 6 }}>
-                            {['?�주', '?�거', '?�업', '?�전', '?�재불명'].map((st) => {
-                                const currentStatus = editingTenant.status || (editingTenant.is_active ? '?�주' : '?�거');
+                            {['입주', '퇴거', '폐업', '이전', '소재불명'].map((st) => {
+                                const currentStatus = editingTenant.status || (editingTenant.is_active ? '입주' : '퇴거');
                                 const isSelected = currentStatus === st;
                                 return (
                                     <Pressable
@@ -259,14 +259,14 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                                             borderRadius: 8,
                                             borderWidth: 1,
                                             alignItems: 'center',
-                                            backgroundColor: isSelected ? (st === '?�주' ? '#10B981' : '#F1F5F9') : '#fff',
-                                            borderColor: isSelected ? (st === '?�주' ? '#10B981' : '#CBD5E1') : '#E2E8F0'
+                                            backgroundColor: isSelected ? (st === '입주' ? '#10B981' : '#F1F5F9') : '#fff',
+                                            borderColor: isSelected ? (st === '입주' ? '#10B981' : '#CBD5E1') : '#E2E8F0'
                                         }}
                                     >
                                         <Text style={{
                                             fontSize: 11,
                                             fontWeight: '800',
-                                            color: isSelected ? (st === '?�주' ? '#fff' : '#475569') : '#94A3B8'
+                                            color: isSelected ? (st === '입주' ? '#fff' : '#475569') : '#94A3B8'
                                         }}>
                                             {st}
                                         </Text>
@@ -278,7 +278,7 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
 
                     <View style={[styles.compactInputGroup, { justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 0 }]}>
                         <View>
-                            <Text style={styles.compactLabel}>{"?�리미엄 ?�비??}</Text>
+                            <Text style={styles.compactLabel}>{"프리미엄 서비스"}</Text>
                         </View>
                         <Switch
                             value={editingTenant.is_premium}
@@ -289,13 +289,13 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                     </View>
 
                     <View style={{ marginTop: 8, marginBottom: 10 }}>
-                        <Text style={[styles.compactLabel, { marginBottom: 6, width: '100%' }]}>?���??�진 ?�동 ??��</Text>
+                        <Text style={[styles.compactLabel, { marginBottom: 6, width: '100%' }]}>🖼️ 사진 자동 삭제</Text>
                         <View style={{ flexDirection: 'row', gap: 6 }}>
                             {[
-                                { label: '1�?, days: 7 },
-                                { label: '2�?, days: 14 },
-                                { label: '1??, days: 30 },
-                                { label: '?�구', days: 0 }
+                                { label: '1주', days: 7 },
+                                { label: '2주', days: 14 },
+                                { label: '1달', days: 30 },
+                                { label: '영구', days: 0 }
                             ].map((item) => (
                                 <Pressable
                                     key={item.days}
@@ -350,14 +350,14 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                         </Pressable>
                         <View style={{ width: 120 }}>
                             <PrimaryButton
-                                label="?�?�하�?
+                                label="저장하기"
                                 onPress={handleSave}
                                 loading={loading}
                                 style={{ width: '100%', height: 44, alignItems: 'center', justifyContent: 'center' }}
                             />
                         </View>
                     </View>
-                    {/* 물리 버튼 겹침 방�? ?�백 */}
+                    {/* 물리 버튼 겹침 방지 여백 */}
                     <View style={{ height: 60 }} />
                 </ScrollView >
             </KeyboardAvoidingView >
@@ -371,7 +371,7 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                     <Text style={styles.title}>{'\uc785\uc8fc\uc0ac \uad00\ub9ac'}</Text>
                     <Text style={styles.countText}>{'\uc785\uc8fc'} {activeCount} / {'\uc804\uccb4'} {tenants.length}</Text>
                 </View>
-                <Pressable onPress={() => { setEditingTenant({ company_id: companyId, is_active: true, is_premium: false, status: '?�주', retention_days: 14 }); setIsEditing(true); }} style={styles.addBtn}>
+                <Pressable onPress={() => { setEditingTenant({ company_id: companyId, is_active: true, is_premium: false, status: '입주', retention_days: 14 }); setIsEditing(true); }} style={styles.addBtn}>
                     <Text style={styles.addBtnText}>+ {'\uc785\uc8fc\uc0ac \ub4f1\ub85d'}</Text>
                 </Pressable>
             </View>
@@ -424,7 +424,7 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                         return (
                             <Pressable key={t.id} style={styles.tenantCard} onPress={() => { setEditingTenant(t); setIsEditing(true); }}>
                                 <View style={styles.tenantInfo}>
-                                    {/* ?�단 ?? ?�수?� ?�사�?*/}
+                                    {/* 상단 행: 호수와 회사명 */}
                                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
                                         <View style={{ width: 50, marginRight: 12 }}>
                                             <Text style={[styles.roomNumber, { width: '100%', textAlign: 'center', paddingHorizontal: 0, fontSize: 13, paddingVertical: 4 }]}>
@@ -438,7 +438,7 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                                         </View>
                                     </View>
 
-                                    {/* ?�단 ?? 배�??� ?�주???�름/?�락�??�계 */}
+                                    {/* 하단 행: 배지와 입주자 이름/연락처/통계 */}
                                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                         <View style={{ width: 50, marginRight: 12, alignItems: 'center' }}>
                                             <View style={{ flexDirection: 'row', gap: 3 }}>
@@ -449,7 +449,7 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                                                 )}
                                                 <View style={{ backgroundColor: t.is_active ? '#F0FDF4' : '#F1F5F9', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4, alignItems: 'center' }}>
                                                     <Text style={{ color: t.is_active ? '#166534' : '#475569', fontSize: 9, fontWeight: '800' }}>
-                                                        {t.status || (t.is_active ? '?�주' : '?�거')}
+                                                        {t.status || (t.is_active ? '입주' : '퇴거')}
                                                     </Text>
                                                 </View>
                                             </View>
@@ -458,7 +458,7 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                                             <Text style={[styles.tenantName, { fontSize: 14, color: '#1E293B', fontWeight: '700' }]} numberOfLines={1}>{t.name}</Text>
                                             <Text style={{ fontSize: 10, color: '#CBD5E1' }}>|</Text>
                                             <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '600' }}>
-                                                보�? <Text style={{ color: '#4F46E5' }}>{t.retention_days === 0 ? '?�구' : `${(t.retention_days || 14) / 7}�?}</Text>
+                                                보관 <Text style={{ color: '#4F46E5' }}>{t.retention_days === 0 ? '영구' : `${(t.retention_days || 14) / 7}주`}</Text>
                                             </Text>
                                             <Text style={{ fontSize: 10, color: '#CBD5E1' }}>|</Text>
                                             <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '600' }}>
@@ -469,7 +469,7 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                                 </View>
                                 <View style={styles.cardActions}>
                                     <Pressable onPress={() => handleShareInvite(t)} style={[styles.editBtn, { marginBottom: 12 }]}>
-                                        <Text style={[styles.editBtnText, { color: '#059669' }]}>{'?�� 초�?'}</Text>
+                                        <Text style={[styles.editBtnText, { color: '#059669' }]}>{'📩 초대'}</Text>
                                     </Pressable>
                                     <View style={{ flexDirection: 'row', gap: 10 }}>
                                         <Pressable onPress={() => { setEditingTenant(t); setIsEditing(true); }} style={styles.editBtn}>

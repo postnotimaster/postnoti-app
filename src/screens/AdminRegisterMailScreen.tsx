@@ -49,29 +49,29 @@ export const AdminRegisterMailScreen = () => {
     const [dropdownVisible, setDropdownVisible] = React.useState(false);
     const [resultModalVisible, setResultModalVisible] = React.useState(false);
     const [lastNotifResult, setLastNotifResult] = React.useState<NotificationResult | null>(null);
-    const [pushStatuses, setPushStatuses] = React.useState<Record<string, boolean>>({}); // [NEW] ?�시 ?�태 ?�황??
+    const [pushStatuses, setPushStatuses] = React.useState<Record<string, boolean>>({}); // [NEW] 푸시 상태 현황판
 
     const prevOcrLoading = React.useRef(ocrLoading);
 
     React.useEffect(() => {
         if (prevOcrLoading.current === true && ocrLoading === false) {
             if (matchedProfile) {
-                const status = matchedProfile.status || (matchedProfile.is_active ? '?�주' : '?�거');
-                if (status !== '?�주') {
-                    const compName = matchedProfile.company_name || '(미등�?';
+                const status = matchedProfile.status || (matchedProfile.is_active ? '입주' : '퇴거');
+                if (status !== '입주') {
+                    const compName = matchedProfile.company_name || '(미등록)';
                     Alert.alert(
-                        `?�️ 주의: [${status}] ?�태 ?�주??,
-                        `진단 ?�?? ${compName} / ${matchedProfile.name}\n???�주?�는 ?�재 [${status}] ?�태?�니??\n\n?�른 ?�편물을 찍으?�겠?�니�? ?�니�??�당 ?�주?�의 ?�보 ?�이지�?가?�겠?�니�?`,
+                        `⚠️ 주의: [${status}] 상태 입주사`,
+                        `진단 대상: ${compName} / ${matchedProfile.name}\n이 입주사는 현재 [${status}] 상태입니다.\n\n다른 우편물을 찍으시겠습니까? 아니면 해당 입주사의 정보 페이지로 가시겠습니까?`,
                         [
                             {
-                                text: '?�� ?�시 촬영',
+                                text: '📷 다시 촬영',
                                 onPress: async () => {
                                     const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
                                     if (!result.canceled) runOCR(result.assets[0].uri);
                                 }
                             },
                             {
-                                text: '?�당 ?�주???�보 보기',
+                                text: '해당 입주사 정보 보기',
                                 onPress: () => {
                                     resetOCR();
                                     setSelectedProfileForHistory(matchedProfile);
@@ -80,7 +80,7 @@ export const AdminRegisterMailScreen = () => {
                                 }
                             },
                             {
-                                text: '무시?�고 ?�록 진행',
+                                text: '무시하고 등록 진행',
                                 style: 'cancel'
                             }
                         ]
@@ -92,16 +92,16 @@ export const AdminRegisterMailScreen = () => {
     }, [ocrLoading, matchedProfile, runOCR, resetOCR, setSelectedProfileForHistory, setIsHistoryVisible, setMode]);
 
     const [presets, setPresets] = React.useState<string[]>([
-        "주문?�신 ?�배가 ?�착?�습?�다 ?��",
-        "중요 ?�기 ?�편???�착?�습?�다 ?�️",
-        "?�반 ?�편물이 ?�착?�습?�다 ?��",
-        "물품?� ?�구 ?�스?�에???�령 가?�합?�다 ?��",
-        "?�배?�에 보�????�었?�니???��"
+        "주문하신 택배가 도착했습니다 📦",
+        "중요 등기 우편이 도착했습니다 ✉️",
+        "일반 우편물이 도착했습니다 📮",
+        "물품은 입구 데스크에서 수령 가능합니다 💁",
+        "택배함에 보관해 두었습니다 🔒"
     ]);
 
     React.useEffect(() => {
         if (officeInfo?.id) {
-            // ?�리??로드 �??�시 ?�태 ?�수 조사 병렬 ?�행
+            // 프리셋 로드 및 푸시 상태 전수 조사 병렬 실행
             if (officeInfo.settings?.notification_presets) {
                 setPresets(officeInfo.settings.notification_presets);
             }
@@ -116,13 +116,13 @@ export const AdminRegisterMailScreen = () => {
 
     const confirmAndSend = async (fallbackToSms: boolean) => {
         try {
-            const defaultMsg = officeInfo?.settings?.default_message || "?�녕?�세?? ?�편물이 ?�착?�습?�다.";
+            const defaultMsg = officeInfo?.settings?.default_message || "안녕하세요. 우편물이 도착했습니다.";
             const finalMessage = selectedPreset || customMessage || defaultMsg;
             
             const result = await handleRegisterMail(
                 matchedProfile,
                 selectedImage,
-                '?�반',
+                '일반',
                 '',
                 extraImages,
                 finalMessage
@@ -131,7 +131,7 @@ export const AdminRegisterMailScreen = () => {
             if (result) {
                 setLastNotifResult(result);
                 if (result.success || !fallbackToSms) {
-                    showToast({ message: '?�림???�공?�으�??�송?�었?�니???��', type: 'success' });
+                    showToast({ message: '알림이 성공적으로 전송되었습니다 🔔', type: 'success' });
                     handleSuccessFinish();
                 } else {
                     handleSmsFallback(result);
@@ -139,7 +139,7 @@ export const AdminRegisterMailScreen = () => {
             }
         } catch (e: any) {
             console.error('[AdminRegisterMail] confirmSend error:', e);
-            Alert.alert('?�록 ?�류', `문제가 발생?�습?�다: ${e.message}`);
+            Alert.alert('등록 오류', `문제가 발생했습니다: ${e.message}`);
         }
     };
 
@@ -148,35 +148,35 @@ export const AdminRegisterMailScreen = () => {
         setSelectedPreset(null);
         setDropdownVisible(false);
         setResultModalVisible(false);
-        if (resetOCR) resetOCR(); // ?�면???�갈 ??초기??
+        if (resetOCR) resetOCR(); // 화면을 나갈 때 초기화
         setMode('admin_dashboard');
     };
 
     const handleSmsFallback = async (result?: NotificationResult) => {
         const notifResult = result || lastNotifResult;
         if (!officeInfo) {
-            showToast({ message: '?�피??지???�보가 ?�습?�다.', type: 'error' });
+            showToast({ message: '오피스 지점 정보가 없습니다.', type: 'error' });
             return;
         }
         if (!matchedProfile) {
-            showToast({ message: '?�주???�보가 ?�습?�다.', type: 'error' });
+            showToast({ message: '입주사 정보가 없습니다.', type: 'error' });
             return;
         }
         if (!notifResult) {
-            showToast({ message: '?�림 ?�송 결과 ?�이?��? ?�습?�다.', type: 'error' });
+            showToast({ message: '알림 전송 결과 데이터가 없습니다.', type: 'error' });
             return;
         }
 
         const phone = notifResult.targetPhone || matchedProfile.phone;
         if (!phone) {
-            showToast({ message: '?�주?�의 ?�화번호가 ?�습?�다.', type: 'error' });
+            showToast({ message: '입주사의 전화번호가 없습니다.', type: 'error' });
             return;
         }
 
         let message = notificationService.getShareMessage(matchedProfile, officeInfo);
         if (Platform.OS === 'web') {
             const currentOrigin = window.location.origin;
-            message = message.replace('https://postnoti-app.vercel.app', currentOrigin);
+            message = message.replace('https://postnoti-app-two.vercel.app', currentOrigin);
         }
 
         const separator = Platform.OS === 'ios' ? '&' : '?';
@@ -192,7 +192,7 @@ export const AdminRegisterMailScreen = () => {
             handleSuccessFinish();
         } catch (e) {
             console.error('SMS open failed', e);
-            showToast({ message: '메시지 ?�을 ?????�습?�다.', type: 'error' });
+            showToast({ message: '메시지 앱을 열 수 없습니다.', type: 'error' });
         }
     };
 
@@ -222,15 +222,15 @@ export const AdminRegisterMailScreen = () => {
                 style={appStyles.flexContainer}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 40}
             >
-                <AppHeader title="?�편�??�록" onBack={handleBack} />
+                <AppHeader title="우편물 등록" onBack={handleBack} />
                 {ocrLoading && (
                     <View style={{ position: 'absolute', zIndex: 99, top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255,255,255,0.7)', justifyContent: 'center', alignItems: 'center' }}>
                         <ActivityIndicator size="large" color="#4F46E5" />
-                        <Text style={{ marginTop: 10, fontWeight: '700' }}>처리 중입?�다...</Text>
+                        <Text style={{ marginTop: 10, fontWeight: '700' }}>처리 중입니다...</Text>
                     </View>
                 )}
                 <ScrollView style={appStyles.container} contentContainerStyle={{ paddingBottom: 100 }}>
-                    <SectionCard title="?�편�?촬영">
+                    <SectionCard title="우편물 촬영">
                         {selectedImage ? (
                             <View>
                                 <Image source={{ uri: selectedImage }} style={appStyles.previewImage} />
@@ -239,20 +239,20 @@ export const AdminRegisterMailScreen = () => {
                                         const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
                                         if (!result.canceled) runOCR(result.assets[0].uri);
                                     }}>
-                                        <Text style={appStyles.retakeBtnText}>?�� ?�시 촬영</Text>
+                                        <Text style={appStyles.retakeBtnText}>📷 다시 촬영</Text>
                                     </Pressable>
                                     <Pressable style={[appStyles.retakeBtn, { flex: 1, backgroundColor: '#F1F5F9' }]} onPress={async () => {
                                         const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.5 });
                                         if (!result.canceled) runOCR(result.assets[0].uri);
                                     }}>
-                                        <Text style={[appStyles.retakeBtnText, { color: '#64748B' }]}>?���??�범 ?�택</Text>
+                                        <Text style={[appStyles.retakeBtnText, { color: '#64748B' }]}>🖼️ 앨범 선택</Text>
                                     </Pressable>
                                 </View>
                             </View>
                         ) : (
                             <View style={{ gap: 10 }}>
                                 <PrimaryButton
-                                    label="?�� ?�편�??�진 촬영"
+                                    label="📷 우편물 사진 촬영"
                                     onPress={async () => {
                                         const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
                                         if (!result.canceled) runOCR(result.assets[0].uri);
@@ -272,7 +272,7 @@ export const AdminRegisterMailScreen = () => {
                                         borderColor: '#E2E8F0'
                                     }}
                                 >
-                                    <Text style={{ color: '#64748B', fontWeight: '700' }}>?���??�범?�서 ?�진 가?�오�?/Text>
+                                    <Text style={{ color: '#64748B', fontWeight: '700' }}>🖼️ 앨범에서 사진 가져오기</Text>
                                 </Pressable>
                             </View>
                         )}
@@ -281,15 +281,15 @@ export const AdminRegisterMailScreen = () => {
 
                     {selectedImage && !ocrLoading && (
                         <>
-                            <SectionCard title="?�식 결과 �??�???�정">
+                            <SectionCard title="인식 결과 및 대상 설정">
                                 <View style={appStyles.inputGroup}>
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                        <Text style={appStyles.label}>받는 �?(?�주??</Text>
+                                        <Text style={appStyles.label}>받는 분 (입주사)</Text>
                                         <Pressable
                                             onPress={() => setIsManualSearchVisible(true)}
                                             style={{ backgroundColor: '#F1F5F9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}
                                         >
-                                            <Text style={{ color: '#64748B', fontSize: 12, fontWeight: '600' }}>?�� ?�동 검??/Text>
+                                            <Text style={{ color: '#64748B', fontSize: 12, fontWeight: '600' }}>🔍 수동 검색</Text>
                                         </Pressable>
                                     </View>
                                     <View style={appStyles.profileSelector}>
@@ -298,11 +298,11 @@ export const AdminRegisterMailScreen = () => {
                                                 <View>
                                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                                         <Text style={[appStyles.matchedText, !matchedProfile.is_active && { color: '#B91C1C' }]}>
-                                                            {!matchedProfile.is_active ? '?�� ' : '??'}
+                                                            {!matchedProfile.is_active ? '🚫 ' : '✅ '}
                                                             {matchedProfile.name} {matchedProfile.room_number ? `(${matchedProfile.room_number})` : ''}
                                                             {matchedProfile.company_name ? ` - ${matchedProfile.company_name}` : ''}
                                                         </Text>
-                                                        {/* [개선] ?�이???�거 ???�자만으�??�시 ?�태 ?�별 */}
+                                                        {/* [개선] 하이픈 제거 후 숫자만으로 푸시 상태 판별 */}
                                                         {(() => {
                                                             const normPhone = matchedProfile.phone ? matchedProfile.phone.replace(/[^0-9]/g, '') : '';
                                                             const isApp = matchedProfile.profile_id || (normPhone && pushStatuses[normPhone]);
@@ -322,12 +322,12 @@ export const AdminRegisterMailScreen = () => {
                                                     </View>
                                                     {!matchedProfile.is_active && (
                                                         <Text style={{ color: '#DC2626', fontSize: 12, fontWeight: '700', marginTop: 4 }}>
-                                                            ?�️ ?�거???�주?�입?�다
+                                                            ⚠️ 퇴거된 입주사입니다
                                                         </Text>
                                                     )}
                                                 </View>
                                                 <Pressable onPress={() => setMatchedProfile(null)}>
-                                                    <Text style={appStyles.changeText}>변�?/Text>
+                                                    <Text style={appStyles.changeText}>변경</Text>
                                                 </Pressable>
                                             </View>
                                         ) : (
@@ -339,7 +339,7 @@ export const AdminRegisterMailScreen = () => {
                                                         onPress={() => setMatchedProfile(p)}
                                                     >
                                                         <Text style={[appStyles.profileChipText, !p.is_active && { color: '#9CA3AF' }]}>
-                                                            {p.name} {p.room_number ? `(${p.room_number})` : ''} {!p.is_active && '(?�거)'}
+                                                            {p.name} {p.room_number ? `(${p.room_number})` : ''} {!p.is_active && '(퇴거)'}
                                                         </Text>
                                                     </Pressable>
                                                 ))}
@@ -347,18 +347,18 @@ export const AdminRegisterMailScreen = () => {
                                         )}
                                     </View>
                                 </View>
-                                {/* 발신�?�??�편 종류 ?�션 ??��??*/}
+                                {/* 발신처 및 우편 종류 섹션 삭제됨 */}
                             </SectionCard>
 
-                            <SectionCard title="?�� ?�림 메시지 ?�택">
+                            <SectionCard title="💬 알림 메시지 선택">
                                 <View style={{ backgroundColor: '#F8FAFC', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 15 }}>
-                                    <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '700', marginBottom: 4 }}>?�� 기본 ?�림 메시지 (미선????발송)</Text>
+                                    <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '700', marginBottom: 4 }}>📋 기본 알림 메시지 (미선택 시 발송)</Text>
                                     <Text style={{ fontSize: 13, color: '#475569', fontWeight: '600' }}>
-                                        "{officeInfo?.settings?.default_message || "?�녕?�세?? ?�편물이 ?�착?�습?�다."}"
+                                        "{officeInfo?.settings?.default_message || "안녕하세요. 우편물이 도착했습니다."}"
                                     </Text>
                                 </View>
 
-                                <Text style={[appStyles.label, { marginBottom: 8 }]}>빠른 메시지 ?�택</Text>
+                                <Text style={[appStyles.label, { marginBottom: 8 }]}>빠른 메시지 선택</Text>
                                 <View style={{ position: 'relative', marginBottom: 10 }}>
                                     <Pressable
                                         onPress={() => setDropdownVisible(!dropdownVisible)}
@@ -375,9 +375,9 @@ export const AdminRegisterMailScreen = () => {
                                         }}
                                     >
                                         <Text style={{ fontSize: 15, color: selectedPreset ? '#1E293B' : '#94A3B8', flex: 1, marginRight: 30 }} numberOfLines={1}>
-                                            {selectedPreset || '?�림 메시지�??�택?�세??..'}
+                                            {selectedPreset || '알림 메시지를 선택하세요...'}
                                         </Text>
-                                        <Text style={{ color: '#64748B', fontSize: 12 }}>??/Text>
+                                        <Text style={{ color: '#64748B', fontSize: 12 }}>▼</Text>
                                     </Pressable>
                                     {selectedPreset && (
                                         <Pressable 
@@ -391,7 +391,7 @@ export const AdminRegisterMailScreen = () => {
                                                 paddingHorizontal: 10 
                                             }}
                                         >
-                                            <Text style={{ color: '#94A3B8', fontWeight: '800', fontSize: 16 }}>??/Text>
+                                            <Text style={{ color: '#94A3B8', fontWeight: '800', fontSize: 16 }}>✕</Text>
                                         </Pressable>
                                     )}
                                 </View>
@@ -438,7 +438,7 @@ export const AdminRegisterMailScreen = () => {
                                     </View>
                                 )}
 
-                                <Text style={appStyles.label}>직접 ?�력 (?�택??메시지 ?�???�용??</Text>
+                                <Text style={appStyles.label}>직접 입력 (선택한 메시지 대신 사용됨)</Text>
                                 <TextInput
                                     style={[appStyles.input, selectedPreset && { opacity: 0.5, backgroundColor: '#F1F5F9' }]}
                                     value={customMessage}
@@ -446,15 +446,15 @@ export const AdminRegisterMailScreen = () => {
                                         setCustomMessage(t);
                                         if (t) setSelectedPreset(null);
                                     }}
-                                    placeholder="?�주?�에�?보낼 추�? 메시지..."
+                                    placeholder="입주사에게 보낼 추가 메시지..."
                                     editable={!selectedPreset}
                                 />
                             </SectionCard>
 
                             {matchedProfile?.is_premium && (
-                                <SectionCard title="???�리미엄 ?�비?? ?�세 촬영">
+                                <SectionCard title="✨ 프리미엄 서비스: 상세 촬영">
                                     <Text style={{ fontSize: 13, color: '#64748B', marginBottom: 15 }}>
-                                        ?�주?��? 개봉/촬영 ?�청 ?�?�입?�다. 추�? ?�이지�?촬영?�세??
+                                        입주사가 개봉/촬영 요청 대상입니다. 추가 페이지를 촬영하세요.
                                     </Text>
                                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                                         {extraImages.map((uri: string, idx: number) => (
@@ -464,22 +464,22 @@ export const AdminRegisterMailScreen = () => {
                                                     onPress={() => setExtraImages(extraImages.filter((_: any, i: number) => i !== idx))}
                                                     style={{ position: 'absolute', top: -5, right: -5, backgroundColor: '#EF4444', borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' }}
                                                 >
-                                                    <Text style={{ color: '#fff', fontSize: 10, fontWeight: '900' }}>??/Text>
+                                                    <Text style={{ color: '#fff', fontSize: 10, fontWeight: '900' }}>✕</Text>
                                                 </Pressable>
                                             </View>
                                         ))}
                                         <Pressable
                                             onPress={() => {
-                                                Alert.alert('?��?지 추�?', '?�디???�진??가?�올까요?', [
-                                                    { text: '?�� 촬영?�기', onPress: () => handleAddExtraImage(true) },
-                                                    { text: '?���??�범?�서 ?�택', onPress: () => handleAddExtraImage(false) },
+                                                Alert.alert('이미지 추가', '어디서 사진을 가져올까요?', [
+                                                    { text: '📷 촬영하기', onPress: () => handleAddExtraImage(true) },
+                                                    { text: '🖼️ 앨범에서 선택', onPress: () => handleAddExtraImage(false) },
                                                     { text: '취소', style: 'cancel' }
                                                 ]);
                                             }}
                                             style={{ width: 80, height: 80, borderRadius: 8, borderStyle: 'dotted', borderWidth: 2, borderColor: '#CBD5E1', justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}
                                         >
                                             <Text style={{ color: '#94A3B8', fontSize: 24 }}>+</Text>
-                                            <Text style={{ color: '#94A3B8', fontSize: 10 }}>?��?지 추�?</Text>
+                                            <Text style={{ color: '#94A3B8', fontSize: 10 }}>이미지 추가</Text>
                                         </Pressable>
                                     </View>
                                 </SectionCard>
@@ -489,10 +489,10 @@ export const AdminRegisterMailScreen = () => {
                                 <PrimaryButton
                                     label={
                                         !matchedProfile
-                                            ? '?�주?��? ?�택?�주?�요'
+                                            ? '입주사를 선택해주세요'
                                             : !matchedProfile.is_active
-                                                ? '?�거???�주?�입?�다 (발송 불�?)'
-                                                : `${matchedProfile.name}?�께 ?�림 보내�?
+                                                ? '퇴거된 입주사입니다 (발송 불가)'
+                                                : `${matchedProfile.name}님께 알림 보내기`
                                     }
                                     onPress={onSubmit}
                                     disabled={!matchedProfile || !matchedProfile.is_active}
@@ -502,7 +502,7 @@ export const AdminRegisterMailScreen = () => {
                     )}
                 </ScrollView>
 
-                {/* ?�동 ?�주??검??모달 */}
+                {/* 수동 입주사 검색 모달 */}
                 <Modal
                     visible={isManualSearchVisible}
                     animationType="slide"
@@ -518,19 +518,19 @@ export const AdminRegisterMailScreen = () => {
                     >
                         <View style={{ backgroundColor: '#fff', borderRadius: 20, maxHeight: '85%', overflow: 'hidden' }}>
                             <View style={{ padding: 15, borderBottomWidth: 1, borderColor: '#F1F5F9', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Text style={{ fontSize: 18, fontWeight: '700' }}>?�주??검??/Text>
+                                <Text style={{ fontSize: 18, fontWeight: '700' }}>입주사 검색</Text>
                                 <Pressable onPress={() => {
                                     setIsManualSearchVisible(false);
                                     setManualSearchQuery('');
                                 }} style={{ padding: 5 }}>
-                                    <Text style={{ fontSize: 16 }}>??/Text>
+                                    <Text style={{ fontSize: 16 }}>✕</Text>
                                 </Pressable>
                             </View>
 
                             <View style={{ padding: 15 }}>
                                 <TextInput
                                     style={{ backgroundColor: '#F1F5F9', padding: 12, borderRadius: 10, fontSize: 15, borderWidth: 1, borderColor: '#E2E8F0' }}
-                                    placeholder="?�주?�명, ?�당?? ?�실 검??.."
+                                    placeholder="입주사명, 담당자, 호실 검색..."
                                     value={manualSearchQuery}
                                     onChangeText={setManualSearchQuery}
                                     autoFocus
@@ -568,12 +568,12 @@ export const AdminRegisterMailScreen = () => {
                                                         {p.name}
                                                     </Text>
                                                     <Text style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
-                                                        {p.company_name ? `${p.company_name} | ` : ''} {p.room_number || '?�실 미기??} | {p.phone}
+                                                        {p.company_name ? `${p.company_name} | ` : ''} {p.room_number || '호실 미기재'} | {p.phone}
                                                     </Text>
                                                 </View>
                                                 {!p.is_active && (
                                                     <View style={{ backgroundColor: '#FEE2E2', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                                                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#991B1B' }}>?�거</Text>
+                                                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#991B1B' }}>퇴거</Text>
                                                     </View>
                                                 )}
                                             </View>
@@ -584,7 +584,7 @@ export const AdminRegisterMailScreen = () => {
                     </KeyboardAvoidingView>
                 </Modal>
 
-                {/* ?�림 결과 �??�마???��?발송 모달 */}
+                {/* 알림 결과 및 스마트 대체 발송 모달 */}
                 <Modal
                     visible={resultModalVisible}
                     animationType="fade"
@@ -599,21 +599,21 @@ export const AdminRegisterMailScreen = () => {
                             ) ? (
                                 <>
                                     <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#DCFCE7', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
-                                        <Text style={{ fontSize: 30 }}>?��</Text>
+                                        <Text style={{ fontSize: 30 }}>📱</Text>
                                     </View>
-                                    <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 10 }}>???�치 ?�주??/Text>
+                                    <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 10 }}>앱 설치 입주사</Text>
                                     <Text style={{ fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 20, marginBottom: 25 }}>
-                                        ?�당 ?�주?�는 ?�이 ?�치???�태?�니??{"\n"}
-                                        ?�하?�는 ?�림 발송 방식???�택??주세??
+                                        해당 입주사는 앱이 설치된 상태입니다.{"\n"}
+                                        원하시는 알림 발송 방식을 선택해 주세요.
                                     </Text>
                                     <PrimaryButton
-                                        label="?? 바로 보내�?(???�시)"
+                                        label="🚀 바로 보내기 (앱 푸시)"
                                         onPress={() => confirmAndSend(false)}
                                         style={{ width: '100%', marginBottom: 10, backgroundColor: '#16A34A', alignSelf: 'stretch', alignItems: 'center', paddingVertical: 15 }}
                                         textStyle={{ fontSize: 16, fontWeight: '700' }}
                                     />
                                     <PrimaryButton
-                                        label="?�� 문자�?링크 ?�송?�기"
+                                        label="📱 문자로 링크 전송하기"
                                         onPress={() => confirmAndSend(true)}
                                         style={{ width: '100%', marginBottom: 12, backgroundColor: '#4F46E5', alignSelf: 'stretch', alignItems: 'center', paddingVertical: 15 }}
                                         textStyle={{ fontSize: 16, fontWeight: '700' }}
@@ -622,15 +622,15 @@ export const AdminRegisterMailScreen = () => {
                             ) : (
                                 <>
                                     <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
-                                        <Text style={{ fontSize: 30 }}>?�️</Text>
+                                        <Text style={{ fontSize: 30 }}>⚠️</Text>
                                     </View>
-                                    <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 10 }}>??미설�??�주??/Text>
+                                    <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 10 }}>앱 미설치 입주사</Text>
                                     <Text style={{ fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 20, marginBottom: 25 }}>
-                                        ?�당 ?�주?�는 ?�직 ?�을 ?�치?��? ?�았?�니??{"\n"}
-                                        문자�??�편�??�인 링크�??�송??주세??
+                                        해당 입주사는 아직 앱을 설치하지 않았습니다.{"\n"}
+                                        문자로 우편물 확인 링크를 전송해 주세요.
                                     </Text>
                                     <PrimaryButton
-                                        label="?�� 문자�?링크 ?�송?�기"
+                                        label="📱 문자로 링크 전송하기"
                                         onPress={() => confirmAndSend(true)}
                                         style={{ width: '100%', marginBottom: 10, backgroundColor: '#4F46E5', alignSelf: 'stretch', alignItems: 'center', paddingVertical: 15 }}
                                         textStyle={{ fontSize: 16, fontWeight: '700' }}
@@ -648,7 +648,7 @@ export const AdminRegisterMailScreen = () => {
                                             marginBottom: 10
                                         }}
                                     >
-                                        <Text style={{ color: '#64748B', fontWeight: '600' }}>?? 그래?????�시 발송 ?�도</Text>
+                                        <Text style={{ color: '#64748B', fontWeight: '600' }}>🚀 그래도 앱 푸시 발송 시도</Text>
                                     </Pressable>
                                 </>
                             )}

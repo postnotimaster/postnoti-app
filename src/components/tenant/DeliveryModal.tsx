@@ -61,13 +61,13 @@ export const DeliveryModal = ({
                 if (guideStr.startsWith('{')) {
                     const parsed = JSON.parse(guideStr);
                     setPaymentInfo(parsed);
-                    setGuidelines(parsed.text || '?�편�??�달 ?�청???�시�?지?�된 주소�?배송???�립?�다.');
+                    setGuidelines(parsed.text || '우편물 전달 신청을 하시면 지정된 주소로 배송해 드립니다.');
                 } else {
-                    setGuidelines(guideStr || '?�편�??�달 ?�청???�시�?지?�된 주소�?배송???�립?�다.');
+                    setGuidelines(guideStr || '우편물 전달 신청을 하시면 지정된 주소로 배송해 드립니다.');
                     setPaymentInfo(null);
                 }
             } catch (e) {
-                setGuidelines(guideStr || '?�편�??�달 ?�청???�시�?지?�된 주소�?배송???�립?�다.');
+                setGuidelines(guideStr || '우편물 전달 신청을 하시면 지정된 주소로 배송해 드립니다.');
                 setPaymentInfo(null);
             }
             setRequests(hist || []);
@@ -82,7 +82,7 @@ export const DeliveryModal = ({
                 setSavedAddress(null);
             }
 
-            // 최근 주소 (중복 ?�거)
+            // 최근 주소 (중복 제거)
             const unique = (hist || []).reduce((acc: MailDeliveryRequest[], cur) => {
                 const exists = acc.find(a => a.address === cur.address);
                 if (!exists) acc.push(cur);
@@ -105,7 +105,7 @@ export const DeliveryModal = ({
         }
     }, [visible, loadData]);
 
-    // ?�시�?구독
+    // 실시간 구독
     useEffect(() => {
         if (!visible || !profileId) return;
 
@@ -126,7 +126,7 @@ export const DeliveryModal = ({
         return () => { supabase.removeChannel(channel); };
     }, [visible, profileId]);
 
-    // ???�경 메시지 ?�신 (Daum 주소 검??
+    // 웹 환경 메시지 수신 (Daum 주소 검색)
     useEffect(() => {
         if (Platform.OS === 'web' && step === 'postcode') {
             const handleWebMessage = (e: MessageEvent) => {
@@ -164,7 +164,7 @@ export const DeliveryModal = ({
 
         if (missing.length > 0) {
             setMissingFields(missing);
-            setErrorText('붉�??�으�??�시???�수 ??��??모두 ?�력??주세??');
+            setErrorText('붉은색으로 표시된 필수 항목을 모두 입력해 주세요.');
             return;
         }
 
@@ -184,7 +184,7 @@ export const DeliveryModal = ({
             setErrorText(null);
             setMissingFields([]);
 
-            // 1. ?�로??주소 ?�데?�트 (체크??경우)
+            // 1. 프로필 주소 업데이트 (체크된 경우)
             if (saveAsDefault) {
                 await profilesService.updateProfile(profileId, {
                     address,
@@ -193,7 +193,7 @@ export const DeliveryModal = ({
                 }).catch(e => console.warn('Failed to save default address:', e));
             }
 
-            // 2. ?�청 ?�성
+            // 2. 요청 생성
             await mailDeliveryService.createRequest(requestData as any);
             setStep('success');
             loadData();
@@ -208,7 +208,7 @@ export const DeliveryModal = ({
                     return;
                 } catch (retryError) { }
             }
-            setErrorText(e.message || '?�청???�패?�습?�다.');
+            setErrorText(e.message || '신청에 실패했습니다.');
         } finally {
             setLoading(false);
         }
@@ -216,10 +216,10 @@ export const DeliveryModal = ({
 
     const getStatusInfo = (status: MailDeliveryStatus) => {
         switch (status) {
-            case 'pending': return { label: '?�수?��?, color: '#D97706', bg: '#FEF3C7', icon: 'time-outline' };
-            case 'received': return { label: '?�금?��?, color: '#2563EB', bg: '#DBEAFE', icon: 'wallet-outline' };
-            case 'paid': return { label: '발송준�?, color: '#4338CA', bg: '#E0E7FF', icon: 'cube-outline' };
-            case 'shipped': return { label: '발송?�료', color: '#059669', bg: '#D1FAE5', icon: 'checkmark-circle-outline' };
+            case 'pending': return { label: '접수대기', color: '#D97706', bg: '#FEF3C7', icon: 'time-outline' };
+            case 'received': return { label: '입금대기', color: '#2563EB', bg: '#DBEAFE', icon: 'wallet-outline' };
+            case 'paid': return { label: '발송준비', color: '#4338CA', bg: '#E0E7FF', icon: 'cube-outline' };
+            case 'shipped': return { label: '발송완료', color: '#059669', bg: '#D1FAE5', icon: 'checkmark-circle-outline' };
             default: return { label: status, color: '#64748B', bg: '#F1F5F9', icon: 'help-circle-outline' };
         }
     };
@@ -227,7 +227,7 @@ export const DeliveryModal = ({
     // --- Steps Rendering ---
 
     if (step === 'postcode') {
-        const postcodeUrl = 'https://postnoti-app.vercel.app/postcode.html';
+        const postcodeUrl = 'https://postnoti-app-two.vercel.app/postcode.html';
         return (
             <Modal visible={visible} animationType="slide" onRequestClose={() => setStep('form')}>
                 <SafeAreaView style={styles.postcodeSafe}>
@@ -235,11 +235,11 @@ export const DeliveryModal = ({
                         <Pressable onPress={() => setStep('form')} style={styles.backButton}>
                             <Ionicons name="chevron-back" size={28} color="#1E293B" />
                         </Pressable>
-                        <Text style={styles.postcodeTitle}>주소 검??/Text>
+                        <Text style={styles.postcodeTitle}>주소 검색</Text>
                     </View>
                     <View style={{ flex: 1 }}>
                         {Platform.OS === 'web' ? (
-                            <iframe src={postcodeUrl} style={{ border: 'none', width: '100%', height: '100%' }} title="주소 검?? />
+                            <iframe src={postcodeUrl} style={{ border: 'none', width: '100%', height: '100%' }} title="주소 검색" />
                         ) : (
                             <WebView
                                 source={{ uri: postcodeUrl }}
@@ -271,12 +271,12 @@ export const DeliveryModal = ({
                         <View style={styles.successIconCircle}>
                             <Ionicons name="checkmark" size={40} color="#fff" />
                         </View>
-                        <Text style={[styles.title, { marginTop: 20, marginBottom: 10 }]}>?�청 ?�료!</Text>
+                        <Text style={[styles.title, { marginTop: 20, marginBottom: 10 }]}>신청 완료!</Text>
                         <Text style={{ textAlign: 'center', color: '#64748B', lineHeight: 22, marginBottom: 30 }}>
-                            ?�편�??�달 ?�청??"\n"}?�상?�으�??�수?�었?�니??
+                            우편물 전달 신청이{"\n"}정상적으로 접수되었습니다.
                         </Text>
                         <PrimaryButton
-                            label="?�역 ?�인?�기"
+                            label="내역 확인하기"
                             onPress={() => { setStep('form'); setActiveTab('list'); }}
                             style={{ width: '100%', borderRadius: 12 }}
                         />
@@ -293,10 +293,10 @@ export const DeliveryModal = ({
                     <View style={styles.header}>
                         <View style={styles.tabs}>
                             <Pressable onPress={() => setActiveTab('request')} style={[styles.tab, activeTab === 'request' && styles.activeTab]}>
-                                <Text style={[styles.tabText, activeTab === 'request' && styles.activeTabText]}>?�청?�기</Text>
+                                <Text style={[styles.tabText, activeTab === 'request' && styles.activeTabText]}>신청하기</Text>
                             </Pressable>
                             <Pressable onPress={() => setActiveTab('list')} style={[styles.tab, activeTab === 'list' && styles.activeTab]}>
-                                <Text style={[styles.tabText, activeTab === 'list' && styles.activeTabText]}>?�청?�황</Text>
+                                <Text style={[styles.tabText, activeTab === 'list' && styles.activeTabText]}>신청현황</Text>
                             </Pressable>
                         </View>
                         <Pressable onPress={onClose} style={styles.closeBtn}>
@@ -320,9 +320,9 @@ export const DeliveryModal = ({
 
                             <View style={styles.form}>
                                 <View style={styles.inputGroup}>
-                                    <Text style={[styles.label, missingFields.includes('name') && { color: '#EF4444' }]}>?�령???�보 *</Text>
-                                    <TextInput style={[styles.input, missingFields.includes('name') && styles.errorInput]} value={name} onChangeText={(t) => { setName(t); setMissingFields(prev => prev.filter(f => f !== 'name')); }} placeholder="?�함" />
-                                    <TextInput style={[styles.input, { marginTop: 8 }, missingFields.includes('phone') && styles.errorInput]} value={phone} onChangeText={(t) => { setPhone(t); setMissingFields(prev => prev.filter(f => f !== 'phone')); }} placeholder="?�락�? keyboardType="phone-pad" />
+                                    <Text style={[styles.label, missingFields.includes('name') && { color: '#EF4444' }]}>수령인 정보 *</Text>
+                                    <TextInput style={[styles.input, missingFields.includes('name') && styles.errorInput]} value={name} onChangeText={(t) => { setName(t); setMissingFields(prev => prev.filter(f => f !== 'name')); }} placeholder="성함" />
+                                    <TextInput style={[styles.input, { marginTop: 8 }, missingFields.includes('phone') && styles.errorInput]} value={phone} onChangeText={(t) => { setPhone(t); setMissingFields(prev => prev.filter(f => f !== 'phone')); }} placeholder="연락처" keyboardType="phone-pad" />
                                 </View>
 
                                 <View style={styles.inputGroup}>
@@ -337,7 +337,7 @@ export const DeliveryModal = ({
                                         {savedAddress && (
                                             <Pressable style={styles.premiumQuickBtn} onPress={() => handleSelectHistory(savedAddress)}>
                                                 <Ionicons name="bookmark" size={12} color="#fff" />
-                                                <Text style={styles.premiumQuickBtnText}>?�록 주소 ?�용</Text>
+                                                <Text style={styles.premiumQuickBtnText}>등록 주소 사용</Text>
                                             </Pressable>
                                         )}
                                         {recentAddresses.length > 0 && (
@@ -352,19 +352,19 @@ export const DeliveryModal = ({
                                         style={[styles.input, (Platform.OS !== 'web') && { backgroundColor: '#F8FAFC' }, missingFields.includes('address') && styles.errorInput]}
                                         value={address}
                                         onChangeText={(t) => { setAddress(t); setMissingFields(prev => prev.filter(f => f !== 'address')); }}
-                                        placeholder="주소 (직접 ?�력 ?�는 검??"
+                                        placeholder="주소 (직접 입력 또는 검색)"
                                         editable={Platform.OS === 'web' || !address}
                                     />
-                                    <TextInput style={[styles.input, { marginTop: 8 }]} value={addressDetail} onChangeText={setAddressDetail} placeholder="?�세 주소" />
+                                    <TextInput style={[styles.input, { marginTop: 8 }]} value={addressDetail} onChangeText={setAddressDetail} placeholder="상세 주소" />
 
                                     <View style={styles.saveDefaultRow}>
                                         <Switch value={saveAsDefault} onValueChange={setSaveAsDefault} trackColor={{ false: "#E2E8F0", true: "#C7D2FE" }} thumbColor={saveAsDefault ? "#4F46E5" : "#F4F3F4"} />
-                                        <Text style={styles.saveDefaultText}>?�력??주소�???기본 주소�??�?�하�?/Text>
+                                        <Text style={styles.saveDefaultText}>입력한 주소를 내 기본 주소로 저장하기</Text>
                                     </View>
                                 </View>
                             </View>
                             <View style={{ height: 30 }} />
-                            <PrimaryButton label="?�달 ?�청?�기" onPress={handleSubmit} loading={loading} disabled={loading} />
+                            <PrimaryButton label="전달 신청하기" onPress={handleSubmit} loading={loading} disabled={loading} />
                             <View style={{ height: 20 }} />
                         </ScrollView>
                     ) : (
@@ -391,11 +391,11 @@ export const DeliveryModal = ({
                                                 {paymentInfo ? (
                                                     <View>
                                                         <Text style={styles.infoNoteText}>금액: {paymentInfo.amount}</Text>
-                                                        <Text style={styles.infoNoteText}>?�금계좌: {paymentInfo.bank} {paymentInfo.account}</Text>
-                                                        <Text style={styles.infoNoteText}>?�금�? {paymentInfo.holder}</Text>
+                                                        <Text style={styles.infoNoteText}>입금계좌: {paymentInfo.bank} {paymentInfo.account}</Text>
+                                                        <Text style={styles.infoNoteText}>예금주: {paymentInfo.holder}</Text>
                                                     </View>
                                                 ) : (
-                                                    <Text style={styles.infoNoteText}>결제 ?�보가 ?�직 ?�정?��? ?�았?�니??</Text>
+                                                    <Text style={styles.infoNoteText}>결제 정보가 아직 설정되지 않았습니다.</Text>
                                                 )}
                                             </View>
                                         )}
@@ -405,7 +405,7 @@ export const DeliveryModal = ({
                             ListEmptyComponent={
                                 <View style={styles.emptyBox}>
                                     <Ionicons name="document-text-outline" size={48} color="#CBD5E1" />
-                                    <Text style={styles.emptyText}>?�청 ?�역???�습?�다.</Text>
+                                    <Text style={styles.emptyText}>신청 내역이 없습니다.</Text>
                                 </View>
                             }
                         />
