@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, Image, ActivityIndicator, TextInput,
 import { notificationService, NotificationResult } from '../services/notificationService';
 import { tenantsService } from '../services/tenantsService';
 import * as ImagePicker from 'expo-image-picker';
+import * as Clipboard from 'expo-clipboard';
 import { useAuth } from '../contexts/AuthContext';
 import { useUI } from '../contexts/UIContext';
 import { useOCRContext } from '../contexts/OCRContext';
@@ -183,16 +184,35 @@ export const AdminRegisterMailScreen = () => {
         const url = `sms:${phone}${separator}body=${encodeURIComponent(message)}`;
 
         try {
-            const canOpen = await Linking.canOpenURL(url);
-            if (canOpen) {
-                await Linking.openURL(url);
+            if (Platform.OS === 'web') {
+                // 웹(PC/모바일 웹) 환경에서는 팝업 차단을 우회하고 안전하게 복사까지 지원
+                try {
+                    await Clipboard.setStringAsync(message);
+                    showToast({ message: '메시지가 클립보드에 복사되었습니다. (PC 환경 대비)', type: 'success' });
+                } catch (e) {
+                    console.log('Clipboard copy failed');
+                }
+                
+                // 모바일 PWA에서는 sms: 링크가 작동하도록 a 태그 클릭 시뮬레이션 또는 href 변경
+                window.location.href = url;
             } else {
-                await Linking.openURL(`sms:${phone}`);
+                const canOpen = await Linking.canOpenURL(url);
+                if (canOpen) {
+                    await Linking.openURL(url);
+                } else {
+                    await Linking.openURL(`sms:${phone}`);
+                }
             }
-            handleSuccessFinish();
+            
+            // 모달을 바로 닫으면 PWA에서 sms 링크로 전환되기 전에 앱이 멈출 수 있으므로 약간의 지연
+            setTimeout(() => {
+                handleSuccessFinish();
+            }, 500);
+            
         } catch (e) {
             console.error('SMS open failed', e);
-            showToast({ message: '메시지 앱을 열 수 없습니다.', type: 'error' });
+            showToast({ message: '메시지 앱을 열 수 없습니다. 직접 문자를 발송해주세요.', type: 'error' });
+            handleSuccessFinish();
         }
     };
 
