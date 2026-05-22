@@ -161,64 +161,63 @@ export const useTenantAuth = ({
         setIdentifying(true);
         try {
             let profile = await profilesService.getTenantProfileByPhone(companyId, fullPhone);
+            let resolvedTenant = await tenantsService.findTenantByPhone(companyId, fullPhone);
             
             if (!profile) {
-                const tenantMatch = await tenantsService.findTenantByPhone(companyId, fullPhone);
-                if (tenantMatch) {
+                if (resolvedTenant) {
                     try {
                         console.log('[useTenantAuth] Found tenant without profile, auto-creating profile...');
                         profile = await profilesService.createProfile({
-                            id: tenantMatch.id,
+                            id: resolvedTenant.id,
                             company_id: companyId,
-                            name: tenantMatch.name,
-                            phone: tenantMatch.phone,
+                            name: resolvedTenant.name,
+                            phone: resolvedTenant.phone,
                             role: 'tenant',
                             is_active: true,
                             push_token: pushToken,
                             web_push_token: webPushToken
                         });
                         // 레코드 연결
-                        await tenantsService.updateTenant(tenantMatch.id, { profile_id: profile.id });
+                        await tenantsService.updateTenant(resolvedTenant.id, { profile_id: profile.id });
                     } catch (e) {
                         console.warn('[useTenantAuth] Auto-creating profile failed (likely RLS), using tenant data as fallback:', e);
-                        profile = tenantMatch as any; // 로그인이라도 성공시키기 위해 폴백 적용
+                        profile = resolvedTenant as any; // 로그인이라도 성공시키기 위해 폴백 적용
                     }
                 }
             }
 
-            if (!profile) {
+            if (!profile && !resolvedTenant) {
                 if (!inputPhone) showToast({ message: '등록되지 않은 전화번호이거나 지점 정보가 일치하지 않습니다.', type: 'error' });
                 return;
             }
 
             // 토큰 및 테넌트 연결 업데이트
-            if (profile.id) {
+            if (profile && profile.id && typeof profile.id === 'string' && profile.id.length > 10) {
                 const updates: any = {};
                 if (pushToken) updates.push_token = pushToken;
                 if (webPushToken) updates.web_push_token = webPushToken;
                 if (Object.keys(updates).length > 0) {
-                    await profilesService.updateProfile(profile.id, updates);
+                    // ignore RLS error on update for anon
+                    profilesService.updateProfile(profile.id, updates).catch(() => {});
                 }
 
-                // [중요] 테넌트 테이블과 프로필 연결 (관리자 앱에서 푸시 가능 여부 판단용)
-                try {
-                    const tenantMatch = await tenantsService.findTenantByNameAndPhone(companyId, profile.name, profile.phone);
-                    if (tenantMatch && !tenantMatch.profile_id) {
-                        console.log(`[useTenantAuth] Linking profile ${profile.id} to tenant ${tenantMatch.id}`);
-                        await tenantsService.updateTenant(tenantMatch.id, { profile_id: profile.id });
+                // [중요] 테넌트 테이블과 프로필 연결
+                if (resolvedTenant && !resolvedTenant.profile_id) {
+                    try {
+                        await tenantsService.updateTenant(resolvedTenant.id, { profile_id: profile.id });
+                    } catch (e) {
+                        console.error('[useTenantAuth] Failed to link tenant profile:', e);
                     }
-                } catch (e) {
-                    console.error('[useTenantAuth] Failed to link tenant profile:', e);
                 }
             }
 
             await AsyncStorage.setItem(`tenant_phone_${companyId}`, targetPhone);
 
-            const finalProfile = profile;
+            const finalProfile = profile || resolvedTenant;
             console.log(`[useTenantAuth] Identification success for phone: ${fullPhone}`);
-            setMyProfile(finalProfile);
-            setTenantProfile(finalProfile); // [중요] 전역 상태 업데이트
-            setMyTenant(null);
+            setMyProfile(finalProfile as any);
+            setTenantProfile(finalProfile as any); // [중요] 전역 상태 업데이트
+            setMyTenant(resolvedTenant); // [중요] myTenant를 반드시 설정하여 메일 조회 시 tenant_id가 쓰이게 함!
             return finalProfile;
         } catch (err) {
             console.error('[useTenantAuth] Identification error:', err);
