@@ -196,22 +196,25 @@ export const AdminRegisterMailScreen = () => {
                 // 모바일 PWA에서는 sms: 링크가 작동하도록 a 태그 클릭 시뮬레이션 또는 href 변경
                 window.location.href = url;
             } else {
-                const canOpen = await Linking.canOpenURL(url);
-                if (canOpen) {
-                    await Linking.openURL(url);
-                } else {
-                    await Linking.openURL(`sms:${phone}`);
-                }
+                // 네이티브 앱 (관리자용 안드로이드/iOS)
+                // 안드로이드 11+ 에서는 intent queries 선언 없이 canOpenURL 호출 시 무조건 false가 반환되므로,
+                // 검사 없이 바로 openURL을 실행하여 내용(body)이 포함된 문자를 엽니다.
+                await Linking.openURL(url);
             }
             
-            // 모달을 바로 닫으면 PWA에서 sms 링크로 전환되기 전에 앱이 멈출 수 있으므로 약간의 지연
+            // 모달을 바로 닫으면 PWA/앱에서 sms 링크로 전환되기 전에 앱이 멈출 수 있으므로 약간의 지연
             setTimeout(() => {
                 handleSuccessFinish();
             }, 500);
             
         } catch (e) {
             console.error('SMS open failed', e);
-            showToast({ message: '메시지 앱을 열 수 없습니다. 직접 문자를 발송해주세요.', type: 'error' });
+            showToast({ message: '메시지 앱을 열 수 없습니다. 텍스트를 복사하여 전송해주세요.', type: 'error' });
+            // 네이티브에서도 실패 시 복사해줌
+            try {
+                await Clipboard.setStringAsync(message);
+            } catch (clipboardErr) {}
+            
             handleSuccessFinish();
         }
     };
