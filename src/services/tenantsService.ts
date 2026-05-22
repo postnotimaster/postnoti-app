@@ -88,6 +88,21 @@ export const tenantsService = {
         return data[0] as Tenant;
     },
 
+    async globalFindTenantByPhone(phone: string) {
+        // 지점 ID 없이 전역에서 전화번호로 입주자 및 지점 정보 조회
+        const { data, error } = await supabase.rpc('global_find_tenant_by_phone_secure', {
+            p_phone: phone
+        });
+
+        if (error) {
+            console.error('globalFindTenantByPhone RPC error:', error);
+            throw error;
+        }
+
+        if (!data || data.length === 0) return null;
+        return data[0] as { tenant_id: string; tenant_name: string; company_id: string; company_name: string };
+    },
+
     async getTenantById(id: string) {
         // 보안 강화를 위해 RLS 우회 RPC 사용 (정확한 UUID 매칭)
         const { data, error } = await supabase.rpc('get_tenant_by_id_secure', {
