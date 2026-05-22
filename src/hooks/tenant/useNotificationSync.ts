@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { profilesService } from '../../services/profilesService';
 import { supabase } from '../../lib/supabase';
-import { messaging, getToken, VAPID_KEY } from '../../lib/firebase';
+import { messaging, getToken, VAPID_KEY, onMessage } from '../../lib/firebase';
 
 interface UseNotificationSyncProps {
     profileId?: string;
@@ -49,6 +49,22 @@ export const useNotificationSync = ({
         };
         syncToken();
     }, [profileId, pushToken, webPushToken]);
+
+    // Foreground Firebase messaging handler for Web
+    useEffect(() => {
+        if (Platform.OS === 'web' && messaging) {
+            const unsubscribe = onMessage(messaging, (payload) => {
+                console.log('[NotificationSync] Foreground message received:', payload);
+                const title = payload.data?.title || payload.notification?.title || '알림';
+                const body = payload.data?.body || payload.notification?.body || '새 알림이 있습니다.';
+                showToast({
+                    message: `${title}: ${body}`,
+                    type: 'info'
+                });
+            });
+            return () => unsubscribe();
+        }
+    }, [showToast]);
 
     const requestNotificationPermission = async () => {
         // 웹 환경이 아니면 무시

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Platform, AppState } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { registerForPushNotificationsAsync } from '../utils/notificationHelper';
+import * as Notifications from 'expo-notifications';
 import { messaging, getToken, VAPID_KEY } from '../lib/firebase';
 import { profilesService } from '../services/profilesService';
 import { masterSendersService } from '../services/masterSendersService';
@@ -90,6 +91,21 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         loadMasterSenders();
         setupNotifications();
+
+        if (Platform.OS !== 'web') {
+            const subscription = Notifications.addNotificationReceivedListener(notification => {
+                console.log('[NotificationContext] Native notification received in foreground:', notification);
+            });
+
+            const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+                console.log('[NotificationContext] Native notification clicked:', response);
+            });
+
+            return () => {
+                subscription.remove();
+                responseSubscription.remove();
+            };
+        }
     }, []);
 
     useEffect(() => {
