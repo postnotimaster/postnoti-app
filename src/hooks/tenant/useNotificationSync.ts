@@ -75,10 +75,25 @@ export const useNotificationSync = ({
             return;
         }
 
+        const getWebPushToken = async () => {
+            let registration: ServiceWorkerRegistration | undefined;
+            if ('serviceWorker' in navigator) {
+                try {
+                    registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                } catch (swErr) {
+                    console.warn('[NotificationSync] SW registration failed:', swErr);
+                }
+            }
+            return await getToken(messaging!, { 
+                vapidKey: VAPID_KEY,
+                serviceWorkerRegistration: registration
+            });
+        };
+
         // 이미 권한이 있으면 토큰만 다시 확인하여 갱신
         if (Notification.permission === 'granted') {
             try {
-                const token = await getToken(messaging!, { vapidKey: VAPID_KEY });
+                const token = await getWebPushToken();
                 if (token && profileId) {
                     const { error } = await supabase.rpc('update_tenant_push_token_secure', {
                         p_profile_id: profileId,
@@ -88,7 +103,7 @@ export const useNotificationSync = ({
                     if (error) throw error;
                 }
             } catch (e) {
-                console.warn('[NotificationSync] Silent token refresh failed');
+                console.warn('[NotificationSync] Silent token refresh failed:', e);
             }
             return;
         }
@@ -100,7 +115,7 @@ export const useNotificationSync = ({
             setPermissionStatus(permission);
 
             if (permission === 'granted') {
-                const token = await getToken(messaging!, { vapidKey: VAPID_KEY });
+                const token = await getWebPushToken();
                 if (token && profileId) {
                     const { error } = await supabase.rpc('update_tenant_push_token_secure', {
                         p_profile_id: profileId,
