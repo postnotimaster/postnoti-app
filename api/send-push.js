@@ -28,7 +28,10 @@ module.exports = async (req, res) => {
     try {
         const message = {
             token: token,
-            // notification: { ... } removed to prevent automatic display by browser (Data-only message)
+            notification: {
+                title: title,
+                body: body
+            },
             data: {
                 title: title,
                 body: body,

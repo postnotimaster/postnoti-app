@@ -15,6 +15,12 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
+    // If the message has a notification payload, the browser handles it automatically.
+    // Returning early prevents duplicate notifications on Android.
+    if (payload.notification) {
+        return;
+    }
+
     // Data-only message handling
     const data = payload.data || {};
     const notificationTitle = data.title || '알림';
