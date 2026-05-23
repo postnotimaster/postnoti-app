@@ -102,8 +102,9 @@ export const useNotificationSync = ({
                     });
                     if (error) throw error;
                 }
-            } catch (e) {
+            } catch (e: any) {
                 console.warn('[NotificationSync] Silent token refresh failed:', e);
+                showToast({ message: `자동 알림 동기화 실패: ${e?.message || e}`, type: 'error' });
             }
             return;
         }
@@ -124,10 +125,15 @@ export const useNotificationSync = ({
                     });
                     if (error) throw error;
                     showToast({ message: '알림 설정이 완료되었습니다! 🔔', type: 'success' });
+                } else {
+                    showToast({ message: '알림 토큰 발급 실패 (token 없음)', type: 'error' });
                 }
+            } else {
+                showToast({ message: '알림 권한이 허용되지 않았습니다.', type: 'error' });
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Notification Permission Error:', error);
+            showToast({ message: `알림 설정 오류: ${error?.message || error}`, type: 'error' });
         } finally {
             setLoading(false);
         }
