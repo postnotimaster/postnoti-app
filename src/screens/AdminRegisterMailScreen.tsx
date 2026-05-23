@@ -343,7 +343,7 @@ export const AdminRegisterMailScreen = () => {
                                                         {/* [개선] 하이픈 제거 후 숫자만으로 푸시 상태 판별 */}
                                                         {(() => {
                                                             const normPhone = matchedProfile.phone ? matchedProfile.phone.replace(/[^0-9]/g, '') : '';
-                                                            const isApp = matchedProfile.profile_id || (normPhone && pushStatuses[normPhone]);
+                                                            const isApp = !!(normPhone && pushStatuses[normPhone]);
                                                             return (
                                                                 <View style={{ 
                                                                     backgroundColor: isApp ? '#DBEAFE' : '#F1F5F9', 
@@ -632,8 +632,7 @@ export const AdminRegisterMailScreen = () => {
                     <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
                         <View style={{ backgroundColor: '#fff', width: '100%', borderRadius: 20, padding: 25, alignItems: 'center' }}>
                             {matchedProfile && (
-                                matchedProfile.profile_id || 
-                                (matchedProfile.phone && pushStatuses[matchedProfile.phone.replace(/[^0-9]/g, '')])
+                                matchedProfile.phone && pushStatuses[matchedProfile.phone.replace(/[^0-9]/g, '')]
                             ) ? (
                                 <>
                                     <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#DCFCE7', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
