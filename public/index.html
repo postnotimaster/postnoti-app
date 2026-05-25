@@ -38,5 +38,17 @@
     </noscript>
     <!-- The root element for your Expo app. -->
     <div id="root"></div>
+    <!-- PWA 설치 요건(Service Worker 즉시 등록) 충족을 위한 스크립트 -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/firebase-messaging-sw.js').then(function(registration) {
+            console.log('SW registered for PWA:', registration.scope);
+          }).catch(function(err) {
+            console.log('SW registration failed:', err);
+          });
+        });
+      }
+    </script>
   </body>
 </html>
