@@ -20,6 +20,9 @@ export const LandingScreen = () => {
     const [isTenantLogin, setIsTenantLogin] = useState(Platform.OS !== 'web');
     const [tenantPhone, setTenantPhone] = useState('');
     const [isSearching, setIsSearching] = useState(false);
+    
+    // 숨겨진 관리자 로그인 진입을 위한 로고 탭 카운터 (이스터에그)
+    const [logoTapCount, setLogoTapCount] = useState(0);
 
     React.useEffect(() => {
         if (isKakaoTalk()) {
@@ -123,15 +126,28 @@ export const LandingScreen = () => {
                     )}
                     <View style={{ flex: 1, padding: 24, justifyContent: 'center', backgroundColor: '#FFFFFF' }}>
                         <View style={{ marginBottom: keyboardVisible ? 10 : 30, marginTop: keyboardVisible ? 20 : 40, alignItems: 'center' }}>
-                            <Image
-                                source={require('../../assets/logo.png')}
-                                style={{
-                                    width: keyboardVisible ? 60 : 90,
-                                    height: keyboardVisible ? 60 : 90,
-                                    borderRadius: keyboardVisible ? 15 : 24
+                            <Pressable 
+                                onPress={() => {
+                                    setLogoTapCount(prev => {
+                                        const next = prev + 1;
+                                        if (next >= 5) {
+                                            setIsTenantLogin(false);
+                                            return 0;
+                                        }
+                                        return next;
+                                    });
                                 }}
-                                resizeMode="contain"
-                            />
+                            >
+                                <Image
+                                    source={require('../../assets/logo.png')}
+                                    style={{
+                                        width: keyboardVisible ? 60 : 90,
+                                        height: keyboardVisible ? 60 : 90,
+                                        borderRadius: keyboardVisible ? 15 : 24
+                                    }}
+                                    resizeMode="contain"
+                                />
+                            </Pressable>
                             <Text style={{ fontSize: 16, color: '#475569', fontWeight: '800', marginTop: 15 }}>스마트우편알림 - 포스트노티</Text>
                         </View>
 
