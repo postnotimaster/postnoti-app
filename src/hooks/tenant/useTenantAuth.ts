@@ -233,6 +233,8 @@ export const useTenantAuth = ({
                 // [중요] 로그아웃 시 URL에 남아있는 매직링크(m, p) 파라미터도 완전히 제거하여 새로고침 시 재로그인 방지
                 if (Platform.OS === 'web') {
                     try {
+                        // AsyncStorage에 저장된 마지막 URL도 지워서 새로고침 시 이전 계정으로 돌아가는 것을 방지
+                        await AsyncStorage.removeItem('last_tenant_url');
                         const url = new URL(window.location.href);
                         if (url.searchParams.has('m') || url.searchParams.has('p')) {
                             url.searchParams.delete('m');
