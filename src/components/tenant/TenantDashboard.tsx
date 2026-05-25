@@ -223,6 +223,7 @@ export const TenantDashboard = ({
     };
 
     // 하드웨어 뒤로가기 제어 (Native & Web PWA 대응)
+    const isManualBackRef = useRef(false);
     const modalsStateRef = useRef({
         selectedMailImage,
         isMailDeliveryVisible,
@@ -302,6 +303,11 @@ export const TenantDashboard = ({
                 window.history.pushState({ name: 'home' }, '');
             }
             const popStateAction = (e: PopStateEvent) => {
+                if (isManualBackRef.current) {
+                    isManualBackRef.current = false;
+                    return;
+                }
+
                 const appState = modalsStateRef.current;
                 const hasModal = appState.selectedMailImage || appState.isMailDeliveryVisible || appState.isSettingsVisible || appState.isNoticeVisible || appState.isIOSGuideVisible || appState.isAndroidGuideVisible;
 
@@ -336,6 +342,7 @@ export const TenantDashboard = ({
                 window.history.pushState({ name: 'modal' }, '');
             } else {
                 if (window.history.state && window.history.state.name === 'modal') {
+                    isManualBackRef.current = true;
                     window.history.back();
                 }
             }
