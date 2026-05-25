@@ -53,6 +53,9 @@ self.addEventListener('notificationclick', function (event) {
                 }
             }
             // If not, open a new window
+            if (clients.openWindow) {
+                return clients.openWindow(urlToOpen);
+            }
         })
     );
 });
