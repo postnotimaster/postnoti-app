@@ -7,6 +7,7 @@ export const usePWAInstall = (profileId?: string) => {
     const [showInstallBanner, setShowInstallBanner] = useState(false);
     const [isIOS, setIsIOS] = useState(false);
     const [isStandalone, setIsStandalone] = useState(false);
+    const [isInstallComplete, setIsInstallComplete] = useState(false);
 
     useEffect(() => {
         if (Platform.OS !== 'web') return;
@@ -36,6 +37,7 @@ export const usePWAInstall = (profileId?: string) => {
         const installedHandler = async () => {
             console.log('PWA was installed');
             setShowInstallBanner(false);
+            setIsInstallComplete(true);
             if (profileId) {
                 await profilesService.updateProfile(profileId, { pwa_installed: true });
             }
@@ -60,6 +62,9 @@ export const usePWAInstall = (profileId?: string) => {
         console.log(`User response to the install prompt: ${outcome}`);
         setDeferredPrompt(null);
         setShowInstallBanner(false);
+        if (outcome === 'accepted') {
+            setIsInstallComplete(true);
+        }
         return outcome;
     };
 
@@ -68,6 +73,7 @@ export const usePWAInstall = (profileId?: string) => {
         setShowInstallBanner,
         handleInstallPrompt,
         isIOS,
-        isStandalone
+        isStandalone,
+        isInstallComplete
     };
 };

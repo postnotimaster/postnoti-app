@@ -124,7 +124,8 @@ export const TenantDashboard = ({
         setShowInstallBanner,
         handleInstallPrompt,
         isIOS,
-        isStandalone
+        isStandalone,
+        isInstallComplete
     } = usePWAInstall(myProfile?.profile_id || myProfile?.id);
 
     const [isIOSGuideVisible, setIsIOSGuideVisible] = useState(false);
@@ -728,6 +729,23 @@ export const TenantDashboard = ({
                         >
                             <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>확인했습니다</Text>
                         </Pressable>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* [신규] 앱 설치 완료 후 강제 이동 모달 */}
+            <Modal visible={isInstallComplete} transparent={true} animationType="fade">
+                <View style={[styles.modalContainer, { justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(79, 70, 229, 0.95)' }]}>
+                    <View style={{ backgroundColor: '#fff', padding: 32, borderRadius: 28, width: '85%', maxWidth: 400, alignItems: 'center' }}>
+                        <Ionicons name="checkmark-circle" size={80} color="#10B981" style={{ marginBottom: 16 }} />
+                        <Text style={{ fontSize: 24, fontWeight: '900', color: '#1E293B', marginBottom: 12, textAlign: 'center' }}>
+                            설치가 완료되었습니다! 🎉
+                        </Text>
+                        <Text style={{ fontSize: 16, color: '#475569', textAlign: 'center', lineHeight: 24 }}>
+                            현재 창(브라우저)은 닫으셔도 됩니다.{'\n'}
+                            이제 홈 화면(바탕화면)에 생성된{'\n'}
+                            <Text style={{ fontWeight: '800', color: '#4F46E5' }}>[우편알림]</Text> 앱 아이콘을 눌러주세요!
+                        </Text>
                     </View>
                 </View>
             </Modal>
