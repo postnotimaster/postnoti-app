@@ -381,8 +381,8 @@ export const TenantDashboard = ({
                         </Pressable>
                     )}
 
-                    {/* 2. PWA 설치 유도 배너 (앱 미설치자에게만 노출) */}
-                    {showInstallBanner && !isStandalone && !myProfile?.web_push_token && !myProfile?.push_token && (
+                    {/* 2. PWA 설치 유도 배너 (앱 미설치자 혹은 브라우저 접속 시 노출) */}
+                    {showInstallBanner && !isStandalone && (
                         <View style={styles.premiumInstallBanner}>
                             <View style={styles.installIconBox}>
                                 <Ionicons name="notifications" size={32} color="#4F46E5" />
