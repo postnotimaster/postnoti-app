@@ -222,66 +222,100 @@ export const TenantDashboard = ({
         }
     };
 
-    // 하드웨어 뒤로가기 제어
+    // 하드웨어 뒤로가기 제어 (Native & Web PWA 대응)
+    const modalsStateRef = useRef({
+        selectedMailImage,
+        isMailDeliveryVisible,
+        isSettingsVisible,
+        isNoticeVisible,
+        isIOSGuideVisible,
+        isAndroidGuideVisible
+    });
+
     useEffect(() => {
-        const backAction = () => {
+        modalsStateRef.current = {
+            selectedMailImage,
+            isMailDeliveryVisible,
+            isSettingsVisible,
+            isNoticeVisible,
+            isIOSGuideVisible,
+            isAndroidGuideVisible
+        };
+    }, [selectedMailImage, isMailDeliveryVisible, isSettingsVisible, isNoticeVisible, isIOSGuideVisible, isAndroidGuideVisible]);
+
+    useEffect(() => {
+        const handleBack = () => {
+            const state = modalsStateRef.current;
+            
             // 1. 열려있는 팝업/모달이 있으면 해당 모달만 순차적으로 닫음
-            if (selectedMailImage) {
+            if (state.selectedMailImage) {
                 setSelectedMailImage(null);
                 return true;
             }
-            if (isMailDeliveryVisible) {
+            if (state.isMailDeliveryVisible) {
                 setIsMailDeliveryVisible(false);
                 return true;
             }
-            if (isSettingsVisible) {
+            if (state.isSettingsVisible) {
                 setIsSettingsVisible(false);
                 return true;
             }
-            if (isNoticeVisible) {
+            if (state.isNoticeVisible) {
                 setIsNoticeVisible(false);
                 return true;
             }
-            if (isIOSGuideVisible) {
+            if (state.isIOSGuideVisible) {
                 setIsIOSGuideVisible(false);
                 return true;
             }
-            if (isAndroidGuideVisible) {
+            if (state.isAndroidGuideVisible) {
                 setIsAndroidGuideVisible(false);
                 return true;
             }
 
             // 2. 메인 대시보드 상태일 때
             if (myProfile) {
-                // 로그인을 유지한 채 앱만 안전하게 종료할 수 있도록 팝업 안내
-                Alert.alert(
-                    '앱 종료',
-                    '포스트노티 앱을 종료하시겠습니까?',
-                    [
-                        { text: '취소', style: 'cancel' },
-                        { text: '종료', onPress: () => BackHandler.exitApp() }
-                    ],
-                    { cancelable: true }
-                );
-                return true;
+                if (Platform.OS === 'web') {
+                    const wantToExit = window.confirm('포스트노티 앱을 종료하시겠습니까?');
+                    return !wantToExit; // 취소하면 true(기존 상태 유지), 종료하면 false(뒤로가기 허용)
+                } else {
+                    Alert.alert(
+                        '앱 종료',
+                        '포스트노티 앱을 종료하시겠습니까?',
+                        [
+                            { text: '취소', style: 'cancel' },
+                            { text: '종료', onPress: () => BackHandler.exitApp() }
+                        ],
+                        { cancelable: true }
+                    );
+                    return true;
+                }
             }
 
-            // 로그인하지 않은 상태(로그인 화면)인 경우: Landing 화면으로 복귀
+            // 로그인하지 않은 상태인 경우: Landing 화면으로 복귀
             onBack();
             return true;
         };
-        const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-        return () => backHandler.remove();
-    }, [
-        selectedMailImage,
-        isMailDeliveryVisible,
-        isSettingsVisible,
-        isNoticeVisible,
-        isIOSGuideVisible,
-        isAndroidGuideVisible,
-        myProfile,
-        onBack
-    ]);
+
+        if (Platform.OS === 'web') {
+            // 앱 진입 시 dummy history를 넣어 뒤로가기 이벤트를 잡을 수 있게 함
+            window.history.pushState({ page: 'home' }, '');
+            const popStateAction = (e: PopStateEvent) => {
+                const handled = handleBack();
+                if (handled) {
+                    // 모달을 닫았거나, 종료를 취소했으면 다시 dummy history를 넣어줌
+                    window.history.pushState({ page: 'home' }, '');
+                } else {
+                    // 실제 종료를 원할 경우
+                }
+            };
+            window.addEventListener('popstate', popStateAction);
+            return () => window.removeEventListener('popstate', popStateAction);
+        } else {
+            const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBack);
+            return () => backHandler.remove();
+        }
+    }, [myProfile, onBack]);
 
     const flatData = React.useMemo(() => {
         const result: any[] = [];
