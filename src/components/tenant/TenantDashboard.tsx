@@ -568,6 +568,7 @@ export const TenantDashboard = ({
                         onPress={() => {
                             refreshAnnouncements();
                             loadMails();
+                            showToast({ message: '우편함을 최신 상태로 동기화했습니다.', type: 'success' });
                         }}
                         style={styles.iconRefreshButton}
                     >
