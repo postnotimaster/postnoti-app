@@ -1,4 +1,4 @@
-﻿import { View, Text, Pressable, Image, StyleSheet, Alert } from 'react-native';
+import { View, Text, Pressable, Image, StyleSheet, Alert } from 'react-native';
 import { mailService } from '../../services/mailService';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
@@ -96,7 +96,7 @@ export const MailItem = ({ item, onImagePress, onMarkRead }: Props) => {
             <View style={itemStyles.content}>
                 <View style={itemStyles.titleRow}>
                     <Text style={[itemStyles.title, !item.read_at && itemStyles.titleUnread]}>
-                        새로운 우편물
+                        {!item.read_at ? '새로운 우편물' : '읽은 우편물'}
                     </Text>
                     {isJustArrived && (
                         <View style={itemStyles.newBadge}>
