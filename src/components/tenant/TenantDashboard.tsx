@@ -298,15 +298,26 @@ export const TenantDashboard = ({
         };
 
         if (Platform.OS === 'web') {
-            // 앱 진입 시 dummy history를 넣어 뒤로가기 이벤트를 잡을 수 있게 함
-            window.history.pushState({ page: 'home' }, '');
+            if (!window.history.state || window.history.state.name !== 'home') {
+                window.history.pushState({ name: 'home' }, '');
+            }
             const popStateAction = (e: PopStateEvent) => {
-                const handled = handleBack();
-                if (handled) {
-                    // 모달을 닫았거나, 종료를 취소했으면 다시 dummy history를 넣어줌
-                    window.history.pushState({ page: 'home' }, '');
+                const appState = modalsStateRef.current;
+                const hasModal = appState.selectedMailImage || appState.isMailDeliveryVisible || appState.isSettingsVisible || appState.isNoticeVisible || appState.isIOSGuideVisible || appState.isAndroidGuideVisible;
+
+                if (hasModal) {
+                    setSelectedMailImage(null);
+                    setIsMailDeliveryVisible(false);
+                    setIsSettingsVisible(false);
+                    setIsNoticeVisible(false);
+                    setIsIOSGuideVisible(false);
+                    setIsAndroidGuideVisible(false);
+                    // 이미 Home 상태로 되돌아왔으므로 추가 push 불필요
                 } else {
-                    // 실제 종료를 원할 경우
+                    const wantToExit = window.confirm('우편알림 앱을 종료하시겠습니까?');
+                    if (!wantToExit) {
+                        window.history.pushState({ name: 'home' }, '');
+                    }
                 }
             };
             window.addEventListener('popstate', popStateAction);
@@ -316,6 +327,20 @@ export const TenantDashboard = ({
             return () => backHandler.remove();
         }
     }, [myProfile, onBack]);
+
+    // 웹(PWA) 모달 열림 상태 동기화를 위한 History 스택 제어
+    useEffect(() => {
+        if (Platform.OS === 'web') {
+            const hasModal = selectedMailImage || isMailDeliveryVisible || isSettingsVisible || isNoticeVisible || isIOSGuideVisible || isAndroidGuideVisible;
+            if (hasModal) {
+                window.history.pushState({ name: 'modal' }, '');
+            } else {
+                if (window.history.state && window.history.state.name === 'modal') {
+                    window.history.back();
+                }
+            }
+        }
+    }, [selectedMailImage, isMailDeliveryVisible, isSettingsVisible, isNoticeVisible, isIOSGuideVisible, isAndroidGuideVisible]);
 
     const flatData = React.useMemo(() => {
         const result: any[] = [];
