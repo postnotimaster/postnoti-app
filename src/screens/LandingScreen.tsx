@@ -9,6 +9,7 @@ import { useNotifications } from '../contexts/NotificationContext';
 import { isKakaoTalk, redirectToExternalBrowser } from '../utils/browserDetection';
 import { tenantsService } from '../services/tenantsService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
 export const LandingScreen = () => {
     const { handleLoginSuccess } = useAuth();
@@ -16,13 +17,12 @@ export const LandingScreen = () => {
     const { setMode, setBrandingCompany } = useUI();
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     
-    // 입주자 글로벌 로그인 상태 (네이티브 앱은 기본이 입주자, 웹은 기본이 관리자)
-    const [isTenantLogin, setIsTenantLogin] = useState(Platform.OS !== 'web');
+    // 입주자 글로벌 로그인 상태 (관리자 앱이면 false, 아니면 true)
+    const appName = Constants.expoConfig?.name || '스마트우편알림';
+    const isAdminApp = appName === '포스트노티 관리자';
+    const [isTenantLogin, setIsTenantLogin] = useState(!isAdminApp);
     const [tenantPhone, setTenantPhone] = useState('');
     const [isSearching, setIsSearching] = useState(false);
-    
-    // 숨겨진 관리자 로그인 진입을 위한 로고 탭 카운터 (이스터에그)
-    const [logoTapCount, setLogoTapCount] = useState(0);
 
     React.useEffect(() => {
         if (isKakaoTalk()) {
@@ -126,29 +126,18 @@ export const LandingScreen = () => {
                     )}
                     <View style={{ flex: 1, padding: 24, justifyContent: 'center', backgroundColor: '#FFFFFF' }}>
                         <View style={{ marginBottom: keyboardVisible ? 10 : 30, marginTop: keyboardVisible ? 20 : 40, alignItems: 'center' }}>
-                            <Pressable 
-                                onPress={() => {
-                                    setLogoTapCount(prev => {
-                                        const next = prev + 1;
-                                        if (next >= 5) {
-                                            setIsTenantLogin(false);
-                                            return 0;
-                                        }
-                                        return next;
-                                    });
+                            <Image
+                                source={require('../../assets/logo.png')}
+                                style={{
+                                    width: keyboardVisible ? 60 : 90,
+                                    height: keyboardVisible ? 60 : 90,
+                                    borderRadius: keyboardVisible ? 15 : 24
                                 }}
-                            >
-                                <Image
-                                    source={require('../../assets/logo.png')}
-                                    style={{
-                                        width: keyboardVisible ? 60 : 90,
-                                        height: keyboardVisible ? 60 : 90,
-                                        borderRadius: keyboardVisible ? 15 : 24
-                                    }}
-                                    resizeMode="contain"
-                                />
-                            </Pressable>
-                            <Text style={{ fontSize: 16, color: '#475569', fontWeight: '800', marginTop: 15 }}>스마트우편알림 - 포스트노티</Text>
+                                resizeMode="contain"
+                            />
+                            <Text style={{ fontSize: 16, color: '#475569', fontWeight: '800', marginTop: 15 }}>
+                                스마트우편알림 - 포스트노티 {isAdminApp && <Text style={{ color: '#4F46E5' }}>(관리자)</Text>}
+                            </Text>
                         </View>
 
                         <View style={appStyles.actionSection}>
@@ -194,8 +183,8 @@ export const LandingScreen = () => {
                                             loading={isSearching}
                                             style={{ backgroundColor: '#4F46E5', borderRadius: 16, height: 56 }}
                                         />
-                                        {/* 앱(APK)에서는 관리자 로그인 버튼 숨김 (철저히 입주자 전용) */}
-                                        {Platform.OS === 'web' && (
+                                        {/* 웹 환경이나 관리자 앱일 때만 관리자 로그인 버튼 노출 */}
+                                        {(Platform.OS === 'web' || isAdminApp) && (
                                             <Pressable onPress={() => setIsTenantLogin(false)} style={{ marginTop: 20, alignItems: 'center', padding: 10 }}>
                                                 <Text style={{ color: '#64748B', fontWeight: '600' }}>관리자이신가요? <Text style={{ color: '#4F46E5' }}>관리자 로그인</Text></Text>
                                             </Pressable>
