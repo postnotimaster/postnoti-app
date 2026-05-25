@@ -105,6 +105,7 @@ export const TenantDashboard = ({
         loading: mailsLoading,
         unreadCount,
         setMails,
+        loadMails,
         getGroupedMails
     } = useMailLogs({
         myProfileId: (!myTenant && myProfile && !myProfile.tenant_id) ? myProfile.id : undefined,
@@ -498,7 +499,10 @@ export const TenantDashboard = ({
                     </ScrollView>
 
                     <Pressable
-                        onPress={() => refreshAnnouncements()}
+                        onPress={() => {
+                            refreshAnnouncements();
+                            loadMails();
+                        }}
                         style={styles.iconRefreshButton}
                     >
                         <Ionicons name="refresh" size={18} color="#4F46E5" />

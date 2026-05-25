@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Image, ScrollView, StyleSheet, Alert, Platform } from 'react-native';
+﻿import { View, Text, Pressable, Image, StyleSheet, Alert } from 'react-native';
 import { mailService } from '../../services/mailService';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
@@ -35,7 +35,7 @@ export const MailItem = ({ item, onImagePress, onMarkRead }: Props) => {
         }
     };
 
-    // extra_images parsing
+    // Parse extra images
     const extraImages: string[] = (() => {
         if (Array.isArray(item.extra_images)) return item.extra_images;
         if (typeof item.extra_images === 'string') {
@@ -49,48 +49,72 @@ export const MailItem = ({ item, onImagePress, onMarkRead }: Props) => {
         return [];
     })();
 
+    // Date formatting and 'Just Arrived' logic
+    const createdAt = new Date(item.created_at);
+    const now = new Date();
+    const diffMs = now.getTime() - createdAt.getTime();
+    const isJustArrived = !item.read_at && diffMs < 30 * 60 * 1000; // Unread + within 30 mins
+
+    const formatDateTime = (date: Date) => {
+        const yy = String(date.getFullYear()).slice(2);
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        const hours = date.getHours();
+        const mins = String(date.getMinutes()).padStart(2, '0');
+        const ampm = hours >= 12 ? '오후' : '오전';
+        const displayHours = hours % 12 || 12;
+        return ${yy}..  :;
+    };
+
     return (
-        <Pressable style={itemStyles.container} onPress={handlePress}>
-            <View style={itemStyles.info}>
-                <View style={itemStyles.header}>
-                    <View style={itemStyles.row}>
-                        {item.read_at ? (
-                            <View style={[itemStyles.badge, { backgroundColor: '#F1F5F9' }]}>
-                                <Text style={[itemStyles.badgeText, { color: '#64748B' }]}>읽음</Text>
-                            </View>
-                        ) : (
-                            <View style={[itemStyles.badge, { backgroundColor: '#FEF2F2' }]}>
-                                <Text style={[itemStyles.badgeText, { color: '#DC2626' }]}>안읽음</Text>
-                            </View>
-                        )}
-                        <Text style={itemStyles.date}>
-                            {new Date(item.created_at).toLocaleDateString()}
-                        </Text>
-                    </View>
-                </View>
-
-                <View style={{ marginTop: 8 }}>
-                </View>
-
-                {extraImages.length > 0 && (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
-                        <View style={itemStyles.row}>
-                            {extraImages.map((img, idx) => (
-                                <Pressable key={idx} onPress={() => onImagePress(img)}>
-                                    <Image
-                                        source={{ uri: img }}
-                                        style={itemStyles.extraThumb}
-                                        resizeMode="cover"
-                                    />
-                                </Pressable>
-                            ))}
+        <Pressable 
+            style={[
+                itemStyles.container, 
+                isJustArrived && itemStyles.containerHighlight,
+                item.read_at && itemStyles.containerRead
+            ]} 
+            onPress={handlePress}
+        >
+            {/* Left: Thumbnail */}
+            {item.image_url ? (
+                <View style={itemStyles.thumbWrapper}>
+                    <Image source={{ uri: item.image_url }} style={itemStyles.thumbImage} resizeMode="cover" />
+                    {extraImages.length > 0 && (
+                        <View style={itemStyles.extraBadge}>
+                            <Ionicons name="images-outline" size={10} color="#fff" />
+                            <Text style={itemStyles.extraBadgeText}>+{extraImages.length}</Text>
                         </View>
-                    </ScrollView>
+                    )}
+                </View>
+            ) : (
+                <View style={[itemStyles.thumbWrapper, itemStyles.thumbPlaceholder]}>
+                    <Ionicons name="mail-outline" size={24} color="#94A3B8" />
+                </View>
+            )}
+
+            {/* Middle: Content */}
+            <View style={itemStyles.content}>
+                <View style={itemStyles.titleRow}>
+                    <Text style={[itemStyles.title, !item.read_at && itemStyles.titleUnread]}>
+                        새로운 우편물
+                    </Text>
+                    {isJustArrived && (
+                        <View style={itemStyles.newBadge}>
+                            <Text style={itemStyles.newBadgeText}>방금 도착</Text>
+                        </View>
+                    )}
+                </View>
+                <Text style={itemStyles.dateText}>{formatDateTime(createdAt)}</Text>
+            </View>
+
+            {/* Right: Status */}
+            <View style={itemStyles.statusWrapper}>
+                {!item.read_at ? (
+                    <View style={itemStyles.unreadDot} />
+                ) : (
+                    <Text style={itemStyles.readText}>읽음</Text>
                 )}
             </View>
-            {item.image_url ? (
-                <Image source={{ uri: item.image_url }} style={itemStyles.mainImage} resizeMode="cover" />
-            ) : null}
         </Pressable>
     );
 };
@@ -101,19 +125,110 @@ const itemStyles = StyleSheet.create({
         borderRadius: 16,
         padding: 16,
         marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-        elevation: 2,
         flexDirection: 'row',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
+        elevation: 2,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
     },
-    info: { flex: 1 },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-    row: { flexDirection: 'row', gap: 6 },
-    badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-    badgeText: { fontSize: 12, fontWeight: '800' },
-    date: { fontSize: 13, color: '#94A3B8', marginLeft: 4 },
-    extraThumb: { width: 60, height: 60, borderRadius: 8, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
-    mainImage: { width: 80, height: 80, borderRadius: 14, marginLeft: 12, backgroundColor: '#F1F5F9' },
+    containerHighlight: {
+        backgroundColor: '#FEFCE8',
+        borderColor: '#FEF08A',
+    },
+    containerRead: {
+        backgroundColor: '#F8FAFC',
+        shadowOpacity: 0,
+        elevation: 0,
+    },
+    thumbWrapper: {
+        width: 56,
+        height: 56,
+        borderRadius: 14,
+        marginRight: 16,
+        backgroundColor: '#F1F5F9',
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    thumbImage: {
+        width: '100%',
+        height: '100%',
+    },
+    thumbPlaceholder: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    extraBadge: {
+        position: 'absolute',
+        bottom: 4,
+        right: 4,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 4,
+        paddingVertical: 2,
+        borderRadius: 6,
+        gap: 2,
+    },
+    extraBadgeText: {
+        color: '#fff',
+        fontSize: 9,
+        fontWeight: 'bold',
+    },
+    content: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    titleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+        gap: 6,
+    },
+    title: {
+        fontSize: 15,
+        color: '#64748B',
+        fontWeight: '500',
+    },
+    titleUnread: {
+        color: '#0F172A',
+        fontWeight: '800',
+    },
+    newBadge: {
+        backgroundColor: '#EF4444',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    newBadgeText: {
+        color: '#fff',
+        fontSize: 10,
+        fontWeight: '800',
+    },
+    dateText: {
+        fontSize: 13,
+        color: '#94A3B8',
+        fontWeight: '500',
+    },
+    statusWrapper: {
+        width: 40,
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+    },
+    unreadDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#EF4444',
+    },
+    readText: {
+        fontSize: 12,
+        color: '#CBD5E1',
+        fontWeight: '500',
+    },
 });
