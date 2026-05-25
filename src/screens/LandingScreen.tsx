@@ -16,8 +16,8 @@ export const LandingScreen = () => {
     const { setMode, setBrandingCompany } = useUI();
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     
-    // 입주자 글로벌 로그인 상태
-    const [isTenantLogin, setIsTenantLogin] = useState(false);
+    // 입주자 글로벌 로그인 상태 (네이티브 앱은 기본이 입주자, 웹은 기본이 관리자)
+    const [isTenantLogin, setIsTenantLogin] = useState(Platform.OS !== 'web');
     const [tenantPhone, setTenantPhone] = useState('');
     const [isSearching, setIsSearching] = useState(false);
 
@@ -178,9 +178,12 @@ export const LandingScreen = () => {
                                             loading={isSearching}
                                             style={{ backgroundColor: '#4F46E5', borderRadius: 16, height: 56 }}
                                         />
-                                        <Pressable onPress={() => setIsTenantLogin(false)} style={{ marginTop: 20, alignItems: 'center', padding: 10 }}>
-                                            <Text style={{ color: '#64748B', fontWeight: '600' }}>관리자이신가요? <Text style={{ color: '#4F46E5' }}>관리자 로그인</Text></Text>
-                                        </Pressable>
+                                        {/* 앱(APK)에서는 관리자 로그인 버튼 숨김 (철저히 입주자 전용) */}
+                                        {Platform.OS === 'web' && (
+                                            <Pressable onPress={() => setIsTenantLogin(false)} style={{ marginTop: 20, alignItems: 'center', padding: 10 }}>
+                                                <Text style={{ color: '#64748B', fontWeight: '600' }}>관리자이신가요? <Text style={{ color: '#4F46E5' }}>관리자 로그인</Text></Text>
+                                            </Pressable>
+                                        )}
                                     </View>
                                 ) : (
                                     <View>
