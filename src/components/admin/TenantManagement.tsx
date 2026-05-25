@@ -451,17 +451,14 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                                                 {t.is_premium && (
                                                     <View style={{ 
                                                         backgroundColor: '#78350F',
-                                                        paddingHorizontal: 6, 
+                                                        paddingHorizontal: 4, 
                                                         paddingVertical: 2, 
-                                                        borderRadius: 4, 
+                                                        borderRadius: 3, 
                                                         borderWidth: 1, 
                                                         borderColor: '#D97706',
-                                                        alignItems: 'center',
-                                                        shadowColor: '#F59E0B',
-                                                        shadowOpacity: 0.4,
-                                                        shadowRadius: 3
+                                                        alignItems: 'center'
                                                     }}>
-                                                        <Text style={{ fontSize: 8, color: '#FDE68A', fontWeight: '900', letterSpacing: 0.8 }}>PREMIUM</Text>
+                                                        <Text style={{ fontSize: 8, color: '#FDE68A', fontWeight: '900' }}>P</Text>
                                                     </View>
                                                 )}
                                                 <View style={{ backgroundColor: t.is_active ? '#F0FDF4' : '#F1F5F9', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4, alignItems: 'center' }}>

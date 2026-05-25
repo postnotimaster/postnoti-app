@@ -48,6 +48,7 @@ export const AdminDashboardScreen = ({ route }: any) => {
     const [mailStats, setMailStats] = useState<Record<string, { total: number; read: number; lastSentAt: string | null }>>({});
     const [pushStatuses, setPushStatuses] = useState<Record<string, boolean>>({}); // [NEW] 전화번호별 푸시 상태
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     const sectionListRef = useRef<any>(null);
     const headerHeightRef = useRef<number>(0);
@@ -99,6 +100,12 @@ export const AdminDashboardScreen = ({ route }: any) => {
         } finally {
             setInitialLoading(false);
         }
+    };
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        await loadFirstPage();
+        setIsRefreshing(false);
     };
 
     const loadNextPage = async () => {
@@ -183,6 +190,8 @@ export const AdminDashboardScreen = ({ route }: any) => {
                         }
                     }}
                     scrollEventThrottle={16}
+                    refreshing={isRefreshing}
+                    onRefresh={handleRefresh}
                     ListHeaderComponent={
                         <DashboardHeader
                             officeInfo={officeInfo}

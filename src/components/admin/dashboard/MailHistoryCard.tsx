@@ -61,8 +61,16 @@ export const MailHistoryCard: React.FC<MailHistoryCardProps> = ({ log, pushStatu
                         <View style={{ width: 50, marginRight: 12, alignItems: 'center' }}>
                             <View style={{ flexDirection: 'row', gap: 3 }}>
                                 {log.tenants?.is_premium && (
-                                    <View style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4, borderWidth: 1, borderColor: '#C7D2FE', alignItems: 'center' }}>
-                                        <Text style={{ fontSize: 9, color: '#4338CA', fontWeight: '900' }}>P</Text>
+                                    <View style={{ 
+                                        backgroundColor: '#78350F',
+                                        paddingHorizontal: 6, 
+                                        paddingVertical: 2, 
+                                        borderRadius: 4, 
+                                        borderWidth: 1, 
+                                        borderColor: '#D97706',
+                                        alignItems: 'center'
+                                    }}>
+                                        <Text style={{ fontSize: 8, color: '#FDE68A', fontWeight: '900', letterSpacing: 0.8 }}>PREMIUM</Text>
                                     </View>
                                 )}
                                 {log.tenants?.is_active === false && (

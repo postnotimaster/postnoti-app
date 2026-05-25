@@ -340,6 +340,20 @@ export const AdminRegisterMailScreen = () => {
                                                             {matchedProfile.name} {matchedProfile.room_number ? `(${matchedProfile.room_number})` : ''}
                                                             {matchedProfile.company_name ? ` - ${matchedProfile.company_name}` : ''}
                                                         </Text>
+                                                        {/* PREMIUM 뱃지 */}
+                                                        {matchedProfile.is_premium && (
+                                                            <View style={{
+                                                                backgroundColor: '#78350F',
+                                                                paddingHorizontal: 7,
+                                                                paddingVertical: 3,
+                                                                borderRadius: 5,
+                                                                borderWidth: 1,
+                                                                borderColor: '#D97706',
+                                                                alignItems: 'center'
+                                                            }}>
+                                                                <Text style={{ fontSize: 9, color: '#FDE68A', fontWeight: '900', letterSpacing: 0.8 }}>PREMIUM</Text>
+                                                            </View>
+                                                        )}
                                                         {/* [개선] 하이픈 제거 후 숫자만으로 푸시 상태 판별 */}
                                                         {(() => {
                                                             const normPhone = matchedProfile.phone ? matchedProfile.phone.replace(/[^0-9]/g, '') : '';
