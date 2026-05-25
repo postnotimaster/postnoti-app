@@ -59,6 +59,9 @@ module.exports = async (req, res) => {
             webpush: {
                 headers: {
                     Urgency: "high"
+                },
+                fcm_options: {
+                    link: data.url || '/' // 알림 클릭 시 자동으로 열릴 앱 URL 지정
                 }
             }
         };
