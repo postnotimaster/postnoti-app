@@ -695,16 +695,25 @@ export const TenantDashboard = ({
                                     <View style={styles.guideStep}>
                                         <View style={styles.stepNumber}><Text style={styles.stepNumberText}>1</Text></View>
                                         <View style={{ flex: 1 }}>
+                                            <Text style={styles.stepTitle}>화면 상단 주소창 옆의 <Text style={{ fontWeight: '800', color: '#4F46E5' }}>다운로드(⬇️) 버튼</Text>을 눌러주세요.</Text>
+                                        </View>
+                                    </View>
+                                    <View style={{ marginVertical: 8, alignItems: 'center' }}>
+                                        <Text style={{ fontSize: 13, color: '#94A3B8', fontWeight: '700' }}>--- 또는 ---</Text>
+                                    </View>
+                                    <View style={styles.guideStep}>
+                                        <View style={styles.stepNumber}><Text style={styles.stepNumberText}>2</Text></View>
+                                        <View style={{ flex: 1 }}>
                                             <Text style={styles.stepTitle}>우측 상단 혹은 하단의 <Text style={{ fontWeight: '800', color: '#4F46E5' }}>메뉴 버튼</Text>을 눌러주세요.</Text>
-                                            <View style={{ flexDirection: 'row', marginTop: 4, gap: 8 }}>
-                                                <Ionicons name="ellipsis-vertical" size={24} color="#4F46E5" />
-                                                <Ionicons name="menu" size={24} color="#4F46E5" />
+                                            <View style={{ flexDirection: 'row', marginTop: 4, gap: 8, alignItems: 'center' }}>
+                                                <Ionicons name="ellipsis-vertical" size={20} color="#4F46E5" />
+                                                <Ionicons name="menu" size={20} color="#4F46E5" />
                                                 <Text style={{ fontSize: 12, color: '#94A3B8' }}>(점 3개 혹은 가로줄 3개)</Text>
                                             </View>
                                         </View>
                                     </View>
                                     <View style={styles.guideStep}>
-                                        <View style={styles.stepNumber}><Text style={styles.stepNumberText}>2</Text></View>
+                                        <View style={styles.stepNumber}><Text style={styles.stepNumberText}>3</Text></View>
                                         <View style={{ flex: 1 }}>
                                             <Text style={styles.stepTitle}><Text style={{ fontWeight: '800', color: '#4F46E5' }}>[앱 설치]</Text> 또는 <Text style={{ fontWeight: '800', color: '#4F46E5' }}>[홈 화면에 추가]</Text>를 눌러주세요.</Text>
                                         </View>
