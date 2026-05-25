@@ -63,7 +63,7 @@ export const MailItem = ({ item, onImagePress, onMarkRead }: Props) => {
         const mins = String(date.getMinutes()).padStart(2, '0');
         const ampm = hours >= 12 ? '오후' : '오전';
         const displayHours = hours % 12 || 12;
-        return ${yy}..  :;
+        return `${yy}.${mm}.${dd} ${ampm} ${displayHours}:${mins}`;
     };
 
     return (
