@@ -190,20 +190,6 @@ export const useTenantAuth = ({
 
             await AsyncStorage.setItem(`tenant_phone_${companyId}`, targetPhone);
 
-            // [중요] 수동 로그인을 했으므로, 기존 URL에 남아있을 수 있는 매직링크(m, p) 파라미터를 제거하여 새로고침 시 충돌 방지
-            if (Platform.OS === 'web') {
-                try {
-                    const url = new URL(window.location.href);
-                    if (url.searchParams.has('m') || url.searchParams.has('p')) {
-                        url.searchParams.delete('m');
-                        url.searchParams.delete('p');
-                        window.history.replaceState(window.history.state, '', url.toString());
-                    }
-                } catch (e) {
-                    console.warn('URL cleanup failed:', e);
-                }
-            }
-
             const rawProfile = profile || resolvedTenant;
             // tenant_id를 보존하여 useNotificationSync가 올바른 profile ID를 사용할 수 있도록 함
             const finalProfile = { ...rawProfile, tenant_id: resolvedTenant?.id || rawProfile?.id };
@@ -229,22 +215,6 @@ export const useTenantAuth = ({
                 setMyTenant(null);
                 // setName(''); // 입주사명은 로그아웃해도 그대로 유지되도록 주석 처리
                 setPhoneSuffix('');
-
-                // [중요] 로그아웃 시 URL에 남아있는 매직링크(m, p) 파라미터도 완전히 제거하여 새로고침 시 재로그인 방지
-                if (Platform.OS === 'web') {
-                    try {
-                        // AsyncStorage에 저장된 마지막 URL도 지워서 새로고침 시 이전 계정으로 돌아가는 것을 방지
-                        await AsyncStorage.removeItem('last_tenant_url');
-                        const url = new URL(window.location.href);
-                        if (url.searchParams.has('m') || url.searchParams.has('p')) {
-                            url.searchParams.delete('m');
-                            url.searchParams.delete('p');
-                            window.history.replaceState(window.history.state, '', url.toString());
-                        }
-                    } catch (e) {
-                        console.warn('URL cleanup failed:', e);
-                    }
-                }
             } catch (e) {
                 console.error('Logout failed', e);
             }
