@@ -246,7 +246,6 @@ export const notificationService = {
     getShareMessage(tenant: any, company: any): string {
         const link = this.generateShareLink(tenant, company);
         const companyLabel = tenant.company_name || tenant.name;
-        // [긴급 수정] 주소를 맨 앞으로 배치하여 문자 앱에서의 절단을 방지
-        return `[${company.name}] 우편함 확인: ${link}\n\n(신규알림) ${companyLabel}님 우편물이 도착했습니다.\n포스트노티 스마트 우편알림`;
+        return `[${company.name}]\n${companyLabel}님께 우편물이 도착했습니다.\n우편물 확인은 아래 링크를 눌러주세요.\n\n${link}`;
     }
 };

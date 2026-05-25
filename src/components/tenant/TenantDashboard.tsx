@@ -385,30 +385,34 @@ export const TenantDashboard = ({
                     {showInstallBanner && !isStandalone && !myProfile?.web_push_token && !myProfile?.push_token && (
                         <View style={styles.premiumInstallBanner}>
                             <View style={styles.installIconBox}>
-                                <Ionicons name="apps" size={32} color="#4F46E5" />
+                                <Ionicons name="notifications" size={32} color="#4F46E5" />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={styles.installBannerTitle}>매번 링크 찾기 힘드시죠? 🏠</Text>
-                                <Text style={styles.installBannerDesc}>지금 바로 <Text style={{fontWeight:'bold'}}>{companyName || '스마트'}</Text> 우편함을 홈 화면에 추가하세요! 1초면 설치가 완료되며, 언제든 앱처럼 빠르게 우편물을 확인할 수 있습니다.</Text>
-                                <View style={{ marginVertical: 8, gap: 4 }}>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                        <Ionicons name="checkmark-circle" size={14} color="#10B981" />
-                                        <Text style={{ fontSize: 13, color: '#475569' }}>우편물 도착 시 실시간 알림</Text>
+                                <Text style={styles.installBannerTitle}>우편알림 앱을 설치해주세요 📲</Text>
+                                <Text style={styles.installBannerDesc}>우편알림은 전용앱을 통해서 알림됩니다.{'\n'}앱을 설치하시면 우편물 도착 시 실시간으로 알림을 받으실 수 있습니다.</Text>
+                                {isIOS ? (
+                                    <View style={{ marginTop: 10, gap: 8 }}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                            <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center' }}>
+                                                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800' }}>1</Text>
+                                            </View>
+                                            <Text style={{ fontSize: 13, color: '#334155', flex: 1 }}>하단의 <Text style={{ fontWeight: '800', color: '#4F46E5' }}>공유 버튼</Text> <Ionicons name="share-outline" size={14} color="#4F46E5" /> 을 누르세요</Text>
+                                        </View>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                            <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center' }}>
+                                                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800' }}>2</Text>
+                                            </View>
+                                            <Text style={{ fontSize: 13, color: '#334155', flex: 1 }}><Text style={{ fontWeight: '800', color: '#4F46E5' }}>[홈 화면에 추가]</Text> <Ionicons name="add-circle-outline" size={14} color="#4F46E5" /> 를 누르세요</Text>
+                                        </View>
                                     </View>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                        <Ionicons name="checkmark-circle" size={14} color="#10B981" />
-                                        <Text style={{ fontSize: 13, color: '#475569' }}>홈 화면에서 한 번에 열기</Text>
-                                    </View>
-                                </View>
-                                <Pressable style={styles.premiumInstallButton} onPress={onInstallPress}>
-                                    <Text style={styles.premiumInstallButtonText}>
-                                        내 휴대폰에 앱 추가하기
-                                    </Text>
-                                </Pressable>
+                                ) : (
+                                    <Pressable style={styles.premiumInstallButton} onPress={onInstallPress}>
+                                        <Text style={styles.premiumInstallButtonText}>
+                                            앱 설치하기
+                                        </Text>
+                                    </Pressable>
+                                )}
                             </View>
-                            <Pressable style={styles.closeBannerBtn} onPress={() => setShowInstallBanner(false)}>
-                                <Ionicons name="close" size={20} color="#94A3B8" />
-                            </Pressable>
                         </View>
                     )}
 
