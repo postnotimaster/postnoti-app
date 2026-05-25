@@ -53,9 +53,11 @@ self.addEventListener('notificationclick', function (event) {
                 }
             }
             // If not, open a new window
-            if (clients.openWindow) {
-                return clients.openWindow(urlToOpen);
-            }
         })
     );
+});
+
+// [중요] 안드로이드 크롬에서 PWA 자동 설치 팝업(beforeinstallprompt)을 띄우기 위한 필수 조건
+self.addEventListener('fetch', function(event) {
+    // 빈 fetch 핸들러라도 존재해야 크롬이 설치 가능한 PWA로 인식합니다.
 });
