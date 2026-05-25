@@ -110,9 +110,20 @@ export const MailHistoryCard: React.FC<MailHistoryCardProps> = ({ log, pushStatu
                     <Text style={{ fontSize: 11, color: '#94A3B8', marginBottom: 4 }}>
                         {new Date(log.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}
                     </Text>
-                    <View style={{ backgroundColor: log.read_at ? '#DCFCE7' : '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                        <Text style={{ fontSize: 10, color: log.read_at ? '#15803D' : '#64748B', fontWeight: '600' }}>
-                            {log.read_at ? '읽음' : '미개봉'}
+                    <View style={{ 
+                        backgroundColor: log.read_at ? '#DCFCE7' : '#FEF2F2', 
+                        paddingHorizontal: 8, 
+                        paddingVertical: 3, 
+                        borderRadius: 6,
+                        borderWidth: 1,
+                        borderColor: log.read_at ? '#BBF7D0' : '#FECACA'
+                    }}>
+                        <Text style={{ 
+                            fontSize: 11, 
+                            color: log.read_at ? '#16A34A' : '#EF4444', 
+                            fontWeight: '800' 
+                        }}>
+                            {log.read_at ? '✓ 읽음' : '미개봉'}
                         </Text>
                     </View>
                 </View>

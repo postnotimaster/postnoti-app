@@ -1,4 +1,4 @@
-import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import {
     View,
     Text,
@@ -35,9 +35,11 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
     const [sortOrder, setSortOrder] = useState<'recent' | 'name' | 'room'>('recent');
     const [isEditing, setIsEditing] = useState(false);
 
+    const isEditingRef = useRef(false);
+
     useImperativeHandle(ref, () => ({
         handleBack: () => {
-            if (isEditing) {
+            if (isEditingRef.current) {
                 setIsEditing(false);
                 return true;
             }
@@ -47,6 +49,10 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
             setIsEditing(false);
         }
     }));
+
+    useEffect(() => {
+        isEditingRef.current = isEditing;
+    }, [isEditing]);
     const [editingTenant, setEditingTenant] = useState<Partial<Tenant>>({
         company_id: companyId,
         company_name: '',
@@ -443,8 +449,19 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                                         <View style={{ width: 50, marginRight: 12, alignItems: 'center' }}>
                                             <View style={{ flexDirection: 'row', gap: 3 }}>
                                                 {t.is_premium && (
-                                                    <View style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4, borderWidth: 1, borderColor: '#C7D2FE', alignItems: 'center' }}>
-                                                        <Text style={{ fontSize: 9, color: '#4338CA', fontWeight: '900' }}>P</Text>
+                                                    <View style={{ 
+                                                        backgroundColor: '#78350F',
+                                                        paddingHorizontal: 6, 
+                                                        paddingVertical: 2, 
+                                                        borderRadius: 4, 
+                                                        borderWidth: 1, 
+                                                        borderColor: '#D97706',
+                                                        alignItems: 'center',
+                                                        shadowColor: '#F59E0B',
+                                                        shadowOpacity: 0.4,
+                                                        shadowRadius: 3
+                                                    }}>
+                                                        <Text style={{ fontSize: 8, color: '#FDE68A', fontWeight: '900', letterSpacing: 0.8 }}>PREMIUM</Text>
                                                     </View>
                                                 )}
                                                 <View style={{ backgroundColor: t.is_active ? '#F0FDF4' : '#F1F5F9', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4, alignItems: 'center' }}>
