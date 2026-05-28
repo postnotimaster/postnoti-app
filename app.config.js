@@ -2,6 +2,7 @@
 const IS_ADMIN = true;
 // 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
 
+export default {
   expo: {
     name: IS_ADMIN ? "포스트노티" : "우편알림",
     slug: "postnoti-app",
