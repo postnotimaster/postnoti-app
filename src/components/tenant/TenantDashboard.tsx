@@ -474,11 +474,28 @@ export const TenantDashboard = ({
                                         </View>
                                     </View>
                                 ) : (
-                                    <Pressable style={styles.premiumInstallButton} onPress={onInstallPress}>
-                                        <Text style={styles.premiumInstallButtonText}>
-                                            앱 설치하기
-                                        </Text>
-                                    </Pressable>
+                                    <View style={{ flexDirection: 'column', gap: 8, marginTop: 10 }}>
+                                        <Pressable 
+                                            style={[styles.premiumInstallButton, { backgroundColor: '#4F46E5' }]} 
+                                            onPress={() => {
+                                                if (Platform.OS === 'web') {
+                                                    window.location.href = `/download.html?branch=${encodeURIComponent(companyName || '')}`;
+                                                }
+                                            }}
+                                        >
+                                            <Text style={styles.premiumInstallButtonText}>
+                                                안드로이드 전용 앱 다운로드
+                                            </Text>
+                                        </Pressable>
+                                        <Pressable 
+                                            style={[styles.premiumInstallButton, { backgroundColor: '#64748B' }]} 
+                                            onPress={onInstallPress}
+                                        >
+                                            <Text style={styles.premiumInstallButtonText}>
+                                                웹앱으로 설치하기
+                                            </Text>
+                                        </Pressable>
+                                    </View>
                                 )}
                             </View>
                         </View>
