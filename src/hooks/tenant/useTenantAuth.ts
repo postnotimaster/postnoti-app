@@ -211,6 +211,15 @@ export const useTenantAuth = ({
             try {
                 // await AsyncStorage.removeItem(`tenant_name_${companyId}`); // 입주사명은 영구 기억
                 await AsyncStorage.removeItem(`tenant_phone_${companyId}`);
+                await AsyncStorage.removeItem('last_tenant_url'); // APK 자동 로그인 방지
+
+                // 다른 지점 로그인 기록이 있을 수 있으므로 모두 삭제
+                const keys = await AsyncStorage.getAllKeys();
+                const tenantKeys = keys.filter(k => k.startsWith('tenant_phone_'));
+                if (tenantKeys.length > 0) {
+                    await AsyncStorage.multiRemove(tenantKeys);
+                }
+
                 setMyProfile(null);
                 setMyTenant(null);
                 // setName(''); // 입주사명은 로그아웃해도 그대로 유지되도록 주석 처리
