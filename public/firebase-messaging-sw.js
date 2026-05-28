@@ -26,8 +26,8 @@ messaging.onBackgroundMessage((payload) => {
     const notificationTitle = data.title || '알림';
     const notificationOptions = {
         body: data.body || '내용 없음',
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
+        icon: '/favicon.png',
+        badge: '/favicon.png',
         data: data // Keep original data including url
     };
 
