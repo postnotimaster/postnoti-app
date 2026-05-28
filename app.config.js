@@ -4,12 +4,12 @@ const IS_ADMIN = true;
 
 export default {
   expo: {
-    name: IS_ADMIN ? "포스트노티 관리자" : "스마트우편알림",
+    name: IS_ADMIN ? "포스트노티 관리자" : "우편알림",
     slug: "postnoti-app",
     scheme: "postnoti",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/icon.png",
+    icon: IS_ADMIN ? "./assets/icon.png" : "./assets/icon_tenant.png",
     userInterfaceStyle: "light",
     newArchEnabled: true,
     splash: {
@@ -26,7 +26,7 @@ export default {
       versionCode: 1,
       googleServicesFile: "./google-services.json",
       adaptiveIcon: {
-        foregroundImage: "./assets/adaptive-icon.png",
+        foregroundImage: IS_ADMIN ? "./assets/adaptive-icon.png" : "./assets/adaptive-icon_tenant.png",
         backgroundColor: "#4A60AB"
       },
       edgeToEdgeEnabled: true,
