@@ -19,7 +19,7 @@ export const LandingScreen = () => {
     
     // 입주자 글로벌 로그인 상태 (관리자 앱이면 false, 아니면 true)
     const appName = Constants.expoConfig?.name || '스마트우편알림';
-    const isAdminApp = appName === '포스트노티 관리자';
+    const isAdminApp = appName === '포스트노티';
     const [isTenantLogin, setIsTenantLogin] = useState(!isAdminApp);
     const [tenantPhone, setTenantPhone] = useState('');
     const [isSearching, setIsSearching] = useState(false);
