@@ -1,5 +1,5 @@
 // 👇👇👇 주의: 관리자용 앱을 빌드할 때는 아래를 true로, 입주자용 앱을 빌드할 때는 false로 바꾸세요! 👇👇👇
-const IS_ADMIN = false;
+const IS_ADMIN = true;
 // 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
 
 export default {
@@ -23,6 +23,7 @@ export default {
     },
     android: {
       package: "com.postnoti.app",
+      versionCode: 1,
       googleServicesFile: "./google-services.json",
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
