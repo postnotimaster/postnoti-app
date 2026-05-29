@@ -31,13 +31,12 @@ export const AppHeader = ({ title, onBack, onMenu }: Props) => {
 
 const styles = StyleSheet.create({
     header: {
-        height: 80, // Height increased
+        height: 56, // Reduced height for standard mobile header (SafeArea handles notch)
         backgroundColor: '#FFFFFF',
         flexDirection: 'row',
-        alignItems: 'flex-end', // Align items to bottom for better spacing from top
+        alignItems: 'center', // Center align vertically
         justifyContent: 'space-between',
         paddingHorizontal: 16,
-        paddingBottom: 12, // Space from bottom
         borderBottomWidth: 1,
         borderBottomColor: '#F1F5F9',
     },
@@ -70,11 +69,10 @@ const styles = StyleSheet.create({
         fontWeight: '300',
     },
     title: {
-        fontSize: 17,
-        fontWeight: '800', // Slightly bolder for premium feel
+        fontSize: 18,
+        fontWeight: '700', // Consistent header weight
         color: '#1E293B',
         flex: 1,
         textAlign: 'center',
-        marginBottom: 8, // Adjust vertical position
     },
 });

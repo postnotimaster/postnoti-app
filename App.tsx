@@ -42,15 +42,21 @@ function AppContent() {
     }
   }, [authLoading, uiLoading, officeInfo, mode, setMode]);
 
+  const modeRef = React.useRef(mode);
+  React.useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+
   React.useEffect(() => {
     const handleBackButton = () => {
+      const currentMode = modeRef.current;
       // 1. 입주자 대시보드 화면은 자체 백핸들러가 최우선 작동하므로 이 핸들러는 무시되도록 함
-      if (mode === 'tenant_dashboard') {
+      if (currentMode === 'tenant_dashboard') {
         return false;
       }
 
       // 2. 관리자/기타 모드별 백핸들링 정의
-      switch (mode) {
+      switch (currentMode) {
         case 'admin_signup':
         case 'tenant_login':
           setMode('landing');
@@ -70,6 +76,8 @@ function AppContent() {
         case 'admin_delivery':
         case 'admin_announcements':
         case 'admin_menu':
+          // 하위 컴포넌트(AdminTenantsScreen 등)에서 먼저 false를 반환했을 때만 이쪽으로 넘어옵니다.
+          // 즉, 하위에서 true를 반환하면(모달 닫기 등) 앱 종료나 메인 이동을 막습니다.
           setMode('admin_dashboard');
           return true;
 
@@ -93,7 +101,7 @@ function AppContent() {
 
     const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackButton);
     return () => backHandler.remove();
-  }, [mode]);
+  }, [setMode]);
 
   const isSystemInitializing = authLoading || uiLoading;
 
