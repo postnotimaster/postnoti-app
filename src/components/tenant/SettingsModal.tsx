@@ -49,14 +49,23 @@ export const SettingsModal = ({
                                 </Text>
                             </View>
                         </View>
-                        {permissionStatus !== 'granted' && (
-                            <Pressable 
-                                onPress={onRequestPermission}
-                                style={{ backgroundColor: '#4F46E5', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}
-                            >
-                                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>권한 요청</Text>
-                            </Pressable>
-                        )}
+                        <Switch
+                            value={permissionStatus === 'granted'}
+                            onValueChange={(val) => {
+                                if (val) {
+                                    if (permissionStatus === 'denied') {
+                                        // 웹앱(PWA)에서 차단된 경우, 시스템 설정 안내
+                                        alert('알림이 차단되어 있습니다. 브라우저 주소창 왼쪽의 자물쇠(🔒) 아이콘을 눌러 알림 권한을 [허용]으로 변경한 뒤 다시 시도해 주세요.');
+                                    } else {
+                                        onRequestPermission();
+                                    }
+                                } else {
+                                    alert('알림을 끄려면 브라우저 주소창 왼쪽의 자물쇠(🔒) 아이콘을 눌러 알림 권한을 [차단]으로 변경해 주세요.');
+                                }
+                            }}
+                            trackColor={{ false: '#E2E8F0', true: '#10B981' }}
+                            thumbColor={permissionStatus === 'granted' ? '#fff' : '#f4f3f4'}
+                        />
                     </View>
 
                     <View style={modalStyles.row}>

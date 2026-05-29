@@ -49,6 +49,7 @@ export const TenantDashboard = ({
     const [isMailDeliveryVisible, setIsMailDeliveryVisible] = useState(false);
     const [soundEnabled, setSoundEnabled] = useState(true);
     const [newMailAlert, setNewMailAlert] = useState<{sender: string; type: string; time: string} | null>(null);
+    const [isInstallBannerDismissed, setIsInstallBannerDismissed] = useState(false);
 
     // 1. 인증 및 세션 관리
     const {
@@ -450,13 +451,18 @@ export const TenantDashboard = ({
                     )}
 
                     {/* 2. PWA 설치 유도 배너 (앱 미설치자 혹은 브라우저 접속 시 노출) */}
-                    {showInstallBanner && !isStandalone && (
+                    {showInstallBanner && !isStandalone && !isInstallBannerDismissed && (
                         <View style={styles.premiumInstallBanner}>
                             <View style={styles.installIconBox}>
                                 <Ionicons name="notifications" size={32} color="#4F46E5" />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={styles.installBannerTitle}>우편알림 앱을 설치해주세요 📲</Text>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <Text style={styles.installBannerTitle}>우편알림 앱을 설치해주세요 📲</Text>
+                                    <Pressable style={styles.closeBannerBtn} onPress={() => setIsInstallBannerDismissed(true)}>
+                                        <Ionicons name="close" size={20} color="#94A3B8" />
+                                    </Pressable>
+                                </View>
                                 <Text style={styles.installBannerDesc}>우편알림은 전용앱을 통해서 알림됩니다.{'\n'}앱을 설치하시면 우편물 도착 시 실시간으로 알림을 받으실 수 있습니다.</Text>
                                 {isIOS ? (
                                     <View style={{ marginTop: 10, gap: 8 }}>
@@ -857,7 +863,7 @@ const styles = StyleSheet.create({
     premiumButton: { borderRadius: 16, height: 56, marginTop: 8, backgroundColor: '#4F46E5', shadowColor: '#4F46E5', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 },
     secureBadge: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 24, gap: 6, opacity: 0.6 },
     secureText: { fontSize: 12, color: '#64748B', fontWeight: '500' },
-    header: { padding: 20, paddingTop: 24, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    header: { padding: 20, paddingTop: 48, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     title: { fontSize: 22, fontWeight: '800', color: '#1E293B' },
     subtitle: { fontSize: 13, color: '#64748B', marginTop: 2 },
     unreadBadge: { backgroundColor: '#EF4444', borderRadius: 12, paddingHorizontal: 6, paddingVertical: 2 },
