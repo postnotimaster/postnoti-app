@@ -372,13 +372,11 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <View>
-                    <Text style={styles.title}>{'\uc785\uc8fc\uc0ac \uad00\ub9ac'}</Text>
-                    <Text style={styles.countText}>{'\uc785\uc8fc'} {activeCount} / {'\uc804\uccb4'} {tenants.length}</Text>
-                </View>
-                <Pressable onPress={() => { setEditingTenant({ company_id: companyId, is_active: true, is_premium: false, status: '입주', retention_days: 14 }); setIsEditing(true); }} style={styles.addBtn}>
-                    <Text style={styles.addBtnText}>+ {'\uc785\uc8fc\uc0ac \ub4f1\ub85d'}</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#F1F5F9', backgroundColor: '#fff' }}>
+                <Text style={{ fontSize: 14, color: '#64748B', fontWeight: '600' }}>{'\uc785\uc8fc'} {activeCount} / {'\uc804\uccb4'} {tenants.length}</Text>
+                <Pressable onPress={() => { setEditingTenant({ company_id: companyId, is_active: true, is_premium: false, status: '입주', retention_days: 14 }); setIsEditing(true); }} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#4F46E5', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 }}>
+                    <Ionicons name="add" size={18} color="#fff" style={{ marginRight: 4 }} />
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>{'\uc785\uc8fc\uc0ac \ub4f1\ub85d'}</Text>
                 </Pressable>
             </View>
 

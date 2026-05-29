@@ -54,13 +54,12 @@ export const SettingsModal = ({
                             onValueChange={(val) => {
                                 if (val) {
                                     if (permissionStatus === 'denied') {
-                                        // 웹앱(PWA)에서 차단된 경우, 시스템 설정 안내
-                                        alert('알림이 차단되어 있습니다. 브라우저 주소창 왼쪽의 자물쇠(🔒) 아이콘을 눌러 알림 권한을 [허용]으로 변경한 뒤 다시 시도해 주세요.');
+                                        alert('알림이 차단되어 있습니다. 휴대폰의 [설정] 앱을 열고, 설치된 이 앱(또는 브라우저)의 알림 권한을 직접 허용으로 변경해 주세요.');
                                     } else {
                                         onRequestPermission();
                                     }
                                 } else {
-                                    alert('알림을 끄려면 브라우저 주소창 왼쪽의 자물쇠(🔒) 아이콘을 눌러 알림 권한을 [차단]으로 변경해 주세요.');
+                                    alert('알림을 끄려면 휴대폰의 [설정] 앱에서 이 앱의 알림 권한을 차단으로 변경해 주세요.');
                                 }
                             }}
                             trackColor={{ false: '#E2E8F0', true: '#10B981' }}

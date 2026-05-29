@@ -8,6 +8,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { AdminTabBar } from '../../components/admin/AdminTabBar';
+import { AppHeader } from '../../components/common/AppHeader';
 import { mailDeliveryService, MailDeliveryRequest } from '../../services/mailDeliveryService';
 import { notificationService } from '../../services/notificationService';
 
@@ -136,10 +137,8 @@ export const DeliveryScreen = () => {
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>우편물 전달 관리</Text>
-            </View>
+        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+            <AppHeader title="우편전달 관리" />
 
             <FlatList
                 data={requests}

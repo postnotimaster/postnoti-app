@@ -144,15 +144,13 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                                         <Pressable
                                             style={[styles.resendBtn, { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }]}
                                             onPress={async () => {
-                                                const link = `https://postnoti-app-two.vercel.app/view?p=${tenant.id}`;
-
                                                 if (!tenant.profile_id) {
                                                     Alert.alert('회원 미연동', '이 입주사는 앱 계정이 연결되어 있지 않습니다. 아래 전용 링크를 문자로 보내시겠습니까?', [
                                                         { text: '취소', style: 'cancel' },
                                                         {
                                                             text: '문자 보내기',
                                                             onPress: () => {
-                                                                const message = `[Postnoti] ${tenant.company_name || tenant.name}님, 도착한 우편물을 확인하세요.\n\n확인링크: ${link}`;
+                                                                const message = notificationService.getShareMessage(tenant, officeInfo!);
                                                                 Linking.openURL(`sms:${tenant.phone}?body=${encodeURIComponent(message)}`);
                                                             }
                                                         }
@@ -174,7 +172,7 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                                                         {
                                                             text: '문자 보내기',
                                                             onPress: () => {
-                                                                const message = `[Postnoti] ${tenant.company_name || tenant.name}님, 도착한 우편물을 확인하세요.\n\n확인링크: ${link}`;
+                                                                const message = notificationService.getShareMessage(tenant, officeInfo!);
                                                                 Linking.openURL(`sms:${tenant.phone}?body=${encodeURIComponent(message)}`);
                                                             }
                                                         }

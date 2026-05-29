@@ -28,7 +28,7 @@ export const AdminTenantsScreen = () => {
 
     return (
         <SafeAreaView style={appStyles.safeArea} edges={['top', 'left', 'right']}>
-            <AppHeader title="입주사" />
+            <AppHeader title="입주사 관리" />
             <View style={{ flex: 1, backgroundColor: '#fff' }}>
                 <TenantManagement
                     ref={tenantMgmtRef}

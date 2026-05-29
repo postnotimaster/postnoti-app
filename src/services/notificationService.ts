@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 
 export interface NotificationResult {
     success: boolean;
-    method: 'pwa' | 'native' | 'none';
+    method: 'pwa' | 'native' | 'both' | 'none';
     error?: string;
     targetPhone?: string;
     shareLink?: string;
@@ -124,6 +124,9 @@ export const notificationService = {
 
         const profile = (pushStatus && pushStatus.length > 0) ? pushStatus[0] : null;
 
+        let success = false;
+        let method: 'pwa' | 'native' | 'both' | 'none' = 'none';
+
         // 1. Native Push (Expo)
         if (profile?.push_token) {
             try {
@@ -135,10 +138,10 @@ export const notificationService = {
                         sound: 'default',
                         title,
                         body,
-                        data: { url: shareLink } // [수정] 긴 주소로 변경
+                        data: { url: shareLink }
                     })
                 });
-                if (response.ok) return { success: true, method: 'native', shareLink };
+                if (response.ok) { success = true; method = 'native'; }
             } catch (e) {
                 console.warn('Expo push failed', e);
             }
@@ -154,15 +157,19 @@ export const notificationService = {
                         token: profile.web_push_token,
                         title,
                         body,
-                        data: { company_id: company.id, url: shareLink } // [수정] 긴 주소로 변경
+                        data: { company_id: company.id, url: shareLink }
                     })
                 });
-                if (response.ok) return { success: true, method: 'pwa', shareLink };
+                if (response.ok) { 
+                    success = true; 
+                    method = method === 'native' ? 'both' : 'pwa'; 
+                }
             } catch (e) {
                 console.warn('Web push failed', e);
             }
         }
 
+        if (success) return { success: true, method, shareLink };
         return { success: false, method: 'none', targetPhone: tenant.phone, shareLink };
     },
 
@@ -238,14 +245,13 @@ export const notificationService = {
      */
     generateShareLink(tenant: any, company: any): string {
         const tenantId = tenant?.id || tenant?.tenant_id || tenant?.profile_id || tenant?.uid;
-        if (!tenantId) return `https://postnoti-app-two.vercel.app/view?m=${company?.id}`;
+        if (!tenantId) return `https://postnoti-app-two.vercel.app/?m=${company?.id}`;
 
-        return `https://postnoti-app-two.vercel.app/view?p=${tenantId}&m=${company?.id}`;
+        return `https://postnoti-app-two.vercel.app/?p=${tenantId}`;
     },
 
     getShareMessage(tenant: any, company: any): string {
-        const link = this.generateShareLink(tenant, company);
-        const companyLabel = tenant.company_name || tenant.name;
-        return `[${company.name}]\n${companyLabel}님께 우편물이 도착했습니다.\n우편물 확인은 아래 링크를 눌러주세요.\n\n${link}`;
+        const link = this.generateShareLink(tenant, company).replace('https://', ''); // 문자 길이 압축
+        return `[포스트노티]우편도착\n확인:${link}`;
     }
 };

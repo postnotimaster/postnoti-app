@@ -44,7 +44,7 @@ export const AdminMenuScreen = () => {
 
     return (
         <SafeAreaView style={appStyles.safeArea} edges={['top', 'left', 'right']}>
-            <AppHeader title="관리 메뉴" onBack={() => setMode('admin_dashboard')} />
+            <AppHeader title="관리 메뉴" />
 
             <ScrollView style={{ flex: 1, backgroundColor: '#F8FAFC' }} contentContainerStyle={{ padding: 20 }}>
                 <View style={[appStyles.bottomSheetHeader, { marginBottom: 15 }]}>

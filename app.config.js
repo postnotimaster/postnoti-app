@@ -7,9 +7,9 @@ export default {
     name: IS_ADMIN ? "포스트노티" : "우편알림",
     slug: "postnoti-app",
     scheme: "postnoti",
-    version: "1.0.0",
+    version: "1.0.1",
     orientation: "portrait",
-    icon: IS_ADMIN ? "./assets/icon.png" : "./assets/icon_tenant.png",
+    icon: IS_ADMIN ? "./assets/icon_padded_new.png" : "./assets/icon.png",
     userInterfaceStyle: "light",
     newArchEnabled: true,
     splash: {
@@ -23,17 +23,17 @@ export default {
     },
     android: {
       package: "com.postnoti.app",
-      versionCode: 1,
+      versionCode: 2,
       googleServicesFile: "./google-services.json",
       adaptiveIcon: {
-        foregroundImage: IS_ADMIN ? "./assets/adaptive-icon.png" : "./assets/adaptive-icon_tenant.png",
-        backgroundColor: "#4A60AB"
+        foregroundImage: IS_ADMIN ? "./assets/icon_padded_new.png" : "./assets/adaptive-icon.png",
+        backgroundColor: IS_ADMIN ? "#ffffff" : "#4A60AB"
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false
     },
     web: {
-      favicon: IS_ADMIN ? "./assets/favicon.png" : "./assets/icon_tenant.png",
+      favicon: IS_ADMIN ? "./assets/logo.png" : "./assets/icon.png",
       display: "standalone",
       themeColor: IS_ADMIN ? "#ffffff" : "#FEF3C7",
       description: "포스트노티 공유오피스 스마트 우편알림",
