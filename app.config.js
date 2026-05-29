@@ -1,5 +1,5 @@
 // 👇👇👇 주의: 관리자용 앱을 빌드할 때는 아래를 true로, 입주자용 앱을 빌드할 때는 false로 바꾸세요! 👇👇👇
-const IS_ADMIN = false;
+const IS_ADMIN = true;
 // 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
 
 export default {
@@ -33,12 +33,12 @@ export default {
       predictiveBackGestureEnabled: false
     },
     web: {
-      favicon: "./assets/favicon.png",
+      favicon: IS_ADMIN ? "./assets/favicon.png" : "./assets/icon_tenant.png",
       display: "standalone",
-      themeColor: "#FEF3C7",
+      themeColor: IS_ADMIN ? "#ffffff" : "#FEF3C7",
       description: "포스트노티 공유오피스 스마트 우편알림",
-      name: "우편알림",
-      shortName: "우편알림",
+      name: IS_ADMIN ? "포스트노티" : "우편알림",
+      shortName: IS_ADMIN ? "포스트노티" : "우편알림",
       startUrl: "."
     },
     extra: {
