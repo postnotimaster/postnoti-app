@@ -8,9 +8,20 @@
     <meta name="apple-mobile-web-app-title" content="우편알림" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <link rel="apple-touch-icon" href="/favicon.png" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="manifest" href="/manifest.json" />
+    <script>
+      (function() {
+        var isTenant = window.location.search.indexOf('m=') !== -1 || window.location.search.indexOf('p=') !== -1;
+        if (isTenant) {
+          document.write('<link rel="manifest" href="/manifest.json" />');
+          document.write('<link rel="apple-touch-icon" href="/favicon.png" />');
+          document.write('<link rel="icon" type="image/png" href="/favicon.png" />');
+        } else {
+          document.write('<link rel="manifest" href="/manifest-admin.json" />');
+          document.write('<link rel="apple-touch-icon" href="/favicon-admin.png" />');
+          document.write('<link rel="icon" type="image/png" href="/favicon-admin.png" />');
+        }
+      })();
+    </script>
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
     <style id="expo-reset">
       /* These styles make the body full-height */

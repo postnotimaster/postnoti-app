@@ -30,9 +30,17 @@ import { AdminNotificationSettingsScreen } from './src/screens/AdminNotification
 import { KakaoGuideOverlay } from './src/components/common/KakaoGuideOverlay';
 
 function AppContent() {
-  const { isInitializing: authLoading } = useAuth();
+  const { isInitializing: authLoading, officeInfo } = useAuth();
   const { mode, setMode, magicIdResolved, isInitializing: uiLoading, brandingCompany, setBrandingCompany } = useUI();
   const { expoPushToken, webPushToken } = useNotifications();
+
+  React.useEffect(() => {
+    // 관리자 자동 로그인 로직: 초기화 완료 후 officeInfo가 존재하면 즉시 대시보드로 이동
+    const isSystemInitializing = authLoading || uiLoading;
+    if (!isSystemInitializing && officeInfo && mode === 'landing') {
+      setMode('admin_dashboard');
+    }
+  }, [authLoading, uiLoading, officeInfo, mode, setMode]);
 
   React.useEffect(() => {
     const handleBackButton = () => {
