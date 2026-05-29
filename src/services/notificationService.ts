@@ -251,7 +251,7 @@ export const notificationService = {
     },
 
     getShareMessage(tenant: any, company: any): string {
-        const link = this.generateShareLink(tenant, company).replace('https://', ''); // 문자 길이 압축
-        return `[포스트노티]우편도착\n확인:${link}`;
+        const link = this.generateShareLink(tenant, company).replace('https://', '');
+        return `[포스트노티] ${link}`;
     }
 };
