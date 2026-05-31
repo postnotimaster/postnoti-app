@@ -51,6 +51,7 @@ export const AdminRegisterMailScreen = () => {
     const [resultModalVisible, setResultModalVisible] = React.useState(false);
     const [lastNotifResult, setLastNotifResult] = React.useState<NotificationResult | null>(null);
     const [pushStatuses, setPushStatuses] = React.useState<Record<string, boolean>>({}); // [NEW] 푸시 상태 현황판
+    const [isSending, setIsSending] = React.useState(false);
 
     const prevOcrLoading = React.useRef(ocrLoading);
 
@@ -116,6 +117,8 @@ export const AdminRegisterMailScreen = () => {
     };
 
     const confirmAndSend = async (fallbackToSms: boolean) => {
+        if (isSending) return;
+        setIsSending(true);
         try {
             const defaultMsg = officeInfo?.settings?.default_message || "안녕하세요. 우편물이 도착했습니다.";
             const finalMessage = selectedPreset || customMessage || defaultMsg;
@@ -156,6 +159,8 @@ export const AdminRegisterMailScreen = () => {
         } catch (e: any) {
             console.error('[AdminRegisterMail] confirmSend error:', e);
             Alert.alert('등록 오류', `문제가 발생했습니다: ${e.message}`);
+        } finally {
+            setIsSending(false);
         }
     };
 
@@ -658,14 +663,18 @@ export const AdminRegisterMailScreen = () => {
                                         원하시는 알림 발송 방식을 선택해 주세요.
                                     </Text>
                                     <PrimaryButton
-                                        label="🚀 바로 보내기 (앱 푸시)"
+                                        label={isSending ? "데이터 저장 중..." : "🚀 바로 보내기 (앱 푸시)"}
                                         onPress={() => confirmAndSend(false)}
+                                        loading={isSending}
+                                        disabled={isSending}
                                         style={{ width: '100%', marginBottom: 10, backgroundColor: '#16A34A', alignSelf: 'stretch', alignItems: 'center', paddingVertical: 15 }}
                                         textStyle={{ fontSize: 16, fontWeight: '700' }}
                                     />
                                     <PrimaryButton
-                                        label="📱 문자로 링크 전송하기"
+                                        label={isSending ? "사진 업로드 중..." : "📱 문자로 링크 전송하기"}
                                         onPress={() => confirmAndSend(true)}
+                                        loading={isSending}
+                                        disabled={isSending}
                                         style={{ width: '100%', marginBottom: 12, backgroundColor: '#4F46E5', alignSelf: 'stretch', alignItems: 'center', paddingVertical: 15 }}
                                         textStyle={{ fontSize: 16, fontWeight: '700' }}
                                     />
@@ -681,13 +690,16 @@ export const AdminRegisterMailScreen = () => {
                                         문자로 우편물 확인 링크를 전송해 주세요.
                                     </Text>
                                     <PrimaryButton
-                                        label="📱 문자로 링크 전송하기"
+                                        label={isSending ? "처리 중..." : "📱 문자로 링크 전송하기"}
                                         onPress={() => confirmAndSend(true)}
+                                        loading={isSending}
+                                        disabled={isSending}
                                         style={{ width: '100%', marginBottom: 10, backgroundColor: '#4F46E5', alignSelf: 'stretch', alignItems: 'center', paddingVertical: 15 }}
                                         textStyle={{ fontSize: 16, fontWeight: '700' }}
                                     />
                                     <Pressable
                                         onPress={() => confirmAndSend(false)}
+                                        disabled={isSending}
                                         style={{ 
                                             width: '100%', 
                                             paddingVertical: 12, 
@@ -696,10 +708,11 @@ export const AdminRegisterMailScreen = () => {
                                             borderColor: '#E2E8F0', 
                                             alignItems: 'center', 
                                             backgroundColor: '#F8FAFC',
-                                            marginBottom: 10
+                                            marginBottom: 10,
+                                            opacity: isSending ? 0.5 : 1
                                         }}
                                     >
-                                        <Text style={{ color: '#64748B', fontWeight: '600' }}>🚀 그래도 앱 푸시 발송 시도</Text>
+                                        <Text style={{ color: '#64748B', fontWeight: '600' }}>{isSending ? "로딩 중..." : "🚀 그래도 앱 푸시 발송 시도"}</Text>
                                     </Pressable>
                                 </>
                             )}
