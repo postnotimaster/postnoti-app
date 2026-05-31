@@ -5,6 +5,7 @@ import * as Linking from 'expo-linking';
 import { supabase } from '../lib/supabase';
 import { Company } from '../services/companiesService';
 import { tenantsService, Tenant } from '../services/tenantsService';
+import { base62ToUuid } from '../utils/base62';
 
 export type AppMode = 'landing' | 'admin_login' | 'admin_branch_select' | 'admin_dashboard' | 'admin_register_mail' | 'admin_notification_settings' | 'admin_settings' | 'admin_tenants' | 'admin_delivery' | 'admin_announcements' | 'admin_menu' | 'admin_senders' | 'admin_signup' | 'tenant_login' | 'tenant_dashboard';
 
@@ -55,7 +56,8 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
             const tenantIdRaw = paramPMatch ? paramPMatch[1].trim() : null;
             
             const msgMagicId = msgMagicIdRaw === 'undefined' ? null : msgMagicIdRaw;
-            const tenantId = tenantIdRaw === 'undefined' ? null : tenantIdRaw;
+            let tenantId = tenantIdRaw === 'undefined' ? null : tenantIdRaw;
+            if (tenantId) tenantId = base62ToUuid(tenantId);
 
             console.log('[UIContext] Parsed Params:', { msgMagicId, tenantId });
 

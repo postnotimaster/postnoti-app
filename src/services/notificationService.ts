@@ -3,6 +3,7 @@ import { Profile } from './profilesService';
 import { Company } from './companiesService';
 import { Tenant } from './tenantsService';
 import { supabase } from '../lib/supabase';
+import { uuidToBase62 } from '../utils/base62';
 
 export interface NotificationResult {
     success: boolean;
@@ -247,11 +248,11 @@ export const notificationService = {
         const tenantId = tenant?.id || tenant?.tenant_id || tenant?.profile_id || tenant?.uid;
         if (!tenantId) return `https://postnoti-app-two.vercel.app/?m=${company?.id}`;
 
-        return `https://postnoti-app-two.vercel.app/?p=${tenantId}`;
+        return `https://postnoti-app-two.vercel.app/?p=${uuidToBase62(tenantId)}`;
     },
 
     getShareMessage(tenant: any, company: any): string {
         const link = this.generateShareLink(tenant, company).replace('https://', '');
-        return `[포스트노티] ${link}`;
+        return `[${company.name}]우편확인:${link}`;
     }
 };
