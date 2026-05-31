@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, ActivityIndicator, Pressable } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert, ActivityIndicator, Pressable, Switch } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../lib/supabase';
 import { PrimaryButton } from '../common/PrimaryButton';
 
@@ -13,6 +14,24 @@ export const LoginScreen = ({ onLoginSuccess, onBack, isEmbedded }: Props) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [rememberMe, setRememberMe] = useState(true);
+
+    React.useEffect(() => {
+        const loadSavedCredentials = async () => {
+            try {
+                const savedEmail = await AsyncStorage.getItem('saved_admin_email');
+                const savedPassword = await AsyncStorage.getItem('saved_admin_password');
+                if (savedEmail) setEmail(savedEmail);
+                if (savedPassword) {
+                    setPassword(savedPassword);
+                    setRememberMe(true);
+                }
+            } catch (e) {
+                console.warn('Failed to load credentials', e);
+            }
+        };
+        loadSavedCredentials();
+    }, []);
 
     const handleLogin = async () => {
         // ... 기존 로그인 로직 유지
@@ -37,6 +56,15 @@ export const LoginScreen = ({ onLoginSuccess, onBack, isEmbedded }: Props) => {
             if (profileError || profile.role !== 'admin') {
                 throw new Error('관리자 권한이 없거나 프로필 설정을 확인해주세요.');
             }
+
+            if (rememberMe) {
+                await AsyncStorage.setItem('saved_admin_email', email);
+                await AsyncStorage.setItem('saved_admin_password', password);
+            } else {
+                await AsyncStorage.removeItem('saved_admin_email');
+                await AsyncStorage.removeItem('saved_admin_password');
+            }
+
             onLoginSuccess(profile);
         } catch (error: any) {
             Alert.alert('로그인 실패', error.message);
@@ -78,6 +106,19 @@ export const LoginScreen = ({ onLoginSuccess, onBack, isEmbedded }: Props) => {
                             secureTextEntry
                         />
                     </View>
+
+                    <Pressable 
+                        style={{ flexDirection: 'row', alignItems: 'center', marginTop: -4 }}
+                        onPress={() => setRememberMe(!rememberMe)}
+                    >
+                        <Switch
+                            value={rememberMe}
+                            onValueChange={setRememberMe}
+                            trackColor={{ false: '#CBD5E1', true: '#4F46E5' }}
+                            style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+                        />
+                        <Text style={{ fontSize: 13, color: '#64748B', marginLeft: 4 }}>로그인 정보 기억하기 (자동입력)</Text>
+                    </Pressable>
 
                     {loading ? (
                         <ActivityIndicator size="large" color="#2563EB" style={{ marginTop: 20 }} />
