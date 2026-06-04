@@ -127,7 +127,8 @@ export const TenantDashboard = ({
         handleInstallPrompt,
         isIOS,
         isStandalone,
-        isInstallComplete
+        isInstallComplete,
+        setIsInstallComplete
     } = usePWAInstall(myProfile?.profile_id || myProfile?.id);
 
     const [isIOSGuideVisible, setIsIOSGuideVisible] = useState(false);
@@ -231,7 +232,8 @@ export const TenantDashboard = ({
         isSettingsVisible,
         isNoticeVisible,
         isIOSGuideVisible,
-        isAndroidGuideVisible
+        isAndroidGuideVisible,
+        isInstallComplete
     });
 
     useEffect(() => {
@@ -241,9 +243,10 @@ export const TenantDashboard = ({
             isSettingsVisible,
             isNoticeVisible,
             isIOSGuideVisible,
-            isAndroidGuideVisible
+            isAndroidGuideVisible,
+            isInstallComplete
         };
-    }, [selectedMailImage, isMailDeliveryVisible, isSettingsVisible, isNoticeVisible, isIOSGuideVisible, isAndroidGuideVisible]);
+    }, [selectedMailImage, isMailDeliveryVisible, isSettingsVisible, isNoticeVisible, isIOSGuideVisible, isAndroidGuideVisible, isInstallComplete]);
 
     useEffect(() => {
         const handleBack = () => {
@@ -272,6 +275,10 @@ export const TenantDashboard = ({
             }
             if (state.isAndroidGuideVisible) {
                 setIsAndroidGuideVisible(false);
+                return true;
+            }
+            if (state.isInstallComplete) {
+                setIsInstallComplete(false);
                 return true;
             }
 
@@ -310,7 +317,7 @@ export const TenantDashboard = ({
                 }
 
                 const appState = modalsStateRef.current;
-                const hasModal = appState.selectedMailImage || appState.isMailDeliveryVisible || appState.isSettingsVisible || appState.isNoticeVisible || appState.isIOSGuideVisible || appState.isAndroidGuideVisible;
+                const hasModal = appState.selectedMailImage || appState.isMailDeliveryVisible || appState.isSettingsVisible || appState.isNoticeVisible || appState.isIOSGuideVisible || appState.isAndroidGuideVisible || appState.isInstallComplete;
 
                 if (hasModal) {
                     setSelectedMailImage(null);
@@ -319,6 +326,7 @@ export const TenantDashboard = ({
                     setIsNoticeVisible(false);
                     setIsIOSGuideVisible(false);
                     setIsAndroidGuideVisible(false);
+                    setIsInstallComplete(false);
                     // 이미 Home 상태로 되돌아왔으므로 추가 push 불필요
                 } else {
                     const wantToExit = window.confirm('우편알림 앱을 종료하시겠습니까?');
@@ -338,7 +346,7 @@ export const TenantDashboard = ({
     // 웹(PWA) 모달 열림 상태 동기화를 위한 History 스택 제어
     useEffect(() => {
         if (Platform.OS === 'web') {
-            const hasModal = selectedMailImage || isMailDeliveryVisible || isSettingsVisible || isNoticeVisible || isIOSGuideVisible || isAndroidGuideVisible;
+            const hasModal = selectedMailImage || isMailDeliveryVisible || isSettingsVisible || isNoticeVisible || isIOSGuideVisible || isAndroidGuideVisible || isInstallComplete;
             if (hasModal) {
                 window.history.pushState({ name: 'modal' }, '');
             } else {
@@ -348,7 +356,7 @@ export const TenantDashboard = ({
                 }
             }
         }
-    }, [selectedMailImage, isMailDeliveryVisible, isSettingsVisible, isNoticeVisible, isIOSGuideVisible, isAndroidGuideVisible]);
+    }, [selectedMailImage, isMailDeliveryVisible, isSettingsVisible, isNoticeVisible, isIOSGuideVisible, isAndroidGuideVisible, isInstallComplete]);
 
     const flatData = React.useMemo(() => {
         const result: any[] = [];
@@ -840,6 +848,12 @@ export const TenantDashboard = ({
                             이제 홈 화면(바탕화면)에 생성된{'\n'}
                             <Text style={{ fontWeight: '800', color: '#4F46E5' }}>[우편알림]</Text> 앱 아이콘을 눌러주세요!
                         </Text>
+                        <Pressable 
+                            style={{ marginTop: 24, backgroundColor: '#F1F5F9', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12 }}
+                            onPress={() => setIsInstallComplete(false)}
+                        >
+                            <Text style={{ color: '#64748B', fontWeight: '700' }}>닫기</Text>
+                        </Pressable>
                     </View>
                 </View>
             </Modal>

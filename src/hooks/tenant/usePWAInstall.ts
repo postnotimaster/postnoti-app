@@ -74,6 +74,7 @@ export const usePWAInstall = (profileId?: string) => {
         handleInstallPrompt,
         isIOS,
         isStandalone,
-        isInstallComplete
+        isInstallComplete,
+        setIsInstallComplete
     };
 };
