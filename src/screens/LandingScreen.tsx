@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Image, Pressable, Keyboard, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Image, Pressable, Keyboard, TextInput, ActivityIndicator, Alert, Modal } from 'react-native';
 import { LoginScreen } from '../components/auth/LoginScreen';
 import { PrimaryButton } from '../components/common/PrimaryButton';
 import { appStyles } from '../styles/appStyles';
@@ -23,6 +23,8 @@ export const LandingScreen = () => {
     const [isTenantLogin, setIsTenantLogin] = useState(!isAdminApp);
     const [tenantPhone, setTenantPhone] = useState('');
     const [isSearching, setIsSearching] = useState(false);
+    const [showSignupModal, setShowSignupModal] = useState(false);
+    const [signupPassword, setSignupPassword] = useState('');
 
     React.useEffect(() => {
         if (isKakaoTalk()) {
@@ -209,7 +211,7 @@ export const LandingScreen = () => {
 
                             {!isTenantLogin && (
                                 <Pressable
-                                    onPress={() => setMode('admin_signup')}
+                                    onPress={() => setShowSignupModal(true)}
                                     style={{ marginTop: 40, alignItems: 'center' }}
                                 >
                                     <Text style={{ fontSize: 16, color: '#64748B' }}>
@@ -221,6 +223,59 @@ export const LandingScreen = () => {
                         </View>
                     </View>
                 </ScrollView>
+
+                {/* 베타 테스트 중 오피스 가입을 제한하기 위한 비밀번호 모달 */}
+                <Modal visible={showSignupModal} transparent={true} animationType="fade">
+                    <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                        <View style={{ backgroundColor: '#fff', padding: 24, borderRadius: 16, width: '100%', maxWidth: 400 }}>
+                            <Text style={{ fontSize: 18, fontWeight: '700', color: '#1E293B', marginBottom: 12 }}>베타 테스터 인증</Text>
+                            <Text style={{ fontSize: 14, color: '#64748B', marginBottom: 20, lineHeight: 20 }}>
+                                현재 오피스 등록은 사전 등록된 베타 테스터에게만 허용됩니다. 인증 코드를 입력해주세요.
+                            </Text>
+                            <TextInput
+                                style={{
+                                    backgroundColor: '#F1F5F9',
+                                    borderWidth: 1,
+                                    borderColor: '#E2E8F0',
+                                    borderRadius: 12,
+                                    paddingHorizontal: 16,
+                                    height: 50,
+                                    fontSize: 16,
+                                    marginBottom: 20
+                                }}
+                                placeholder="인증 코드 입력"
+                                secureTextEntry
+                                value={signupPassword}
+                                onChangeText={setSignupPassword}
+                            />
+                            <View style={{ flexDirection: 'row', gap: 12 }}>
+                                <Pressable
+                                    style={{ flex: 1, height: 48, backgroundColor: '#F1F5F9', borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}
+                                    onPress={() => {
+                                        setShowSignupModal(false);
+                                        setSignupPassword('');
+                                    }}
+                                >
+                                    <Text style={{ color: '#475569', fontWeight: '600' }}>취소</Text>
+                                </Pressable>
+                                <Pressable
+                                    style={{ flex: 1, height: 48, backgroundColor: '#4F46E5', borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}
+                                    onPress={() => {
+                                        if (signupPassword === 'wait2894') {
+                                            setShowSignupModal(false);
+                                            setSignupPassword('');
+                                            setMode('admin_signup');
+                                        } else {
+                                            Alert.alert('인증 실패', '올바른 인증 코드가 아닙니다.');
+                                        }
+                                    }}
+                                >
+                                    <Text style={{ color: '#fff', fontWeight: '600' }}>확인</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );

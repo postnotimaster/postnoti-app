@@ -141,16 +141,7 @@ export const LoginScreen = ({ onLoginSuccess, onBack, isEmbedded }: Props) => {
                         </View>
                     )}
 
-                    {/* 개발용 단축 입력 */}
-                    <Pressable
-                        style={{ marginTop: 10, alignItems: 'center' }}
-                        onPress={() => {
-                            setEmail('admin@postnoti.com');
-                            setPassword('289400');
-                        }}
-                    >
-                        <Text style={{ color: '#CBD5E1', fontSize: 11 }}>자동입력 [admin / 289400]</Text>
-                    </Pressable>
+
                 </View>
             </View>
         </View>

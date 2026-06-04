@@ -112,9 +112,9 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
             loadTenants();
             setIsEditing(false);
             if (onComplete) onComplete();
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            Alert.alert('\uc624\ub958', '\uc800\uc7a5\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. DB \uad6c\uc870 \uc5c5\ub370\uc774\ud2b8\ub97c \ud655\uc778\ud574 \uc8fc\uc138\uc694.');
+            Alert.alert('\uc624\ub958', `\uc800\uc7a5\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4.\n${error.message || JSON.stringify(error)}`);
         } finally {
             setLoading(false);
         }

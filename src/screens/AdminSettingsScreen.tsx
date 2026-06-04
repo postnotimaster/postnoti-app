@@ -92,8 +92,14 @@ export const AdminSettingsScreen = () => {
                 text: '로그아웃',
                 style: 'destructive',
                 onPress: async () => {
-                    await supabase.auth.signOut();
-                    setMode('landing');
+                    try {
+                        await supabase.auth.signOut();
+                    } catch (e) {
+                        console.error('Logout error:', e);
+                    } finally {
+                        setOfficeInfo(null);
+                        setMode('landing');
+                    }
                 }
             }
         ]);
