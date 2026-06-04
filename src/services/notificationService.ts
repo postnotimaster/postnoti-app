@@ -252,7 +252,7 @@ export const notificationService = {
     },
 
     getShareMessage(tenant: any, company: any): string {
-        const link = this.generateShareLink(tenant, company).replace('https://', '');
-        return `[${company.name}]우편확인:${link}`;
+        const link = this.generateShareLink(tenant, company);
+        return `[${company.name}] 우편확인:\n${link}`;
     }
 };
