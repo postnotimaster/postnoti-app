@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Image, Pressable, Keyboard, TextInput, ActivityIndicator, Alert, Modal } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LoginScreen } from '../components/auth/LoginScreen';
 import { PrimaryButton } from '../components/common/PrimaryButton';
 import { appStyles } from '../styles/appStyles';
@@ -166,7 +167,7 @@ export const LandingScreen = () => {
                                                 style={{ flex: 1, backgroundColor: '#EEF2FF', paddingVertical: 25, paddingHorizontal: 10, borderRadius: 20, alignItems: 'center', borderWidth: 2, borderColor: '#C7D2FE' }}
                                                 onPress={() => setViewState('tenant')}
                                             >
-                                                <Text style={{ fontSize: 36, marginBottom: 12 }}>🏠</Text>
+                                                <Ionicons name="mail" size={36} color="#4F46E5" style={{ marginBottom: 12 }} />
                                                 <Text style={{ fontSize: 16, fontWeight: '800', color: '#4F46E5', marginBottom: 6 }}>입주자 우편함</Text>
                                                 <Text style={{ fontSize: 11, color: '#64748B', textAlign: 'center' }}>휴대전화 번호 조회</Text>
                                             </Pressable>
@@ -175,7 +176,7 @@ export const LandingScreen = () => {
                                                 style={{ flex: 1, backgroundColor: '#F8FAFC', paddingVertical: 25, paddingHorizontal: 10, borderRadius: 20, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' }}
                                                 onPress={() => setViewState('admin')}
                                             >
-                                                <Text style={{ fontSize: 36, marginBottom: 12 }}>🏢</Text>
+                                                <Ionicons name="business" size={36} color="#1E293B" style={{ marginBottom: 12 }} />
                                                 <Text style={{ fontSize: 16, fontWeight: '800', color: '#1E293B', marginBottom: 6 }}>관리자 전용</Text>
                                                 <Text style={{ fontSize: 11, color: '#64748B', textAlign: 'center' }}>오피스 매니저 로그인</Text>
                                             </Pressable>
@@ -247,7 +248,7 @@ export const LandingScreen = () => {
                     </View>
                     {!keyboardVisible && (
                         <View style={{ alignItems: 'center', paddingBottom: 20 }}>
-                            <Text style={{ color: '#CBD5E1', fontSize: 13, fontWeight: '600' }}>postn.kr</Text>
+                            <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '700' }}>© 2024 postn.kr All rights reserved.</Text>
                         </View>
                     )}
                 </ScrollView>
