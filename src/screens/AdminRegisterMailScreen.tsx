@@ -387,6 +387,7 @@ export const AdminRegisterMailScreen = () => {
                                                     <Text style={appStyles.changeText}>변경</Text>
                                                 </Pressable>
                                             </View>
+                                        ) : (
                                             <View style={{ alignItems: 'center', paddingVertical: 25, backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', borderStyle: 'dashed' }}>
                                                 <Text style={{ fontSize: 28, marginBottom: 8 }}>⚠️</Text>
                                                 <Text style={{ color: '#1E293B', fontSize: 16, fontWeight: '800', marginBottom: 6 }}>

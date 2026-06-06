@@ -251,8 +251,8 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
 
                     <View style={{ marginTop: 8, marginBottom: 10 }}>
                         <Text style={[styles.compactLabel, { marginBottom: 6, width: '100%' }]}>📋 입주 상태</Text>
-                        <View style={{ flexDirection: 'row', gap: 6 }}>
-                            {['입주', '퇴거', '폐업', '이전', '소재불명'].map((st) => {
+                        <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
+                            {['입주', '퇴거', '폐업', '이전', '소재불명', '연체불량'].map((st) => {
                                 const currentStatus = editingTenant.status || (editingTenant.is_active ? '입주' : '퇴거');
                                 const isSelected = currentStatus === st;
                                 return (
@@ -260,7 +260,7 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                                         key={st}
                                         onPress={() => setEditingTenant({ ...editingTenant, status: st })}
                                         style={{
-                                            flex: 1,
+                                            flexBasis: '31%',
                                             paddingVertical: 8,
                                             borderRadius: 8,
                                             borderWidth: 1,
@@ -470,7 +470,7 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                                             <Text style={[styles.tenantName, { fontSize: 14, color: '#1E293B', fontWeight: '700' }]} numberOfLines={1}>{t.name}</Text>
                                             <Text style={{ fontSize: 10, color: '#CBD5E1' }}>|</Text>
                                             <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '600' }}>
-                                                보관 <Text style={{ color: '#4F46E5' }}>{t.retention_days === 0 ? '영구' : `${(t.retention_days || 14) / 7}주`}</Text>
+                                                보관 <Text style={{ color: '#4F46E5' }}>{t.retention_days === 0 ? '영구' : t.retention_days === 30 ? '1달' : `${(t.retention_days || 14) / 7}주`}</Text>
                                             </Text>
                                             <Text style={{ fontSize: 10, color: '#CBD5E1' }}>|</Text>
                                             <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '600' }}>

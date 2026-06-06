@@ -104,12 +104,13 @@ export const LandingScreen = () => {
     return (
         <SafeAreaView style={appStyles.flexContainer}>
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={appStyles.flexContainer}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
             >
                 <ScrollView
                     style={appStyles.flexContainer}
-                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+                    contentContainerStyle={{ flexGrow: 1, paddingBottom: keyboardVisible ? 200 : 20 }}
                     keyboardShouldPersistTaps="handled"
                 >
                     {isKakaoTalk() && (
@@ -138,7 +139,8 @@ export const LandingScreen = () => {
                                 resizeMode="contain"
                             />
                             <Text style={{ fontSize: 16, color: '#475569', fontWeight: '800', marginTop: 15 }}>
-                                스마트우편알림 - 포스트노티 {isAdminApp && <Text style={{ color: '#4F46E5' }}>(관리자)</Text>}
+                                스마트우편알림 - <Text style={{ fontSize: 14 }}>postnoti</Text>
+                                {isAdminApp && viewState !== 'tenant' && <Text style={{ color: '#4F46E5' }}> (관리자)</Text>}
                             </Text>
                         </View>
 
@@ -157,25 +159,27 @@ export const LandingScreen = () => {
                             }]}>
                                 {viewState === 'selection' ? (
                                     <View style={{ gap: 15 }}>
-                                        <Text style={{ textAlign: 'center', color: '#64748B', fontWeight: '700', marginBottom: 10 }}>어떤 권한으로 접속하시나요?</Text>
+                                        <Text style={{ textAlign: 'center', color: '#64748B', fontWeight: '700', marginBottom: 5 }}>어떤 권한으로 접속하시나요?</Text>
                                         
-                                        <Pressable 
-                                            style={{ backgroundColor: '#EEF2FF', padding: 25, borderRadius: 24, alignItems: 'center', borderWidth: 2, borderColor: '#C7D2FE' }}
-                                            onPress={() => setViewState('tenant')}
-                                        >
-                                            <Text style={{ fontSize: 40, marginBottom: 10 }}>🏠</Text>
-                                            <Text style={{ fontSize: 20, fontWeight: '800', color: '#4F46E5', marginBottom: 5 }}>오피스 입주자</Text>
-                                            <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center' }}>카카오톡/문자로 받은 전용 링크가 없다면 여기를 눌러주세요</Text>
-                                        </Pressable>
-                                        
-                                        <Pressable 
-                                            style={{ backgroundColor: '#F8FAFC', padding: 25, borderRadius: 24, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' }}
-                                            onPress={() => setViewState('admin')}
-                                        >
-                                            <Text style={{ fontSize: 40, marginBottom: 10 }}>🏢</Text>
-                                            <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 5 }}>오피스 관리자</Text>
-                                            <Text style={{ fontSize: 13, color: '#64748B' }}>지점코드와 비밀번호로 로그인</Text>
-                                        </Pressable>
+                                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                                            <Pressable 
+                                                style={{ flex: 1, backgroundColor: '#EEF2FF', paddingVertical: 25, paddingHorizontal: 10, borderRadius: 20, alignItems: 'center', borderWidth: 2, borderColor: '#C7D2FE' }}
+                                                onPress={() => setViewState('tenant')}
+                                            >
+                                                <Text style={{ fontSize: 36, marginBottom: 12 }}>🏠</Text>
+                                                <Text style={{ fontSize: 16, fontWeight: '800', color: '#4F46E5', marginBottom: 6 }}>입주자 우편함</Text>
+                                                <Text style={{ fontSize: 11, color: '#64748B', textAlign: 'center' }}>휴대전화 번호 조회</Text>
+                                            </Pressable>
+                                            
+                                            <Pressable 
+                                                style={{ flex: 1, backgroundColor: '#F8FAFC', paddingVertical: 25, paddingHorizontal: 10, borderRadius: 20, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' }}
+                                                onPress={() => setViewState('admin')}
+                                            >
+                                                <Text style={{ fontSize: 36, marginBottom: 12 }}>🏢</Text>
+                                                <Text style={{ fontSize: 16, fontWeight: '800', color: '#1E293B', marginBottom: 6 }}>관리자 전용</Text>
+                                                <Text style={{ fontSize: 11, color: '#64748B', textAlign: 'center' }}>오피스 매니저 로그인</Text>
+                                            </Pressable>
+                                        </View>
                                     </View>
                                 ) : viewState === 'tenant' ? (
                                     <View>
@@ -241,6 +245,11 @@ export const LandingScreen = () => {
                             )}
                         </View>
                     </View>
+                    {!keyboardVisible && (
+                        <View style={{ alignItems: 'center', paddingBottom: 20 }}>
+                            <Text style={{ color: '#CBD5E1', fontSize: 13, fontWeight: '600' }}>postn.kr</Text>
+                        </View>
+                    )}
                 </ScrollView>
 
                 {/* 베타 테스트 중 오피스 가입을 제한하기 위한 비밀번호 모달 */}

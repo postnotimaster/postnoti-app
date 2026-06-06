@@ -60,19 +60,6 @@ export const MailHistoryCard: React.FC<MailHistoryCardProps> = ({ log, pushStatu
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
                         <View style={{ width: 50, marginRight: 12, alignItems: 'center' }}>
                             <View style={{ flexDirection: 'row', gap: 3 }}>
-                                {log.tenants?.is_premium && (
-                                    <View style={{ 
-                                        backgroundColor: '#78350F',
-                                        paddingHorizontal: 6, 
-                                        paddingVertical: 2, 
-                                        borderRadius: 4, 
-                                        borderWidth: 1, 
-                                        borderColor: '#D97706',
-                                        alignItems: 'center'
-                                    }}>
-                                        <Text style={{ fontSize: 8, color: '#FDE68A', fontWeight: '900', letterSpacing: 0.8 }}>PREMIUM</Text>
-                                    </View>
-                                )}
                                 {log.tenants?.is_active === false && (
                                     <View style={{ backgroundColor: '#FEF2F2', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4, borderWidth: 1, borderColor: '#FECACA', alignItems: 'center' }}>
                                         <Text style={{ fontSize: 9, color: '#991B1B', fontWeight: '900' }}>퇴거</Text>
@@ -80,7 +67,20 @@ export const MailHistoryCard: React.FC<MailHistoryCardProps> = ({ log, pushStatu
                                 )}
                             </View>
                         </View>
-                        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            {log.tenants?.is_premium && (
+                                <View style={{ 
+                                    backgroundColor: '#FFD700',
+                                    paddingHorizontal: 5, 
+                                    paddingVertical: 2, 
+                                    borderRadius: 4, 
+                                    borderWidth: 1, 
+                                    borderColor: '#F59E0B',
+                                    alignItems: 'center'
+                                }}>
+                                    <Text style={{ fontSize: 9, color: '#78350F', fontWeight: '900' }}>프리미엄</Text>
+                                </View>
+                            )}
                             <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '600' }} numberOfLines={1}>
                                 {log.tenants?.name}
                             </Text>
