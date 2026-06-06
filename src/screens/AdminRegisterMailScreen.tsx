@@ -345,18 +345,18 @@ export const AdminRegisterMailScreen = () => {
                                                             {matchedProfile.name} {matchedProfile.room_number ? `(${matchedProfile.room_number})` : ''}
                                                             {matchedProfile.company_name ? ` - ${matchedProfile.company_name}` : ''}
                                                         </Text>
-                                                        {/* PREMIUM 뱃지 */}
+                                                        {/* 프리미엄 뱃지 */}
                                                         {matchedProfile.is_premium && (
                                                             <View style={{
-                                                                backgroundColor: '#78350F',
+                                                                backgroundColor: '#FFD700', // 골드빛 배경
                                                                 paddingHorizontal: 7,
                                                                 paddingVertical: 3,
                                                                 borderRadius: 5,
                                                                 borderWidth: 1,
-                                                                borderColor: '#D97706',
+                                                                borderColor: '#F59E0B', // 진한 노란색/주황색 테두리
                                                                 alignItems: 'center'
                                                             }}>
-                                                                <Text style={{ fontSize: 9, color: '#FDE68A', fontWeight: '900', letterSpacing: 0.8 }}>PREMIUM</Text>
+                                                                <Text style={{ fontSize: 9, color: '#78350F', fontWeight: '900', letterSpacing: 0.8 }}>프리미엄</Text>
                                                             </View>
                                                         )}
                                                         {/* [개선] 하이픈 제거 후 숫자만으로 푸시 상태 판별 */}
@@ -387,20 +387,33 @@ export const AdminRegisterMailScreen = () => {
                                                     <Text style={appStyles.changeText}>변경</Text>
                                                 </Pressable>
                                             </View>
-                                        ) : (
-                                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={appStyles.profileList}>
-                                                {profiles.map((p: any) => (
-                                                    <Pressable
-                                                        key={p.id}
-                                                        style={[appStyles.profileChip, !p.is_active && { opacity: 0.5, backgroundColor: '#F3F4F6' }]}
-                                                        onPress={() => setMatchedProfile(p)}
+                                            <View style={{ alignItems: 'center', paddingVertical: 25, backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', borderStyle: 'dashed' }}>
+                                                <Text style={{ fontSize: 28, marginBottom: 8 }}>⚠️</Text>
+                                                <Text style={{ color: '#1E293B', fontSize: 16, fontWeight: '800', marginBottom: 6 }}>
+                                                    대상을 찾지 못했습니다
+                                                </Text>
+                                                <Text style={{ color: '#64748B', fontSize: 13, marginBottom: 20, textAlign: 'center', paddingHorizontal: 20 }}>
+                                                    사진을 다시 찍거나 직접 검색해주세요.
+                                                </Text>
+                                                
+                                                <View style={{ flexDirection: 'row', gap: 10, width: '100%', paddingHorizontal: 20 }}>
+                                                    <Pressable 
+                                                        onPress={async () => {
+                                                            const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
+                                                            if (!result.canceled) runOCR(result.assets[0].uri);
+                                                        }} 
+                                                        style={{ flex: 1, backgroundColor: '#EEF2FF', padding: 12, borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: '#C7D2FE' }}
                                                     >
-                                                        <Text style={[appStyles.profileChipText, !p.is_active && { color: '#9CA3AF' }]}>
-                                                            {p.name} {p.room_number ? `(${p.room_number})` : ''} {!p.is_active && '(퇴거)'}
-                                                        </Text>
+                                                        <Text style={{ color: '#4F46E5', fontWeight: '700', fontSize: 14 }}>📷 다시 촬영</Text>
                                                     </Pressable>
-                                                ))}
-                                            </ScrollView>
+                                                    <Pressable 
+                                                        onPress={() => setIsManualSearchVisible(true)}
+                                                        style={{ flex: 1, backgroundColor: '#4F46E5', padding: 12, borderRadius: 10, alignItems: 'center' }}
+                                                    >
+                                                        <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>🔍 이름/호수 검색</Text>
+                                                    </Pressable>
+                                                </View>
+                                            </View>
                                         )}
                                     </View>
                                 </View>

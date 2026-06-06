@@ -140,72 +140,7 @@ export const TenantMailHistory = ({ tenant, officeInfo, onClose, isTenantMode = 
                                             <Text style={[styles.badgeText, { color: '#94A3B8' }]}>안읽음</Text>
                                         </View>
                                     )}
-                                    {!isTenantMode && (
-                                        <Pressable
-                                            style={[styles.resendBtn, { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }]}
-                                            onPress={async () => {
-                                                if (!tenant.profile_id) {
-                                                    Alert.alert('회원 미연동', '이 입주사는 앱 계정이 연결되어 있지 않습니다. 아래 전용 링크를 문자로 보내시겠습니까?', [
-                                                        { text: '취소', style: 'cancel' },
-                                                        {
-                                                            text: '문자 보내기',
-                                                            onPress: () => {
-                                                                const message = notificationService.getShareMessage(tenant, officeInfo!);
-                                                                Linking.openURL(`sms:${tenant.phone}?body=${encodeURIComponent(message)}`);
-                                                            }
-                                                        }
-                                                    ]);
-                                                    return;
-                                                }
 
-                                                // RLS 우회를 위해 check_tenant_push_status RPC 호출
-                                                const { data: pushStatuses } = await supabase.rpc('check_tenant_push_status', {
-                                                    p_company_id: tenant.company_id,
-                                                    p_phone: tenant.phone
-                                                });
-
-                                                const pushStatus = (pushStatuses && pushStatuses.length > 0) ? pushStatuses[0] : null;
-
-                                                if (!pushStatus?.push_token && !pushStatus?.web_push_token) {
-                                                    Alert.alert('알림 불가', '이 입주민은 알림 수신 설정이 되어있지 않습니다. 문자로 전용 링크를 보내시겠습니까?', [
-                                                        { text: '취소', style: 'cancel' },
-                                                        {
-                                                            text: '문자 보내기',
-                                                            onPress: () => {
-                                                                const message = notificationService.getShareMessage(tenant, officeInfo!);
-                                                                Linking.openURL(`sms:${tenant.phone}?body=${encodeURIComponent(message)}`);
-                                                            }
-                                                        }
-                                                    ]);
-                                                    return;
-                                                }
-
-                                                Alert.alert('알림 재발송', `${tenant.name}님께 앱 푸시 알림을 다시 보내시겠습니까?`, [
-                                                    { text: '취소', style: 'cancel' },
-                                                    {
-                                                        text: '푸시 보내기',
-                                                        onPress: async () => {
-                                                            const body = `새로운 우편물이 도착했습니다. 터치하여 확인하세요.`;
-
-                                                            const res = await notificationService.sendMailArrivalPush(
-                                                                tenant,
-                                                                officeInfo!,
-                                                                tenant.name,
-                                                                '일반',
-                                                                body
-                                                            );
-
-                                                            if (res.success) Alert.alert('성공', '알림이 재발송되었습니다.');
-                                                            else Alert.alert('실패', '알림 발송 중 오류가 발생했습니다. 문자로 보내보세요.');
-                                                        }
-                                                    }
-                                                ]);
-                                            }}
-                                        >
-                                            <Ionicons name="notifications-outline" size={14} color="#4F46E5" style={{ marginRight: 4 }} />
-                                            <Text style={[styles.resendBtnText, { fontSize: 12 }]}>재발송</Text>
-                                        </Pressable>
-                                    )}
                                 </View>
                                 <Text style={styles.date}>{formatDate(mail.created_at)}</Text>
                             </View>
