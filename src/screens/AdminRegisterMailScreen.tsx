@@ -197,7 +197,7 @@ export const AdminRegisterMailScreen = () => {
         let message = notificationService.getShareMessage(matchedProfile, officeInfo);
         if (Platform.OS === 'web') {
             const currentOrigin = window.location.origin;
-            message = message.replace('https://postnoti-app-two.vercel.app', currentOrigin);
+            message = message.replace('https://postn.kr', currentOrigin);
         }
 
         const separator = Platform.OS === 'ios' ? '&' : '?';

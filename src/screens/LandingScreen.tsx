@@ -81,7 +81,7 @@ export const LandingScreen = () => {
             }
 
             // PWA 홈 화면 복귀를 대비해 저장
-            const magicUrl = `https://postnoti-app-two.vercel.app/view?m=${match.company_id}&p=${match.tenant_id}`;
+            const magicUrl = `https://postn.kr/view?m=${match.company_id}&p=${match.tenant_id}`;
             await AsyncStorage.setItem('last_tenant_url', magicUrl);
 
             // UI Context 업데이트 후 입주자 화면으로 전환

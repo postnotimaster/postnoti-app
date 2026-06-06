@@ -227,7 +227,7 @@ export const DeliveryModal = ({
     // --- Steps Rendering ---
 
     if (step === 'postcode') {
-        const postcodeUrl = 'https://postnoti-app-two.vercel.app/postcode.html';
+        const postcodeUrl = 'https://postn.kr/postcode.html';
         return (
             <Modal visible={visible} animationType="slide" onRequestClose={() => setStep('form')}>
                 <SafeAreaView style={styles.postcodeSafe}>

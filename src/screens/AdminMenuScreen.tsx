@@ -43,7 +43,7 @@ export const AdminMenuScreen = () => {
     };
 
     const copyLink = async () => {
-        const url = `https://postnoti-app-two.vercel.app/view`;
+        const url = `https://postn.kr/view`;
         await Clipboard.setStringAsync(url);
         Alert.alert('복사 완료', `입주자 전용 링크 주소가 복사되었습니다.\n${url}`);
     };

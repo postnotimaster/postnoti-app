@@ -142,7 +142,7 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
     };
 
     const handleShareInvite = async (tenant: Tenant) => {
-        const link = `https://postnoti-app-two.vercel.app/view?m=${companyId}&p=${tenant.id}`;
+        const link = `https://postn.kr/view?m=${companyId}&p=${tenant.id}`;
         const message = `[포스트노티 공유오피스]\n${tenant.name}님, 전용 우편함이 준비되었습니다!\n\n아래 링크를 눌러 로그인 없이 바로 우편물을 확인하고, 알림 앱을 설치해 보세요.\n\n👉 전용 우편함 열기:\n${link}`;
         
         Alert.alert('입주자 초대', '어떤 방식으로 전달하시겠습니까?', [

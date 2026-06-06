@@ -400,7 +400,7 @@ export const TenantDashboard = ({
                                     style={[styles.premiumInstallButton, { backgroundColor: '#D97706' }]} 
                                     onPress={() => {
                                         if (Platform.OS === 'web') {
-                                            alert('📱 갤럭시(안드로이드) 알림 켜기:\n\n방법 1. 휴대폰 [설정] ➔ [애플리케이션] ➔ [포스트노티] ➔ [알림] ➔ [알림 허용] 켬\n\n방법 2. 일반 크롬(Chrome) 앱에서 postnoti-app-two.vercel.app 접속 ➔ 주소창 왼쪽 🔒 터치 ➔ [알림] ➔ [허용]으로 변경\n\n🍎 아이폰(iOS) 알림 켜기:\n\n휴대폰 [설정] ➔ [알림] ➔ [포스트노티] ➔ [알림 허용] 켬');
+                                            alert('📱 갤럭시(안드로이드) 알림 켜기:\n\n방법 1. 휴대폰 [설정] ➔ [애플리케이션] ➔ [포스트노티] ➔ [알림] ➔ [알림 허용] 켬\n\n방법 2. 일반 크롬(Chrome) 앱에서 postn.kr 접속 ➔ 주소창 왼쪽 🔒 터치 ➔ [알림] ➔ [허용]으로 변경\n\n🍎 아이폰(iOS) 알림 켜기:\n\n휴대폰 [설정] ➔ [알림] ➔ [포스트노티] ➔ [알림 허용] 켬');
                                         } else {
                                             Linking.openSettings();
                                         }

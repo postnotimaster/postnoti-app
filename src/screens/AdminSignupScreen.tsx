@@ -301,7 +301,7 @@ export const AdminSignupScreen = () => {
                                     borderWidth: 1,
                                     borderColor: isSlugChecked ? '#10B981' : 'transparent'
                                 }}>
-                                    <Text style={{ color: '#94A3B8', fontSize: 13 }}>postnoti-app-two.vercel.app/</Text>
+                                    <Text style={{ color: '#94A3B8', fontSize: 13 }}>postn.kr/</Text>
                                     <TextInput
                                         style={[appStyles.input, { flex: 1, backgroundColor: 'transparent', borderWidth: 0 }]}
                                         value={slug}
