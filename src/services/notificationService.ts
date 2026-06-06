@@ -148,8 +148,8 @@ export const notificationService = {
             }
         }
 
-        // 2. Web Push (Firebase)
-        if (profile?.web_push_token) {
+        // 2. Web Push (Firebase) - 앱 푸시(네이티브) 토큰이 없는 경우에만 발송하여 중복 방지
+        if (profile?.web_push_token && !profile?.push_token) {
             try {
                 const response = await fetch('https://postn.kr/api/send-push', {
                     method: 'POST',
