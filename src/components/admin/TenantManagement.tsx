@@ -17,6 +17,7 @@ import {
 import * as Clipboard from 'expo-clipboard';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { tenantsService, Tenant } from '../../services/tenantsService';
+import { supabase } from '../../lib/supabase';
 import { PrimaryButton } from '../common/PrimaryButton';
 
 type MailStats = Record<string, { total: number; read: number; lastSentAt: string | null }>;
