@@ -58,6 +58,18 @@ export const LoginScreen = ({ onLoginSuccess, onBack, isEmbedded }: Props) => {
             }
 
             if (rememberMe) {
+                const accountsStr = await AsyncStorage.getItem('saved_admin_accounts') || '[]';
+                let accounts = JSON.parse(accountsStr);
+                const newAccount = { 
+                    email, 
+                    password, 
+                    company_name: profile.companies.name || '알 수 없는 지점'
+                };
+                accounts = accounts.filter((a: any) => a.email !== email);
+                accounts.unshift(newAccount);
+                await AsyncStorage.setItem('saved_admin_accounts', JSON.stringify(accounts));
+                
+                // Keep backward compatibility for standard load
                 await AsyncStorage.setItem('saved_admin_email', email);
                 await AsyncStorage.setItem('saved_admin_password', password);
             } else {
