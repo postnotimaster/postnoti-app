@@ -283,6 +283,41 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                         </View>
                     </View>
 
+                    {editingTenant.id && (
+                        <View style={{ marginTop: 15, marginBottom: 10, padding: 15, backgroundColor: '#FEF2F2', borderRadius: 12, borderWidth: 1, borderColor: '#FECACA' }}>
+                            <Text style={{ fontSize: 13, fontWeight: '700', color: '#991B1B', marginBottom: 8 }}>🛠 기기 알림 문제 해결</Text>
+                            <Text style={{ fontSize: 11, color: '#DC2626', marginBottom: 12 }}>
+                                입주자가 알림을 받지 못한다고 할 경우, 기존에 꼬인 토큰을 강제로 삭제하여 초기화할 수 있습니다. (초기화 후 입주자가 앱을 다시 켜면 정상 복구됩니다.)
+                            </Text>
+                            <Pressable 
+                                onPress={async () => {
+                                    if (!editingTenant.profile_id) {
+                                        Alert.alert('알림', '이 입주자는 아직 앱에 한 번도 가입/접속하지 않았습니다.');
+                                        return;
+                                    }
+                                    Alert.alert('경고', '이 입주자의 푸시 알림 기기 정보를 초기화하시겠습니까?', [
+                                        { text: '취소', style: 'cancel' },
+                                        { 
+                                            text: '초기화', 
+                                            style: 'destructive',
+                                            onPress: async () => {
+                                                const { error } = await supabase.rpc('reset_push_token_secure', { p_profile_id: editingTenant.profile_id });
+                                                if (error) {
+                                                    Alert.alert('오류', '초기화 실패: ' + error.message);
+                                                } else {
+                                                    Alert.alert('완료', '해당 기기의 알림 토큰이 삭제되었습니다.\n입주자에게 앱을 껐다가 다시 켜달라고 요청해주세요.');
+                                                }
+                                            }
+                                        }
+                                    ]);
+                                }}
+                                style={{ backgroundColor: '#EF4444', paddingVertical: 10, borderRadius: 8, alignItems: 'center' }}
+                            >
+                                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>이 기기 알림 초기화하기</Text>
+                            </Pressable>
+                        </View>
+                    )}
+
                     <View style={[styles.compactInputGroup, { justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 0 }]}>
                         <View>
                             <Text style={styles.compactLabel}>{"프리미엄 서비스"}</Text>
