@@ -198,9 +198,9 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
     if (isEditing) {
         return (
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 style={{ flex: 1, backgroundColor: '#fff' }}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
             >
                 <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
                     <Text style={{ fontSize: 16, fontWeight: '800', color: '#1E293B' }}>
@@ -210,7 +210,7 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                         <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '700' }}>{'리스트로 복귀'}</Text>
                     </Pressable>
                 </View>
-                <ScrollView contentContainerStyle={styles.editForm}>
+                <ScrollView contentContainerStyle={[styles.editForm, { paddingBottom: 200 }]} keyboardShouldPersistTaps="handled">
                     <View style={styles.compactInputGroup}>
                         <Text style={styles.compactLabel}>회사명</Text>
                         <TextInput

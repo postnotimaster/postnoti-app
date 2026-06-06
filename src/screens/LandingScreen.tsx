@@ -20,7 +20,7 @@ export const LandingScreen = () => {
     // 입주자 글로벌 로그인 상태 (관리자 앱이면 false, 아니면 true)
     const appName = Constants.expoConfig?.name || '스마트우편알림';
     const isAdminApp = appName === '포스트노티';
-    const [isTenantLogin, setIsTenantLogin] = useState(!isAdminApp);
+    const [viewState, setViewState] = useState<'selection' | 'tenant' | 'admin'>('selection');
     const [tenantPhone, setTenantPhone] = useState('');
     const [isSearching, setIsSearching] = useState(false);
     const [showSignupModal, setShowSignupModal] = useState(false);
@@ -155,9 +155,34 @@ export const LandingScreen = () => {
                                 borderRadius: 30,
                                 marginHorizontal: 4
                             }]}>
-                                {isTenantLogin ? (
+                                {viewState === 'selection' ? (
+                                    <View style={{ gap: 15 }}>
+                                        <Text style={{ textAlign: 'center', color: '#64748B', fontWeight: '700', marginBottom: 10 }}>어떤 권한으로 접속하시나요?</Text>
+                                        
+                                        <Pressable 
+                                            style={{ backgroundColor: '#EEF2FF', padding: 25, borderRadius: 24, alignItems: 'center', borderWidth: 2, borderColor: '#C7D2FE' }}
+                                            onPress={() => setViewState('tenant')}
+                                        >
+                                            <Text style={{ fontSize: 40, marginBottom: 10 }}>🏠</Text>
+                                            <Text style={{ fontSize: 20, fontWeight: '800', color: '#4F46E5', marginBottom: 5 }}>오피스 입주자</Text>
+                                            <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center' }}>카카오톡/문자로 받은 전용 링크가 없다면 여기를 눌러주세요</Text>
+                                        </Pressable>
+                                        
+                                        <Pressable 
+                                            style={{ backgroundColor: '#F8FAFC', padding: 25, borderRadius: 24, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' }}
+                                            onPress={() => setViewState('admin')}
+                                        >
+                                            <Text style={{ fontSize: 40, marginBottom: 10 }}>🏢</Text>
+                                            <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 5 }}>오피스 관리자</Text>
+                                            <Text style={{ fontSize: 13, color: '#64748B' }}>지점코드와 비밀번호로 로그인</Text>
+                                        </Pressable>
+                                    </View>
+                                ) : viewState === 'tenant' ? (
                                     <View>
-                                        <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 20, textAlign: 'center' }}>입주자 빠른 로그인</Text>
+                                        <Pressable onPress={() => setViewState('selection')} style={{ marginBottom: 15 }}>
+                                            <Text style={{ color: '#64748B', fontWeight: '700' }}>← 이전으로</Text>
+                                        </Pressable>
+                                        <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 20, textAlign: 'center' }}>입주자 번호 로그인</Text>
                                         <View style={{ marginBottom: 20 }}>
                                             <Text style={{ fontSize: 14, fontWeight: '600', color: '#64748B', marginBottom: 8 }}>등록된 휴대전화 번호</Text>
                                             <TextInput
@@ -180,20 +205,17 @@ export const LandingScreen = () => {
                                             />
                                         </View>
                                         <PrimaryButton
-                                            label={isSearching ? "확인 중..." : "우편물 확인하기"}
+                                            label={isSearching ? "확인 중..." : "내 우편함 열기"}
                                             onPress={handleGlobalTenantLogin}
                                             loading={isSearching}
                                             style={{ backgroundColor: '#4F46E5', borderRadius: 16, height: 56 }}
                                         />
-                                        {/* 웹 환경이나 관리자 앱일 때만 관리자 로그인 버튼 노출 */}
-                                        {(Platform.OS === 'web' || isAdminApp) && (
-                                            <Pressable onPress={() => setIsTenantLogin(false)} style={{ marginTop: 20, alignItems: 'center', padding: 10 }}>
-                                                <Text style={{ color: '#64748B', fontWeight: '600' }}>관리자이신가요? <Text style={{ color: '#4F46E5' }}>관리자 로그인</Text></Text>
-                                            </Pressable>
-                                        )}
                                     </View>
                                 ) : (
                                     <View>
+                                        <Pressable onPress={() => setViewState('selection')} style={{ marginBottom: 15 }}>
+                                            <Text style={{ color: '#64748B', fontWeight: '700' }}>← 이전으로</Text>
+                                        </Pressable>
                                         <LoginScreen
                                             onLoginSuccess={async (profile) => {
                                                 await handleLoginSuccess(profile, expoPushToken, webPushToken);
@@ -202,14 +224,11 @@ export const LandingScreen = () => {
                                             onBack={() => { }}
                                             isEmbedded={true}
                                         />
-                                        <Pressable onPress={() => setIsTenantLogin(true)} style={{ marginTop: 20, alignItems: 'center', padding: 10, backgroundColor: '#EEF2FF', borderRadius: 12 }}>
-                                            <Text style={{ color: '#4F46E5', fontWeight: '700' }}>혹시 입주자이신가요? 번호로 간편 로그인 👉</Text>
-                                        </Pressable>
                                     </View>
                                 )}
                             </View>
 
-                            {!isTenantLogin && (
+                            {viewState === 'admin' && (
                                 <Pressable
                                     onPress={() => setShowSignupModal(true)}
                                     style={{ marginTop: 40, alignItems: 'center' }}
