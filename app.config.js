@@ -7,7 +7,7 @@ export default {
     name: IS_ADMIN ? "포스트노티" : "우편알림",
     slug: "postnoti-app",
     scheme: "postnoti",
-    version: "1.0.11",
+    version: "1.0.12",
     orientation: "portrait",
     icon: IS_ADMIN ? "./assets/icon_padded_new.png" : "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -23,7 +23,7 @@ export default {
     },
     android: {
       package: "com.postnoti.app",
-      versionCode: 12,
+      versionCode: 13,
       googleServicesFile: "./google-services.json",
       adaptiveIcon: {
         foregroundImage: IS_ADMIN ? "./assets/icon_padded_new.png" : "./assets/adaptive-icon.png",

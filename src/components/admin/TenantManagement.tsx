@@ -251,7 +251,7 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                             value={editingTenant.phone}
                             onChangeText={t => setEditingTenant({ ...editingTenant, phone: t.replace(/[^0-9]/g, '') })}
                             placeholder="01012345678"
-                            keyboardType="number-pad"
+                            keyboardType={Platform.OS === 'web' ? 'default' : 'number-pad'}
                             maxLength={11}
                         />
                     </View>
