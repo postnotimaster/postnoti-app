@@ -59,7 +59,8 @@ export const AdminRegisterMailScreen = () => {
         if (prevOcrLoading.current === true && ocrLoading === false) {
             if (matchedProfile) {
                 const status = matchedProfile.status || (matchedProfile.is_active ? '입주' : '퇴거');
-                if (status !== '입주') {
+                const warningStatuses = ['퇴거', '폐업', '이전', '소재불명', '연체불량', '입주(알림NO)', '입주(요주의)'];
+                if (warningStatuses.includes(status)) {
                     const compName = matchedProfile.company_name || '(미등록)';
                     Alert.alert(
                         `⚠️ 주의: [${status}] 상태 입주사`,
@@ -377,11 +378,18 @@ export const AdminRegisterMailScreen = () => {
                                                             );
                                                         })()}
                                                     </View>
-                                                    {!matchedProfile.is_active && (
-                                                        <Text style={{ color: '#DC2626', fontSize: 12, fontWeight: '700', marginTop: 4 }}>
-                                                            ⚠️ 퇴거된 입주사입니다
-                                                        </Text>
-                                                    )}
+                                                    {(() => {
+                                                        const currentStatus = matchedProfile.status || (matchedProfile.is_active ? '입주' : '퇴거');
+                                                        const warningStatuses = ['퇴거', '폐업', '이전', '소재불명', '연체불량', '입주(알림NO)', '입주(요주의)'];
+                                                        if (warningStatuses.includes(currentStatus)) {
+                                                            return (
+                                                                <Text style={{ color: '#DC2626', fontSize: 12, fontWeight: '700', marginTop: 4 }}>
+                                                                    ⚠️ {currentStatus} 상태의 입주사입니다
+                                                                </Text>
+                                                            );
+                                                        }
+                                                        return null;
+                                                    })()}
                                                 </View>
                                                 <Pressable onPress={() => setMatchedProfile(null)}>
                                                     <Text style={appStyles.changeText}>변경</Text>
@@ -561,12 +569,12 @@ export const AdminRegisterMailScreen = () => {
                                     label={
                                         !matchedProfile
                                             ? '입주사를 선택해주세요'
-                                            : !matchedProfile.is_active
-                                                ? '퇴거된 입주사입니다 (발송 불가)'
+                                            : (['퇴거', '폐업', '이전', '소재불명', '연체불량'].includes(matchedProfile.status || (matchedProfile.is_active ? '입주' : '퇴거')))
+                                                ? `${matchedProfile.status || '퇴거'}된 입주사입니다 (발송 불가)`
                                                 : `${matchedProfile.name}님께 알림 보내기`
                                     }
                                     onPress={onSubmit}
-                                    disabled={!matchedProfile || !matchedProfile.is_active}
+                                    disabled={!matchedProfile || ['퇴거', '폐업', '이전', '소재불명', '연체불량'].includes(matchedProfile.status || (matchedProfile.is_active ? '입주' : '퇴거'))}
                                 />
                             </View>
                         </>
@@ -644,7 +652,12 @@ export const AdminRegisterMailScreen = () => {
                                                 </View>
                                                 {!p.is_active && (
                                                     <View style={{ backgroundColor: '#FEE2E2', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                                                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#991B1B' }}>퇴거</Text>
+                                                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#991B1B' }}>{p.status || '퇴거'}</Text>
+                                                    </View>
+                                                )}
+                                                {p.is_active && ['입주(알림NO)', '입주(요주의)', '입주(중요알림)'].includes(p.status) && (
+                                                    <View style={{ backgroundColor: '#FEF3C7', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                                                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#92400E' }}>{p.status}</Text>
                                                     </View>
                                                 )}
                                             </View>

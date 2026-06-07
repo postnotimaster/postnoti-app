@@ -261,9 +261,10 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                     <View style={{ marginTop: 8, marginBottom: 10 }}>
                         <Text style={[styles.compactLabel, { marginBottom: 6, width: '100%' }]}>📋 입주 상태</Text>
                         <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-                            {['입주', '퇴거', '폐업', '이전', '소재불명', '연체불량'].map((st) => {
+                            {['입주', '입주(알림NO)', '입주(중요알림)', '입주(요주의)', '퇴거', '폐업', '이전', '소재불명', '연체불량'].map((st) => {
                                 const currentStatus = editingTenant.status || (editingTenant.is_active ? '입주' : '퇴거');
                                 const isSelected = currentStatus === st;
+                                const isPositive = st.startsWith('입주');
                                 return (
                                     <Pressable
                                         key={st}
@@ -274,14 +275,15 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                                             borderRadius: 8,
                                             borderWidth: 1,
                                             alignItems: 'center',
-                                            backgroundColor: isSelected ? (st === '입주' ? '#10B981' : '#F1F5F9') : '#fff',
-                                            borderColor: isSelected ? (st === '입주' ? '#10B981' : '#CBD5E1') : '#E2E8F0'
+                                            backgroundColor: isSelected ? (isPositive ? '#10B981' : '#F1F5F9') : '#fff',
+                                            borderColor: isSelected ? (isPositive ? '#10B981' : '#CBD5E1') : '#E2E8F0',
+                                            marginBottom: 6
                                         }}
                                     >
                                         <Text style={{
                                             fontSize: 11,
                                             fontWeight: '800',
-                                            color: isSelected ? (st === '입주' ? '#fff' : '#475569') : '#94A3B8'
+                                            color: isSelected ? (isPositive ? '#fff' : '#475569') : '#94A3B8'
                                         }}>
                                             {st}
                                         </Text>
