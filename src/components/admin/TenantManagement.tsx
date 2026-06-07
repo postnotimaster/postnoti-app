@@ -182,11 +182,13 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
         })
         .sort((a, b) => {
             if (sortOrder === 'recent') {
-                const aLast = mailStats[a.id!]?.lastSentAt || '';
-                const bLast = mailStats[b.id!]?.lastSentAt || '';
-                return bLast.localeCompare(aLast);
+                const aTime = a.created_at || '';
+                const bTime = b.created_at || '';
+                return bTime.localeCompare(aTime);
             } else if (sortOrder === 'name') {
-                return a.name.localeCompare(b.name);
+                const nameA = a.company_name || a.name || '';
+                const nameB = b.company_name || b.name || '';
+                return nameA.localeCompare(nameB);
             } else {
                 const roomA = a.room_number || '';
                 const roomB = b.room_number || '';
