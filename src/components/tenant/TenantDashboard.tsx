@@ -51,6 +51,10 @@ export const TenantDashboard = ({
     const [newMailAlert, setNewMailAlert] = useState<{sender: string; type: string; time: string} | null>(null);
     const [isInstallBannerDismissed, setIsInstallBannerDismissed] = useState(false);
 
+    const dismissInstallBanner = () => {
+        setIsInstallBannerDismissed(true);
+    };
+
     // 1. 인증 및 세션 관리
     const {
         name, setName,
@@ -467,7 +471,7 @@ export const TenantDashboard = ({
                             <View style={{ flex: 1 }}>
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                     <Text style={styles.installBannerTitle}>우편알림 앱을 설치해주세요 📲</Text>
-                                    <Pressable style={styles.closeBannerBtn} onPress={() => setIsInstallBannerDismissed(true)}>
+                                    <Pressable style={styles.closeBannerBtn} onPress={dismissInstallBanner}>
                                         <Ionicons name="close" size={20} color="#94A3B8" />
                                     </Pressable>
                                 </View>

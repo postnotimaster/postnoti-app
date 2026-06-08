@@ -1,5 +1,5 @@
 // 👇👇👇 주의: 관리자용 앱을 빌드할 때는 아래를 true로, 입주자용 앱을 빌드할 때는 false로 바꾸세요! 👇👇👇
-const IS_ADMIN = true;
+const IS_ADMIN = false;
 // 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
 
 export default {
@@ -7,7 +7,7 @@ export default {
     name: IS_ADMIN ? "포스트노티" : "우편알림",
     slug: "postnoti-app",
     scheme: "postnoti",
-    version: "1.0.17",
+    version: "1.0.19",
     orientation: "portrait",
     icon: IS_ADMIN ? "./assets/icon_padded_new.png" : "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -23,7 +23,7 @@ export default {
     },
     android: {
       package: "com.postnoti.app",
-      versionCode: 18,
+      versionCode: 20,
       googleServicesFile: "./google-services.json",
       adaptiveIcon: {
         foregroundImage: IS_ADMIN ? "./assets/icon_padded_new.png" : "./assets/adaptive-icon.png",

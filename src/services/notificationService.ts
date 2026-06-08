@@ -114,13 +114,45 @@ export const notificationService = {
         const shareLink = this.generateShareLink(tenant, company);
 
         // [혁명적 개선] RPC를 사용하여 보안 벽(RLS)을 우회하고 실제 앱 설치 여부를 확인
-        const { data: pushStatus, error: rpcError } = await supabase.rpc('check_tenant_push_status', {
-            p_company_id: tenant.company_id,
-            p_phone: tenant.phone
-        });
+        let pushStatus: any[] | null = null;
+        try {
+            const { data, error } = await supabase.rpc('check_tenant_push_status', {
+                p_company_id: tenant.company_id,
+                p_phone: tenant.phone
+            });
+            if (error) console.error('[NotificationService] Push status check failed:', error);
+            pushStatus = data;
+        } catch (e) {
+            console.error('[NotificationService] Failed to check push status via RPC:', e);
+        }
 
-        if (rpcError) {
-            console.error('[NotificationService] Push status check failed:', rpcError);
+        // [추가 개선] 관리자가 입주자 앱을 테스트하여 관리자 프로필에 토큰이 저장된 경우 (RPC에서 조회 실패함)
+        // 직접 profiles 테이블에서 해당 전화번호의 토큰을 조회하여 발송 성공률 극대화
+        const hasValidToken = pushStatus && pushStatus.length > 0 && (pushStatus[0].push_token || pushStatus[0].web_push_token);
+
+        if (!hasValidToken) {
+            try {
+                const cleanPhone = tenant.phone ? tenant.phone.replace(/[^0-9]/g, '') : '';
+                if (cleanPhone.length >= 10) {
+                    const p1 = cleanPhone.startsWith('010') ? cleanPhone : '010' + cleanPhone;
+                    const phonePattern = `%${p1.slice(3, 7)}%${p1.slice(7)}%`;
+                    
+                    const { data } = await supabase.from('profiles')
+                        .select('push_token, web_push_token')
+                        .ilike('phone', phonePattern)
+                        .order('created_at', { ascending: false });
+                        
+                    if (data && data.length > 0) {
+                        const validProfile = data.find(p => p.push_token || p.web_push_token);
+                        if (validProfile) {
+                            pushStatus = [validProfile];
+                            console.log('[NotificationService] Found fallback token from profiles table directly');
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('[NotificationService] Fallback token search failed', e);
+            }
         }
 
         const profile = (pushStatus && pushStatus.length > 0) ? pushStatus[0] : null;
