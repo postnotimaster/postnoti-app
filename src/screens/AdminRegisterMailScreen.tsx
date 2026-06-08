@@ -86,23 +86,22 @@ export const AdminRegisterMailScreen = () => {
                         message,
                         [
                             {
-                                text: '📷 다시 촬영',
-                                onPress: async () => {
-                                    const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
-                                    if (!result.canceled) runOCR(result.assets[0].uri);
+                                text: '닫기 (발송 취소)',
+                                onPress: () => {
+                                    if (resetOCR) resetOCR();
                                 }
                             },
                             {
                                 text: '해당 입주사 정보 보기',
                                 onPress: () => {
-                                    resetOCR();
+                                    if (resetOCR) resetOCR();
                                     setSelectedProfileForHistory(matchedProfile);
                                     setIsHistoryVisible(true);
                                     setMode('admin_dashboard');
                                 }
                             },
                             {
-                                text: '무시하고 등록 진행',
+                                text: '무시하고 계속 진행',
                                 style: 'cancel'
                             }
                         ]
