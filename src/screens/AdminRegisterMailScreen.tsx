@@ -54,21 +54,19 @@ export const AdminRegisterMailScreen = () => {
     const [isSending, setIsSending] = React.useState(false);
 
     const prevOcrLoading = React.useRef(ocrLoading);
-    const hasShownPopupRef = React.useRef(false); // [NEW] 팝업 중복 호출 방지
+    const shownProfileIdRef = React.useRef<string | null>(null);
 
     React.useEffect(() => {
-        if (ocrLoading) {
-            hasShownPopupRef.current = false; // OCR이 새로 시작되면 플래그 리셋
-        }
-
-        if (prevOcrLoading.current === true && ocrLoading === false) {
-            if (matchedProfile && !isSending && !hasShownPopupRef.current) {
+        if (!matchedProfile) {
+            shownProfileIdRef.current = null;
+        } else if (prevOcrLoading.current === true && ocrLoading === false) {
+            if (!isSending && shownProfileIdRef.current !== matchedProfile.id) {
                 const status = matchedProfile.status || (matchedProfile.is_active ? '입주' : '퇴거');
                 const warningStatuses = ['퇴거', '폐업', '이전', '소재불명', '연체불량', '입주(알림NO)', '입주(요주의)'];
                 const hasMemo = !!matchedProfile.memo && matchedProfile.memo.trim().length > 0;
                 
                 if (warningStatuses.includes(status) || hasMemo) {
-                    hasShownPopupRef.current = true; // 팝업 띄웠음을 기록
+                    shownProfileIdRef.current = matchedProfile.id; // 팝업 띄웠음을 기록
                     const compName = matchedProfile.company_name || '(미등록)';
                     
                     let title = '';
@@ -95,6 +93,7 @@ export const AdminRegisterMailScreen = () => {
                                 text: '닫기 (발송 취소)',
                                 onPress: () => {
                                     if (resetOCR) resetOCR();
+                                    setMode('admin_dashboard');
                                 }
                             },
                             {
