@@ -57,7 +57,7 @@ export const AdminRegisterMailScreen = () => {
 
     React.useEffect(() => {
         if (prevOcrLoading.current === true && ocrLoading === false) {
-            if (matchedProfile) {
+            if (matchedProfile && !isSending) {
                 const status = matchedProfile.status || (matchedProfile.is_active ? '입주' : '퇴거');
                 const warningStatuses = ['퇴거', '폐업', '이전', '소재불명', '연체불량', '입주(알림NO)', '입주(요주의)'];
                 const hasMemo = !!matchedProfile.memo && matchedProfile.memo.trim().length > 0;
@@ -111,7 +111,7 @@ export const AdminRegisterMailScreen = () => {
             }
         }
         prevOcrLoading.current = ocrLoading;
-    }, [ocrLoading, matchedProfile, runOCR, resetOCR, setSelectedProfileForHistory, setIsHistoryVisible, setMode]);
+    }, [ocrLoading, matchedProfile, isSending, runOCR, resetOCR, setSelectedProfileForHistory, setIsHistoryVisible, setMode]);
 
     const [presets, setPresets] = React.useState<string[]>([
         "주문하신 택배가 도착했습니다 📦",
