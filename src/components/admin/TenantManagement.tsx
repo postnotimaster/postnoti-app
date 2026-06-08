@@ -293,7 +293,16 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                         </View>
                     </View>
 
-
+                    <View style={{ marginTop: 8, marginBottom: 10 }}>
+                        <Text style={[styles.compactLabel, { marginBottom: 6, width: '100%' }]}>📝 특이사항 메모 (선택)</Text>
+                        <TextInput
+                            style={[styles.compactInput, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A', borderWidth: 1, minHeight: 40, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, textAlignVertical: 'top' }]}
+                            value={editingTenant.memo || ''}
+                            onChangeText={t => setEditingTenant({ ...editingTenant, memo: t })}
+                            placeholder="우편물 사진 촬영 시 팝업으로 띄워질 내용입니다. (예: 착불 수령 금지)"
+                            multiline
+                        />
+                    </View>
 
                     <View style={[styles.compactInputGroup, { justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 0 }]}>
                         <View>

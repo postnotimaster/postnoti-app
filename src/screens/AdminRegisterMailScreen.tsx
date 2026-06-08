@@ -60,11 +60,30 @@ export const AdminRegisterMailScreen = () => {
             if (matchedProfile) {
                 const status = matchedProfile.status || (matchedProfile.is_active ? '입주' : '퇴거');
                 const warningStatuses = ['퇴거', '폐업', '이전', '소재불명', '연체불량', '입주(알림NO)', '입주(요주의)'];
-                if (warningStatuses.includes(status)) {
+                const hasMemo = !!matchedProfile.memo && matchedProfile.memo.trim().length > 0;
+                
+                if (warningStatuses.includes(status) || hasMemo) {
                     const compName = matchedProfile.company_name || '(미등록)';
+                    
+                    let title = '';
+                    let message = `진단 대상: ${compName} / ${matchedProfile.name}\n\n`;
+                    
+                    if (warningStatuses.includes(status)) {
+                        title = `⚠️ 주의: [${status}] 상태 입주사`;
+                        message += `이 입주사는 현재 [${status}] 상태입니다.\n`;
+                    } else {
+                        title = `📝 입주사 특이사항 메모`;
+                    }
+
+                    if (hasMemo) {
+                        message += `\n📌 메모 내용:\n${matchedProfile.memo}\n`;
+                    }
+
+                    message += `\n어떻게 진행하시겠습니까?`;
+
                     Alert.alert(
-                        `⚠️ 주의: [${status}] 상태 입주사`,
-                        `진단 대상: ${compName} / ${matchedProfile.name}\n이 입주사는 현재 [${status}] 상태입니다.\n\n다른 우편물을 찍으시겠습니까? 아니면 해당 입주사의 정보 페이지로 가시겠습니까?`,
+                        title,
+                        message,
                         [
                             {
                                 text: '📷 다시 촬영',
