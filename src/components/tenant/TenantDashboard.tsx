@@ -465,9 +465,6 @@ export const TenantDashboard = ({
                     {/* 2. PWA 설치 유도 배너 (앱 미설치자 혹은 브라우저 접속 시 노출) */}
                     {showInstallBanner && !isStandalone && !isInstallBannerDismissed && (
                         <View style={styles.premiumInstallBanner}>
-                            <View style={styles.installIconBox}>
-                                <Ionicons name="notifications" size={32} color="#4F46E5" />
-                            </View>
                             <View style={{ flex: 1 }}>
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                     <Text style={styles.installBannerTitle}>우편알림 앱을 설치해주세요 📲</Text>

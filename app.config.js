@@ -9,7 +9,7 @@ export default {
     scheme: "postnoti",
     version: "1.0.19",
     orientation: "portrait",
-    icon: IS_ADMIN ? "./assets/icon_padded_new.png" : "./assets/icon.png",
+    icon: IS_ADMIN ? "./assets/icon_padded_new.png" : "./assets/icon_tenant_padded.png",
     userInterfaceStyle: "light",
     newArchEnabled: true,
     splash: {
@@ -26,7 +26,7 @@ export default {
       versionCode: 20,
       googleServicesFile: "./google-services.json",
       adaptiveIcon: {
-        foregroundImage: IS_ADMIN ? "./assets/icon_padded_new.png" : "./assets/adaptive-icon.png",
+        foregroundImage: IS_ADMIN ? "./assets/icon_padded_new.png" : "./assets/icon_tenant_padded.png",
         backgroundColor: IS_ADMIN ? "#ffffff" : "#4A60AB"
       },
       edgeToEdgeEnabled: true,
