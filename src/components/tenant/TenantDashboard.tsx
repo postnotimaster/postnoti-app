@@ -592,7 +592,7 @@ export const TenantDashboard = ({
                             onPress={() => setIsMailDeliveryVisible(true)}
                         >
                             <Ionicons name="paper-plane" size={14} color="#fff" />
-                            <Text style={[styles.tabText, { color: '#fff', marginLeft: 4 }]}>전달신청</Text>
+                            <Text style={[styles.tabText, { color: '#fff', marginLeft: 4 }]}>우편물 받기</Text>
                         </Pressable>
                     </ScrollView>
 

@@ -63,11 +63,11 @@ export const DeliveryModal = ({
                     setPaymentInfo(parsed);
                     setGuidelines(parsed.text || '우편물 전달 신청을 하시면 지정된 주소로 배송해 드립니다.');
                 } else {
-                    setGuidelines(guideStr || '우편물 전달 신청을 하시면 지정된 주소로 배송해 드립니다.');
+                    setGuidelines(guideStr || '우편물을 다른 주소로 받길 원하시면 배송 요청을 해주세요.');
                     setPaymentInfo(null);
                 }
             } catch (e) {
-                setGuidelines(guideStr || '우편물 전달 신청을 하시면 지정된 주소로 배송해 드립니다.');
+                setGuidelines(guideStr || '우편물을 다른 주소로 받길 원하시면 배송 요청을 해주세요.');
                 setPaymentInfo(null);
             }
             setRequests(hist || []);
@@ -273,7 +273,7 @@ export const DeliveryModal = ({
                         </View>
                         <Text style={[styles.title, { marginTop: 20, marginBottom: 10 }]}>신청 완료!</Text>
                         <Text style={{ textAlign: 'center', color: '#64748B', lineHeight: 22, marginBottom: 30 }}>
-                            우편물 전달 신청이{"\n"}정상적으로 접수되었습니다.
+                            우편물 배송 요청이{"\n"}정상적으로 접수되었습니다.
                         </Text>
                         <PrimaryButton
                             label="내역 확인하기"
@@ -364,7 +364,7 @@ export const DeliveryModal = ({
                                 </View>
                             </View>
                             <View style={{ height: 30 }} />
-                            <PrimaryButton label="전달 신청하기" onPress={handleSubmit} loading={loading} disabled={loading} />
+                            <PrimaryButton label="우편물 배송 요청" onPress={handleSubmit} loading={loading} disabled={loading} />
                             <View style={{ height: 20 }} />
                         </ScrollView>
                     ) : (
