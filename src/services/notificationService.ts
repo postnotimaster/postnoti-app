@@ -59,7 +59,7 @@ export const notificationService = {
             // 2. 네이티브 푸시 발송 (중복 없는 토큰 리스트 대상)
             for (const token of uniqueExpoTokens) {
                 try {
-                    await fetch('https://postn.kr/api/send-expo', {
+                    await fetch('https://www.postn.kr/api/send-expo', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -79,7 +79,7 @@ export const notificationService = {
             // 3. 웹 푸시 발송 (중복 없는 토큰 리스트 대상)
             for (const token of uniqueWebTokens) {
                 try {
-                    await fetch('https://postn.kr/api/send-push', {
+                    await fetch('https://www.postn.kr/api/send-push', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -163,7 +163,7 @@ export const notificationService = {
         // 1. Native Push (Expo)
         if (profile?.push_token) {
             try {
-                const response = await fetch('https://postn.kr/api/send-expo', {
+                const response = await fetch('https://www.postn.kr/api/send-expo', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -183,7 +183,7 @@ export const notificationService = {
         // 2. Web Push (Firebase) - 앱 푸시(네이티브) 토큰이 없는 경우에만 발송하여 중복 방지
         if (profile?.web_push_token && !profile?.push_token) {
             try {
-                const response = await fetch('https://postn.kr/api/send-push', {
+                const response = await fetch('https://www.postn.kr/api/send-push', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
