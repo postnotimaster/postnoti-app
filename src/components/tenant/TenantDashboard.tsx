@@ -456,8 +456,8 @@ export const TenantDashboard = ({
                                     <Text style={styles.premiumInstallButtonText}>확인하기</Text>
                                 </View>
                             </View>
-                            <Pressable style={styles.closeBannerBtn} onPress={() => setNewMailAlert(null)}>
-                                <Ionicons name="close" size={20} color="#6EE7B7" />
+                            <Pressable style={styles.closeBannerBtn} hitSlop={20} onPress={(e) => { if(e && e.stopPropagation) e.stopPropagation(); setNewMailAlert(null); }}>
+                                <Ionicons name="close" size={24} color="#6EE7B7" />
                             </Pressable>
                         </Pressable>
                     )}
@@ -468,8 +468,8 @@ export const TenantDashboard = ({
                             <View style={{ flex: 1 }}>
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                     <Text style={styles.installBannerTitle}>우편알림 앱을 설치해주세요 📲</Text>
-                                    <Pressable style={styles.closeBannerBtn} onPress={dismissInstallBanner}>
-                                        <Ionicons name="close" size={20} color="#94A3B8" />
+                                    <Pressable style={styles.closeBannerBtn} hitSlop={20} onPress={(e) => { if(e && e.stopPropagation) e.stopPropagation(); dismissInstallBanner(); }}>
+                                        <Ionicons name="close" size={24} color="#94A3B8" />
                                     </Pressable>
                                 </View>
                                 <Text style={styles.installBannerDesc}>우편알림은 전용앱을 통해서 알림됩니다.{'\n'}앱을 설치하시면 우편물 도착 시 실시간으로 알림을 받으실 수 있습니다.</Text>
