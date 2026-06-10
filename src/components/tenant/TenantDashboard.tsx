@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
     View, Text, StyleSheet, FlatList, Image,
     ActivityIndicator, TextInput, Alert, Pressable, Modal,
-    BackHandler, Platform, Dimensions, ScrollView, Linking, Vibration
+    BackHandler, Platform, Dimensions, ScrollView, Linking, Vibration, TouchableOpacity
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PrimaryButton } from '../common/PrimaryButton';
@@ -456,9 +456,11 @@ export const TenantDashboard = ({
                                     <Text style={styles.premiumInstallButtonText}>확인하기</Text>
                                 </View>
                             </View>
-                            <Pressable style={styles.closeBannerBtn} hitSlop={20} onPress={(e) => { if(e && e.stopPropagation) e.stopPropagation(); setNewMailAlert(null); }}>
-                                <Ionicons name="close" size={24} color="#6EE7B7" />
-                            </Pressable>
+                            <TouchableOpacity style={styles.closeBannerBtn} hitSlop={{top: 20, bottom: 20, left: 20, right: 20}} onPress={(e) => { if(e && e.stopPropagation) e.stopPropagation(); setNewMailAlert(null); }}>
+                                <View pointerEvents="none">
+                                    <Ionicons name="close" size={24} color="#6EE7B7" />
+                                </View>
+                            </TouchableOpacity>
                         </Pressable>
                     )}
 
@@ -468,9 +470,11 @@ export const TenantDashboard = ({
                             <View style={{ flex: 1 }}>
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                     <Text style={styles.installBannerTitle}>우편알림 앱을 설치해주세요 📲</Text>
-                                    <Pressable style={styles.closeBannerBtn} hitSlop={20} onPress={(e) => { if(e && e.stopPropagation) e.stopPropagation(); dismissInstallBanner(); }}>
-                                        <Ionicons name="close" size={24} color="#94A3B8" />
-                                    </Pressable>
+                                    <TouchableOpacity style={styles.closeBannerBtn} hitSlop={{top: 20, bottom: 20, left: 20, right: 20}} onPress={(e) => { if(e && e.stopPropagation) e.stopPropagation(); dismissInstallBanner(); }}>
+                                        <View pointerEvents="none">
+                                            <Ionicons name="close" size={24} color="#94A3B8" />
+                                        </View>
+                                    </TouchableOpacity>
                                 </View>
                                 <Text style={styles.installBannerDesc}>우편알림은 전용앱을 통해서 알림됩니다.{'\n'}앱을 설치하시면 우편물 도착 시 실시간으로 알림을 받으실 수 있습니다.</Text>
                                 {isIOS ? (
