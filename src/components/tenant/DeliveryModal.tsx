@@ -311,6 +311,24 @@ export const DeliveryModal = ({
                                 <Text style={styles.guideText}>{guidelines}</Text>
                             </View>
 
+                            {paymentInfo && (
+                                <View style={{ backgroundColor: '#F8FAFC', padding: 16, borderRadius: 14, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#475569', marginBottom: 8 }}>배송비 안내</Text>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                                        <Text style={{ fontSize: 13, color: '#64748B' }}>금액</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#1E293B' }}>{paymentInfo.amount}</Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                                        <Text style={{ fontSize: 13, color: '#64748B' }}>입금계좌</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#1E293B' }}>{paymentInfo.bank} {paymentInfo.account}</Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                        <Text style={{ fontSize: 13, color: '#64748B' }}>예금주</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#1E293B' }}>{paymentInfo.holder}</Text>
+                                    </View>
+                                </View>
+                            )}
+
                             {errorText && (
                                 <View style={styles.errorBanner}>
                                     <Ionicons name="alert-circle" size={16} color="#EF4444" />
