@@ -197,7 +197,7 @@ function AppContent() {
   };
 
   return (
-    <NavigationContainer>
+    <NavigationContainer documentTitle={{ formatter: () => '우편알림 (PostNoti)' }}>
       <View style={{ flex: 1 }}>
         <StatusBar style="dark" />
         {renderScreen()}
