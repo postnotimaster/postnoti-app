@@ -643,7 +643,7 @@ export const TenantDashboard = ({
         }
 
         return null;
-    }, [filter, showInstallBanner, isStandalone, myProfile, unreadCount, companyName, announcements, isIOS, permissionStatus]);
+    }, [filter, showInstallBanner, isInstallBannerDismissed, newMailAlert, isStandalone, myProfile, unreadCount, companyName, announcements, isIOS, permissionStatus]);
 
     // -----------------------------------------------------
     // 렌더링 시작
@@ -715,6 +715,7 @@ export const TenantDashboard = ({
             ) : (
                 <FlatList
                     data={flatData}
+                    extraData={{ isInstallBannerDismissed, showInstallBanner, newMailAlert, permissionStatus }}
                     keyExtractor={(item) => item.id}
                     renderItem={renderItem}
                     stickyHeaderIndices={[1]}
