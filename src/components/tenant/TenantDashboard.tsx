@@ -746,7 +746,7 @@ export const TenantDashboard = ({
             ) : (
                 <FlatList
                     data={flatData}
-                    extraData={{ isInstallBannerDismissed, showInstallBanner, newMailAlert, permissionStatus }}
+                    extraData={{ isInstallBannerDismissed, showInstallBanner, newMailAlert, permissionStatus, mails }}
                     keyExtractor={(item) => item.id}
                     renderItem={renderItem}
                     stickyHeaderIndices={[1]}

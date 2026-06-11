@@ -7,6 +7,10 @@
             "destination": "/firebase-messaging-sw.js"
         },
         {
+            "source": "/terms.html",
+            "destination": "/terms.html"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }

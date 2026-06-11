@@ -143,6 +143,7 @@ const itemStyles = StyleSheet.create({
         backgroundColor: '#F8FAFC',
         shadowOpacity: 0,
         elevation: 0,
+        opacity: 0.6,
     },
     thumbWrapper: {
         width: 56,
