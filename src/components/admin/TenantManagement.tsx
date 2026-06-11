@@ -533,6 +533,16 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                                                         {t.status || (t.is_active ? '입주' : '퇴거')}
                                                     </Text>
                                                 </View>
+                                                {t.terms_agreed === true && (
+                                                    <View style={{ backgroundColor: '#DBEAFE', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 4, alignItems: 'center' }}>
+                                                        <Text style={{ color: '#1E40AF', fontSize: 9, fontWeight: '800' }}>✅규정동의</Text>
+                                                    </View>
+                                                )}
+                                                {t.terms_agreed === false && (
+                                                    <View style={{ backgroundColor: '#FEE2E2', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 4, alignItems: 'center' }}>
+                                                        <Text style={{ color: '#991B1B', fontSize: 9, fontWeight: '800' }}>❌동의거부</Text>
+                                                    </View>
+                                                )}
                                             </View>
                                         </View>
                                         <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>

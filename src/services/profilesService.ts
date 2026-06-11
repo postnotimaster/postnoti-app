@@ -19,6 +19,7 @@ export interface Profile {
     postcode?: string;         // [NEW] 기본 우편번호
     pwa_installed?: boolean;   // PWA Install Status
     last_accessed_at?: string;
+    terms_agreed?: boolean | null; // 우편물 수령 규정 동의 여부 (null: 미응답, true: 동의, false: 거부)
 }
 
 export const profilesService = {
@@ -126,5 +127,16 @@ export const profilesService = {
             .delete()
             .eq('id', id);
         if (error) throw error;
+    },
+
+    async updateTenantTermsAgreement(profileId: string, agreed: boolean) {
+        const { error } = await supabase.rpc('update_tenant_terms_agreement', {
+            p_profile_id: profileId,
+            p_agreed: agreed
+        });
+        if (error) {
+            console.error('updateTenantTermsAgreement RPC error:', error);
+            throw error;
+        }
     }
 };

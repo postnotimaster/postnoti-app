@@ -13,6 +13,8 @@ import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-vi
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnnouncementModal } from './AnnouncementModal';
 import { DeliveryModal } from './DeliveryModal';
+import { TermsModal } from './TermsModal';
+import { profilesService } from '../../services/profilesService';
 
 // Custom Hooks
 import { useTenantAuth } from '../../hooks/tenant/useTenantAuth';
@@ -50,6 +52,10 @@ export const TenantDashboard = ({
     const [soundEnabled, setSoundEnabled] = useState(true);
     const [newMailAlert, setNewMailAlert] = useState<{sender: string; type: string; time: string} | null>(null);
     const [isInstallBannerDismissed, setIsInstallBannerDismissed] = useState(false);
+    
+    // 규정 동의 관련 상태 (최초 1회 팝업 및 배너 처리)
+    const [localTermsAgreed, setLocalTermsAgreed] = useState<boolean | null>(null);
+    const [isTermsModalVisible, setIsTermsModalVisible] = useState(false);
 
     const dismissInstallBanner = () => {
         setIsInstallBannerDismissed(true);
@@ -191,6 +197,55 @@ export const TenantDashboard = ({
     }, [companyName]);
 
     // 설정 로드 및 동기화
+    useEffect(() => {
+        if (identifying) {
+            setFilter('unread');
+        }
+    }, [identifying]);
+
+    // 규정 동의 상태 동기화 및 팝업 띄우기
+    useEffect(() => {
+        if (myProfile && !identifying) {
+            if (myProfile.terms_agreed === undefined) return;
+            setLocalTermsAgreed(myProfile.terms_agreed ?? null);
+            if (myProfile.terms_agreed === null) {
+                setIsTermsModalVisible(true);
+            }
+        }
+    }, [myProfile, identifying]);
+
+    const handleTermsAgree = async () => {
+        if (!myProfile?.id) return;
+        try {
+            await profilesService.updateTenantTermsAgreement(myProfile.id, true);
+            setLocalTermsAgreed(true);
+            setIsTermsModalVisible(false);
+            showToast('✅ 우편물 규정에 동의하셨습니다. 알림 서비스가 정상 작동합니다.');
+            if (myProfile) myProfile.terms_agreed = true;
+        } catch (error) {
+            console.error(error);
+            showToast('동의 처리 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleTermsDisagree = async () => {
+        if (!myProfile?.id) return;
+        try {
+            await profilesService.updateTenantTermsAgreement(myProfile.id, false);
+            setLocalTermsAgreed(false);
+            setIsTermsModalVisible(false);
+            Alert.alert(
+                '서비스 제한 안내',
+                '규정에 동의하지 않으셔서 도착 알림 서비스 이용이 제한됩니다.\n화면 상단 배너를 통해 언제든 다시 동의하실 수 있습니다.',
+                [{ text: '확인' }]
+            );
+            if (myProfile) myProfile.terms_agreed = false;
+        } catch (error) {
+            console.error(error);
+            showToast('처리 중 오류가 발생했습니다.');
+        }
+    };
+
     useEffect(() => {
         AsyncStorage.getItem('soundEnabled').then(val => {
             if (val !== null) setSoundEnabled(val === 'true');
@@ -391,6 +446,25 @@ export const TenantDashboard = ({
         if (item.type === 'header') {
             return (
                 <View>
+                    {/* 0. 우편물 규정 동의 거부 안내 배너 */}
+                    {localTermsAgreed === false && (
+                        <View style={[styles.premiumInstallBanner, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}>
+                            <View style={[styles.installIconBox, { backgroundColor: '#FEE2E2' }]}>
+                                <Ionicons name="warning" size={32} color="#DC2626" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.installBannerTitle, { color: '#991B1B' }]}>서비스 이용 제한 안내 ⚠️</Text>
+                                <Text style={styles.installBannerDesc}>우편물 규정에 동의하지 않으셔서 알림 서비스가 제한됩니다.</Text>
+                                <Pressable 
+                                    style={[styles.premiumInstallButton, { backgroundColor: '#DC2626' }]} 
+                                    onPress={() => setIsTermsModalVisible(true)}
+                                >
+                                    <Text style={styles.premiumInstallButtonText}>규정 확인하고 동의하기</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    )}
+
                     {/* 1. 알림 권한 거부 안내 배너 (앱 설치자 중 알림 꺼둔 사람용) */}
                     {isStandalone && permissionStatus === 'denied' && (
                         <View style={[styles.premiumInstallBanner, { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }]}>
@@ -729,6 +803,7 @@ export const TenantDashboard = ({
                 permissionStatus={permissionStatus}
                 onToggleSound={toggleSound}
                 onRequestPermission={requestNotificationPermission}
+                onShowTerms={() => setIsTermsModalVisible(true)}
                 onClose={() => setIsSettingsVisible(false)}
             />
 
@@ -745,6 +820,12 @@ export const TenantDashboard = ({
                 profileId={myProfile?.profile_id || myProfile?.id || ''}
                 initialName={myProfile?.name || ''}
                 initialPhone={myProfile?.phone || ''}
+            />
+
+            <TermsModal
+                visible={isTermsModalVisible}
+                onAgree={handleTermsAgree}
+                onDisagree={handleTermsDisagree}
             />
 
             <Modal visible={!!selectedMailImage} transparent={true} animationType="fade" onRequestClose={() => setSelectedMailImage(null)}>

@@ -14,6 +14,7 @@ export interface Tenant {
     profile_id?: string;   // 연결된 앱 계정 (선택)
     retention_days?: number; // 사진 보관 기간 (단위: 일, 0은 영구보관)
     memo?: string;
+    terms_agreed?: boolean | null;
     created_at?: string;
 }
 

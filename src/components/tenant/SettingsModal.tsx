@@ -10,6 +10,7 @@ type Props = {
     permissionStatus: NotificationPermission | 'default';
     onToggleSound: (val: boolean) => void;
     onRequestPermission: () => void;
+    onShowTerms: () => void;
     onClose: () => void;
 };
 
@@ -19,6 +20,7 @@ export const SettingsModal = ({
     permissionStatus, 
     onToggleSound, 
     onRequestPermission,
+    onShowTerms,
     onClose 
 }: Props) => (
     <Modal
@@ -78,6 +80,22 @@ export const SettingsModal = ({
                             trackColor={{ false: '#E2E8F0', true: '#818CF8' }}
                             thumbColor={soundEnabled ? '#4F46E5' : '#f4f3f4'}
                         />
+                    </View>
+
+                    <View style={modalStyles.row}>
+                        <View>
+                            <Text style={modalStyles.label}>우편물 수령 규정</Text>
+                            <Text style={modalStyles.sublabel}>이용 규정 내용 확인 및 동의 상태</Text>
+                        </View>
+                        <Pressable 
+                            style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#F1F5F9', borderRadius: 8 }}
+                            onPress={() => {
+                                onClose();
+                                onShowTerms();
+                            }}
+                        >
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: '#475569' }}>보기</Text>
+                        </Pressable>
                     </View>
 
                     <Pressable onPress={onClose} style={modalStyles.closeBtn}>

@@ -45,6 +45,16 @@ export default {
       eas: {
         projectId: "b970de52-12b9-46d4-b6b6-563385365c00"
       }
-    }
+    },
+    plugins: [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableSeparateBuildPerCPUArchitecture": true
+          }
+        }
+      ]
+    ]
   }
 };
