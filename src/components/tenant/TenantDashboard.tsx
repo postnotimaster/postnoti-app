@@ -627,13 +627,7 @@ export const TenantDashboard = ({
                     >
                         <Ionicons name="refresh" size={18} color="#4F46E5" />
                     </Pressable>
-                    {filter === 'unread' && (
-                        <View style={{ marginTop: 15, paddingHorizontal: 4 }}>
-                            <Text style={{ fontSize: 12, color: '#64748B', backgroundColor: '#F8FAFC', padding: 8, borderRadius: 8, overflow: 'hidden' }}>
-                                💡 안읽음 탭에서는 확인한 우편물이 목록에서 자동으로 사라집니다. (읽은 우편물은 '전체' 탭에서 확인 가능)
-                            </Text>
-                        </View>
-                    )}
+
                 </View>
             );
         }
