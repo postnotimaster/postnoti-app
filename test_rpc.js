@@ -1,22 +1,7 @@
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
-
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-async function testRpc() {
-    console.log('Testing RPC get_mails_by_tenant_secure...');
-    const dummyId = '11111111-1111-1111-1111-111111111111';
-    
-    const { data, error } = await supabase.rpc('get_mails_by_tenant_secure', {
-        p_tenant_id: dummyId
-    });
-
-    if (error) {
-        console.error('RPC Error:', error.message);
-    } else {
-        console.log('RPC Success:', data);
-    }
+const supabase = createClient(process.env.EXPO_PUBLIC_SUPABASE_URL, process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
+async function run() {
+  const { error } = await supabase.rpc('execute_sql', { sql: 'CREATE TABLE IF NOT EXISTS push_logs (id uuid default gen_random_uuid() primary key, message text, created_at timestamptz default now());' });
+  console.log('Error creating table:', error);
 }
-testRpc();
+run();
