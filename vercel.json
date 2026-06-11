@@ -11,6 +11,10 @@
             "destination": "/terms.html"
         },
         {
+            "source": "/trem.html",
+            "destination": "/terms.html"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }
