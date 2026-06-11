@@ -53,17 +53,17 @@ export const MailItem = ({ item, onImagePress, onMarkRead }: Props) => {
     const createdAt = new Date(item.created_at);
     const now = new Date();
     const diffMs = now.getTime() - createdAt.getTime();
-    const isJustArrived = !item.read_at && diffMs < 30 * 60 * 1000; // Unread + within 30 mins
+    const isJustArrived = !item.read_at && diffMs < 60 * 60 * 1000; // Unread + within 1 hour
 
     let timeBadge = null;
     if (!item.read_at && !isJustArrived) {
-        const diffHours = diffMs / (60 * 60 * 1000);
-        if (diffHours < 24) {
-            const h = Math.floor(diffHours);
-            if (h > 0) timeBadge = `${h}시간 전`;
-            else timeBadge = `${Math.floor(diffMs / (60 * 1000))}분 전`;
-        } else if (diffHours < 24 * 7) {
-            timeBadge = `${Math.floor(diffHours / 24)}일 전`;
+        const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+        if (diffDays >= 30) {
+            timeBadge = `${Math.floor(diffDays / 30)}개월 전`;
+        } else if (diffDays >= 7) {
+            timeBadge = `${Math.floor(diffDays / 7)}주일 전`;
+        } else if (diffDays >= 1) {
+            timeBadge = `${diffDays}일 전`;
         }
     }
 
