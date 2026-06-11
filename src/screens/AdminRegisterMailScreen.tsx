@@ -51,6 +51,7 @@ export const AdminRegisterMailScreen = () => {
     const [resultModalVisible, setResultModalVisible] = React.useState(false);
     const [lastNotifResult, setLastNotifResult] = React.useState<NotificationResult | null>(null);
     const [pushStatuses, setPushStatuses] = React.useState<Record<string, boolean>>({}); // [NEW] 푸시 상태 현황판
+    const [isMessageSectionExpanded, setIsMessageSectionExpanded] = React.useState(false);
     const [isSending, setIsSending] = React.useState(false);
 
     const prevOcrLoading = React.useRef(ocrLoading);
@@ -70,7 +71,7 @@ export const AdminRegisterMailScreen = () => {
                     const compName = matchedProfile.company_name || '(미등록)';
                     
                     let title = '';
-                    let message = `진단 대상: ${compName} / ${matchedProfile.name}\n\n`;
+                    let message = `🏢 [ ${compName} ]\n👤 담당자: ${matchedProfile.name}\n\n`;
                     
                     if (warningStatuses.includes(status)) {
                         title = `⚠️ 주의: [${status}] 상태 입주사`;
@@ -297,6 +298,20 @@ export const AdminRegisterMailScreen = () => {
                     </View>
                 )}
                 <ScrollView style={appStyles.container} contentContainerStyle={{ paddingBottom: 100 }}>
+                    {matchedProfile && selectedImage && !ocrLoading && (
+                        <View style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 10 }}>
+                            <PrimaryButton
+                                label={
+                                    (['퇴거', '폐업', '이전', '소재불명', '연체불량'].includes(matchedProfile.status || (matchedProfile.is_active ? '입주' : '퇴거')))
+                                        ? `${matchedProfile.status || '퇴거'}된 입주사입니다 (발송 불가)`
+                                        : `🚀 [ ${matchedProfile.company_name || matchedProfile.name} ] 알림 보내기`
+                                }
+                                onPress={onSubmit}
+                                disabled={['퇴거', '폐업', '이전', '소재불명', '연체불량'].includes(matchedProfile.status || (matchedProfile.is_active ? '입주' : '퇴거'))}
+                                style={{ backgroundColor: '#10B981' }}
+                            />
+                        </View>
+                    )}
                     <SectionCard title="우편물 촬영">
                         {selectedImage ? (
                             <View>
@@ -362,12 +377,11 @@ export const AdminRegisterMailScreen = () => {
                                     <View style={appStyles.profileSelector}>
                                         {matchedProfile ? (
                                             <View style={[appStyles.matchedBox, !matchedProfile.is_active && { backgroundColor: '#FEF2F2', borderColor: '#EF4444' }]}>
-                                                <View>
+                                                <View style={{ flex: 1, marginRight: 10 }}>
                                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                                        <Text style={[appStyles.matchedText, !matchedProfile.is_active && { color: '#B91C1C' }]}>
+                                                        <Text style={[appStyles.matchedText, { fontSize: 18, fontWeight: '800', flexShrink: 1 }, !matchedProfile.is_active && { color: '#B91C1C' }]} numberOfLines={1}>
                                                             {!matchedProfile.is_active ? '🚫 ' : '✅ '}
-                                                            {matchedProfile.name} {matchedProfile.room_number ? `(${matchedProfile.room_number})` : ''}
-                                                            {matchedProfile.company_name ? ` - ${matchedProfile.company_name}` : ''}
+                                                            {matchedProfile.company_name || matchedProfile.name}
                                                         </Text>
                                                         {/* 프리미엄 뱃지 */}
                                                         {matchedProfile.is_premium && (
@@ -401,6 +415,9 @@ export const AdminRegisterMailScreen = () => {
                                                             );
                                                         })()}
                                                     </View>
+                                                    <Text style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>
+                                                        {matchedProfile.company_name ? `${matchedProfile.name} | ` : ''}{matchedProfile.room_number || '호실 미기재'}
+                                                    </Text>
                                                     {(() => {
                                                         const currentStatus = matchedProfile.status || (matchedProfile.is_active ? '입주' : '퇴거');
                                                         const warningStatuses = ['퇴거', '폐업', '이전', '소재불명', '연체불량', '입주(알림NO)', '입주(요주의)'];
@@ -453,14 +470,22 @@ export const AdminRegisterMailScreen = () => {
                             </SectionCard>
 
                             <SectionCard title="💬 알림 메시지 선택">
-                                <View style={{ backgroundColor: '#F8FAFC', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 15 }}>
-                                    <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '700', marginBottom: 4 }}>📋 기본 알림 메시지 (미선택 시 발송)</Text>
-                                    <Text style={{ fontSize: 13, color: '#475569', fontWeight: '600' }}>
-                                        "{officeInfo?.settings?.default_message || "안녕하세요. 우편물이 도착했습니다."}"
-                                    </Text>
-                                </View>
+                                <Pressable 
+                                    onPress={() => setIsMessageSectionExpanded(!isMessageSectionExpanded)} 
+                                    style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FAFC', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: isMessageSectionExpanded ? 15 : 0 }}
+                                >
+                                    <View style={{ flex: 1, paddingRight: 10 }}>
+                                        <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '700', marginBottom: 4 }}>발송될 메시지 (터치하여 변경)</Text>
+                                        <Text style={{ fontSize: 13, color: '#4F46E5', fontWeight: '700' }} numberOfLines={1}>
+                                            "{selectedPreset || customMessage || officeInfo?.settings?.default_message || "안녕하세요. 우편물이 도착했습니다."}"
+                                        </Text>
+                                    </View>
+                                    <Text style={{ color: '#64748B', fontWeight: '700', fontSize: 12 }}>{isMessageSectionExpanded ? '접기 ▲' : '변경 ▼'}</Text>
+                                </Pressable>
 
-                                <Text style={[appStyles.label, { marginBottom: 8 }]}>빠른 메시지 선택</Text>
+                                {isMessageSectionExpanded && (
+                                    <>
+                                        <Text style={[appStyles.label, { marginBottom: 8, marginTop: 10 }]}>빠른 메시지 선택</Text>
                                 <View style={{ position: 'relative', marginBottom: 10 }}>
                                     <Pressable
                                         onPress={() => setDropdownVisible(!dropdownVisible)}
@@ -541,16 +566,18 @@ export const AdminRegisterMailScreen = () => {
                                 )}
 
                                 <Text style={appStyles.label}>직접 입력 (선택한 메시지 대신 사용됨)</Text>
-                                <TextInput
-                                    style={[appStyles.input, selectedPreset && { opacity: 0.5, backgroundColor: '#F1F5F9' }]}
-                                    value={customMessage}
-                                    onChangeText={(t) => {
-                                        setCustomMessage(t);
-                                        if (t) setSelectedPreset(null);
-                                    }}
-                                    placeholder="입주사에게 보낼 추가 메시지..."
-                                    editable={!selectedPreset}
-                                />
+                                        <TextInput
+                                            style={[appStyles.input, selectedPreset && { opacity: 0.5, backgroundColor: '#F1F5F9' }]}
+                                            value={customMessage}
+                                            onChangeText={(t) => {
+                                                setCustomMessage(t);
+                                                if (t) setSelectedPreset(null);
+                                            }}
+                                            placeholder="입주사에게 보낼 추가 메시지..."
+                                            editable={!selectedPreset}
+                                        />
+                                    </>
+                                )}
                             </SectionCard>
 
                             {matchedProfile?.is_premium && (
@@ -594,7 +621,7 @@ export const AdminRegisterMailScreen = () => {
                                             ? '입주사를 선택해주세요'
                                             : (['퇴거', '폐업', '이전', '소재불명', '연체불량'].includes(matchedProfile.status || (matchedProfile.is_active ? '입주' : '퇴거')))
                                                 ? `${matchedProfile.status || '퇴거'}된 입주사입니다 (발송 불가)`
-                                                : `${matchedProfile.name}님께 알림 보내기`
+                                                : `🚀 [ ${matchedProfile.company_name || matchedProfile.name} ] 알림 보내기`
                                     }
                                     onPress={onSubmit}
                                     disabled={!matchedProfile || ['퇴거', '폐업', '이전', '소재불명', '연체불량'].includes(matchedProfile.status || (matchedProfile.is_active ? '입주' : '퇴거'))}
