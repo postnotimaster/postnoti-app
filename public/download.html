@@ -113,17 +113,15 @@
             우리 오피스의 가장 빠르고 정확한<br>우편물 비서를 폰에 설치해 보세요!
         </p>
 
-        <!-- APK 다운로드 링크 (메인) - GitHub Release (트래픽 무제한) -->
-        <a href="https://github.com/postnotimaster/postnoti-app/releases/download/v1.0.20/postnoti_tenant_v1.0.20.apk" class="download-btn" style="background-color: #4f46e5; margin-bottom: 15px;">
-            📥 포스트노티 앱 다운로드 (.apk)
+        <!-- APK 다운로드 링크 (메인) - GitHub Release -->
+        <a href="https://github.com/postnotimaster/postnoti-app/releases/download/v1.0.20/postnoti_tenant_v1.0.20.apk" class="download-btn" style="display: block; background-color: #4f46e5; margin-bottom: 15px;">
+            <span id="download-btn-text">📥 우편알림앱 다운로드 (.apk)</span>
         </a>
 
         <!-- ONE Store 다운로드 링크 (서브) -->
-        <div style="margin-top: 10px;">
-            <a href="https://onesto.re/0001006224" target="_blank" style="color: #64748b; font-size: 13px; text-decoration: underline;">
-                원스토어에서 설치하기
-            </a>
-        </div>
+        <a href="https://onesto.re/0001006224" target="_blank" class="download-btn" style="display: block; background-color: #f97316; margin-bottom: 15px;">
+            <span id="onestore-btn-text">🛒 원스토어에서 다운받기</span>
+        </a>
 
         <div class="guide-section">
             <div class="guide-title">⚠️ 안드로이드 앱 설치 필수 안내</div>
@@ -165,6 +163,9 @@
             if (branchName) {
                 document.getElementById('app-title').textContent = branchName + ' 스마트 우편알림';
                 document.getElementById('footer-brand').textContent = branchName + ' PostNoti';
+                
+                var downloadText = document.getElementById('download-btn-text');
+                if(downloadText) downloadText.textContent = '📥 ' + branchName + ' 우편알림앱 다운로드';
             }
         });
     </script>
