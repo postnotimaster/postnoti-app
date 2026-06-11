@@ -23,6 +23,7 @@ export const LandingScreen = () => {
     const isAdminApp = appName === '포스트노티';
     const [viewState, setViewState] = useState<'selection' | 'tenant' | 'admin'>(isAdminApp ? 'selection' : 'tenant');
     const [tenantPhone, setTenantPhone] = useState('');
+    const [isAutoLogin, setIsAutoLogin] = useState(true);
     const [isSearching, setIsSearching] = useState(false);
     const [showSignupModal, setShowSignupModal] = useState(false);
     const [signupPassword, setSignupPassword] = useState('');
@@ -85,6 +86,13 @@ export const LandingScreen = () => {
             const magicUrl = `https://postn.kr/view?m=${match.company_id}&p=${match.tenant_id}`;
             await AsyncStorage.setItem('last_tenant_url', magicUrl);
 
+            // 자동 로그인 체크 시 폰 번호 저장 (TenantDashboard에서 즉시 로그인되도록)
+            if (isAutoLogin) {
+                await AsyncStorage.setItem(`tenant_phone_${match.company_id}`, tenantPhone);
+            } else {
+                await AsyncStorage.removeItem(`tenant_phone_${match.company_id}`);
+            }
+
             // UI Context 업데이트 후 입주자 화면으로 전환
             setBrandingCompany({
                 id: match.company_id,
@@ -101,6 +109,115 @@ export const LandingScreen = () => {
             setIsSearching(false);
         }
     };
+
+    if (viewState === 'selection') {
+        return (
+            <SafeAreaView style={appStyles.flexContainer}>
+                <View style={styles.container}>
+                    <View style={styles.selectionBox}>
+                        <View style={{ marginBottom: 40, alignItems: 'center' }}>
+                            <View style={styles.iconWrapper}>
+                                <Ionicons name="mail" size={48} color="#4F46E5" />
+                            </View>
+                            <Text style={styles.selectionTitle}>어떤 서비스가 필요하신가요?</Text>
+                            <Text style={styles.selectionSubtitle}>해당하는 이용자 유형을 선택해주세요</Text>
+                        </View>
+
+                        <Pressable 
+                            style={styles.selectionCard}
+                            onPress={() => setViewState('tenant')}
+                        >
+                            <View style={styles.cardIconBox}>
+                                <Ionicons name="person" size={24} color="#4F46E5" />
+                            </View>
+                            <View style={styles.cardContent}>
+                                <Text style={styles.cardTitle}>입주사 (우편물 수령)</Text>
+                                <Text style={styles.cardDesc}>도착한 내 우편물을 확인합니다.</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
+                        </Pressable>
+
+                        <Pressable 
+                            style={[styles.selectionCard, { marginTop: 16 }]}
+                            onPress={() => setViewState('admin')}
+                        >
+                            <View style={[styles.cardIconBox, { backgroundColor: '#F1F5F9' }]}>
+                                <Ionicons name="briefcase" size={24} color="#64748B" />
+                            </View>
+                            <View style={styles.cardContent}>
+                                <Text style={[styles.cardTitle, { color: '#475569' }]}>관리자 (우편물 등록)</Text>
+                                <Text style={styles.cardDesc}>지점 우편물을 관리합니다.</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
+                        </Pressable>
+                    </View>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    if (viewState === 'tenant') {
+        return (
+            <SafeAreaView style={appStyles.flexContainer}>
+                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+                    <View style={styles.container}>
+                        <View style={styles.identifyBox}>
+                            <Pressable onPress={() => setViewState('selection')} style={{ marginBottom: 15 }}>
+                                <Text style={{ color: '#64748B', fontWeight: '700' }}>← 이전으로</Text>
+                            </Pressable>
+                            <View style={styles.premiumLoginCard}>
+                                <View style={styles.loginHeader}>
+                                    <View style={styles.iconWrapperSmall}>
+                                        <Ionicons name="search" size={24} color="#4F46E5" />
+                                    </View>
+                                    <Text style={styles.welcomeTitle}>내 우편함 찾기</Text>
+                                    <Text style={styles.welcomeSubtitle}>전화번호로 등록된 우편함을 찾습니다.</Text>
+                                </View>
+
+                                <View style={styles.formGroup}>
+                                    <View style={styles.inputContainer}>
+                                        <Text style={styles.inputLabel}>등록된 휴대전화 번호</Text>
+                                        <TextInput
+                                            style={styles.premiumInput}
+                                            value={tenantPhone}
+                                            onChangeText={handleTenantPhoneChange}
+                                            placeholder="010-0000-0000"
+                                            placeholderTextColor="#94A3B8"
+                                            keyboardType="number-pad"
+                                            returnKeyType="done"
+                                            onSubmitEditing={handleGlobalTenantLogin}
+                                        />
+                                    </View>
+
+                                    <Pressable 
+                                        style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, alignSelf: 'flex-start' }}
+                                        onPress={() => setIsAutoLogin(!isAutoLogin)}
+                                    >
+                                        <Ionicons 
+                                            name={isAutoLogin ? "checkbox" : "square-outline"} 
+                                            size={20} 
+                                            color={isAutoLogin ? "#4F46E5" : "#94A3B8"} 
+                                        />
+                                        <Text style={{ marginLeft: 8, fontSize: 14, color: '#64748B', fontWeight: '500' }}>
+                                            자동 로그인 유지
+                                        </Text>
+                                    </Pressable>
+
+                                    <PrimaryButton
+                                        label={isSearching ? '조회 중...' : '우편함 찾기'}
+                                        onPress={handleGlobalTenantLogin}
+                                        loading={isSearching}
+                                        style={styles.premiumButton}
+                                        textStyle={{ fontSize: 16, fontWeight: '700' }}
+                                    />
+                                </View>
+                            </View>
+                        </View>
+                    </View>
+                </KeyboardAvoidingView>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={appStyles.flexContainer}>
