@@ -100,7 +100,7 @@ export const LoginScreen = ({ onLoginSuccess, onBack, isEmbedded }: Props) => {
                         <Text style={styles.label}>이메일</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="admin@postnoti.com"
+                            placeholder="관리자 이메일 입력"
                             value={email}
                             onChangeText={setEmail}
                             autoCapitalize="none"
