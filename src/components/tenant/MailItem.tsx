@@ -55,6 +55,18 @@ export const MailItem = ({ item, onImagePress, onMarkRead }: Props) => {
     const diffMs = now.getTime() - createdAt.getTime();
     const isJustArrived = !item.read_at && diffMs < 30 * 60 * 1000; // Unread + within 30 mins
 
+    let timeBadge = null;
+    if (!item.read_at && !isJustArrived) {
+        const diffHours = diffMs / (60 * 60 * 1000);
+        if (diffHours < 24) {
+            const h = Math.floor(diffHours);
+            if (h > 0) timeBadge = `${h}시간 전`;
+            else timeBadge = `${Math.floor(diffMs / (60 * 1000))}분 전`;
+        } else if (diffHours < 24 * 7) {
+            timeBadge = `${Math.floor(diffHours / 24)}일 전`;
+        }
+    }
+
     const formatDateTime = (date: Date) => {
         const yy = String(date.getFullYear()).slice(2);
         const mm = String(date.getMonth() + 1).padStart(2, '0');
@@ -101,6 +113,11 @@ export const MailItem = ({ item, onImagePress, onMarkRead }: Props) => {
                     {isJustArrived && (
                         <View style={itemStyles.newBadge}>
                             <Text style={itemStyles.newBadgeText}>방금 도착</Text>
+                        </View>
+                    )}
+                    {timeBadge && (
+                        <View style={[itemStyles.newBadge, { backgroundColor: '#F1F5F9' }]}>
+                            <Text style={[itemStyles.newBadgeText, { color: '#64748B' }]}>{timeBadge}</Text>
                         </View>
                     )}
                 </View>
