@@ -141,7 +141,7 @@ export const useTenantAuth = ({
         checkAutoLogin();
     }, [companyId, magicProfileId, magicTenantId]);
 
-    const handleIdentify = async (inputPhone?: string) => {
+    const handleIdentify = async (inputPhone?: string, saveLogin: boolean = true) => {
         const targetPhone = inputPhone || phoneSuffix;
 
         let fullPhone = targetPhone.replace(/[^0-9]/g, '');
@@ -188,7 +188,11 @@ export const useTenantAuth = ({
                 return;
             }
 
-            await AsyncStorage.setItem(`tenant_phone_${companyId}`, targetPhone);
+            if (saveLogin) {
+                await AsyncStorage.setItem(`tenant_phone_${companyId}`, targetPhone);
+            } else {
+                await AsyncStorage.removeItem(`tenant_phone_${companyId}`);
+            }
 
             const rawProfile = profile || resolvedTenant;
             // tenant_id를 보존하여 useNotificationSync가 올바른 profile ID를 사용할 수 있도록 함

@@ -400,19 +400,42 @@ export const TenantManagement = forwardRef(({ companyId, onComplete, onCancel }:
                                             style: 'destructive',
                                             onPress: async () => {
                                                 try {
-                                                    const { data: profile, error: findError } = await supabase
-                                                        .from('profiles')
-                                                        .select('id')
-                                                        .eq('company_id', companyId)
-                                                        .eq('phone', editingTenant.phone)
-                                                        .single();
+                                                    const cleanPhone = editingTenant.phone?.replace(/[^0-9]/g, '') || '';
+                                                    let foundProfileId = null;
+
+                                                    if (cleanPhone.length >= 10) {
+                                                        const p1 = cleanPhone.startsWith('010') ? cleanPhone : '010' + cleanPhone;
+                                                        const phonePattern = `%${p1.slice(3, 7)}%${p1.slice(7)}%`;
+                                                        
+                                                        // 1. 전화번호 부분 일치로 강력하게 찾기 (공백/하이픈 무시)
+                                                        const { data: profiles } = await supabase
+                                                            .from('profiles')
+                                                            .select('id')
+                                                            .ilike('phone', phonePattern)
+                                                            .order('created_at', { ascending: false });
+
+                                                        if (profiles && profiles.length > 0) {
+                                                            foundProfileId = profiles[0].id;
+                                                        }
+                                                    }
+
+                                                    if (!foundProfileId) {
+                                                        // 2. 혹시나 해서 company_id와 정확한 폰번호로 한 번 더 찾기
+                                                        const { data: exactProfile } = await supabase
+                                                            .from('profiles')
+                                                            .select('id')
+                                                            .eq('company_id', companyId)
+                                                            .eq('phone', editingTenant.phone)
+                                                            .single();
+                                                        if (exactProfile) foundProfileId = exactProfile.id;
+                                                    }
                                                     
-                                                    if (!profile) {
+                                                    if (!foundProfileId) {
                                                         Alert.alert('알림', '이 입주자는 아직 앱에 한 번도 가입/접속하지 않았습니다.');
                                                         return;
                                                     }
                                                     
-                                                    const { error } = await supabase.rpc('reset_push_token_secure', { p_profile_id: profile.id });
+                                                    const { error } = await supabase.rpc('reset_push_token_secure', { p_profile_id: foundProfileId });
                                                     if (error) {
                                                         Alert.alert('오류', '초기화 실패: ' + error.message);
                                                     } else {

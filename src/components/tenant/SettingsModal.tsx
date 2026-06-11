@@ -3,6 +3,7 @@ import {
     View, Text, Pressable, Modal, Switch,
     TouchableWithoutFeedback, StyleSheet
 } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 type Props = {
     visible: boolean;
@@ -49,6 +50,14 @@ export const SettingsModal = ({
                                 <Text style={[modalStyles.sublabel, { color: permissionStatus === 'granted' ? '#059669' : (permissionStatus === 'denied' ? '#DC2626' : '#D97706'), fontWeight: '700' }]}>
                                     {permissionStatus === 'granted' ? '허용됨 (정상 수신 가능)' : (permissionStatus === 'denied' ? '차단됨 (설정 필요)' : '설정 대기 중')}
                                 </Text>
+                                {permissionStatus !== 'granted' && (
+                                    <Pressable 
+                                        onPress={() => alert('기기 설정에서 알림이 차단되어 있습니다.\n\n[설정 > 애플리케이션 > 포스트노티 > 알림]에서 알림을 허용해 주세요.')}
+                                        style={{ marginLeft: 6, padding: 4 }}
+                                    >
+                                        <Ionicons name="information-circle-outline" size={16} color="#94A3B8" />
+                                    </Pressable>
+                                )}
                             </View>
                         </View>
                         <Switch

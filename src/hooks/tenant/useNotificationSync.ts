@@ -19,15 +19,23 @@ export const useNotificationSync = ({
     showToast,
     setLoading
 }: UseNotificationSyncProps) => {
-    const [permissionStatus, setPermissionStatus] = useState<NotificationPermission | 'default'>(
-        typeof Notification !== 'undefined' ? Notification.permission : 'default'
+    const [permissionStatus, setPermissionStatus] = useState<NotificationPermission | 'default' | 'granted' | 'denied'>(
+        Platform.OS === 'web' && typeof Notification !== 'undefined' ? Notification.permission : 'default'
     );
 
     // 토큰 변경 및 권한 상태 동기화
     useEffect(() => {
-        const syncStatus = () => {
-            if (typeof Notification !== 'undefined') {
+        const syncStatus = async () => {
+            if (Platform.OS === 'web' && typeof Notification !== 'undefined') {
                 setPermissionStatus(Notification.permission);
+            } else if (Platform.OS !== 'web') {
+                try {
+                    const { Notifications } = require('expo');
+                    const { status } = await require('expo-notifications').getPermissionsAsync();
+                    setPermissionStatus(status === 'granted' ? 'granted' : (status === 'denied' ? 'denied' : 'default'));
+                } catch (e) {
+                    console.log('Expo notifications not available');
+                }
             }
         };
         syncStatus();

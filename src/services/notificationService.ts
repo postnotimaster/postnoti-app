@@ -219,33 +219,50 @@ export const notificationService = {
         const pushBody = title.length > 50 ? `${title.substring(0, 47)}...` : title;
 
         try {
-            let query = supabase.from('profiles').select('id, push_token, web_push_token');
+            let finalProfileIds: string[] = [];
 
             if (targetTenantIds && targetTenantIds.length > 0) {
-                // [수정] targetTenantIds는 tenants 테이블의 ID이므로, profile_id를 먼저 조회해야 함
-                const { data: tenants } = await supabase
-                    .from('tenants')
-                    .select('profile_id')
-                    .in('id', targetTenantIds);
+                // 특정 입주사 타겟
+                const { data: tenants } = await supabase.from('tenants').select('profile_id, phone').in('id', targetTenantIds);
+                if (tenants) {
+                    const explicitIds = tenants.map(t => t.profile_id).filter(id => id) as string[];
+                    finalProfileIds.push(...explicitIds);
 
-                const profileIds = tenants?.map(t => t.profile_id).filter(id => id) || [];
-                if (profileIds.length === 0) {
-                    console.log('[NotificationService] No linked profiles found for targeted tenants');
-                    return;
+                    // 전화번호 기반으로 프로필 찾기 (강력한 폴백)
+                    const phoneConditions = tenants.map(t => {
+                        const clean = t.phone?.replace(/[^0-9]/g, '') || '';
+                        if (clean.length >= 10) {
+                            const p1 = clean.startsWith('010') ? clean : '010' + clean;
+                            return `phone.ilike.%${p1.slice(3, 7)}%${p1.slice(7)}%`;
+                        }
+                        return null;
+                    }).filter(Boolean);
+
+                    if (phoneConditions.length > 0) {
+                        for (let i = 0; i < phoneConditions.length; i += 10) {
+                            const chunk = phoneConditions.slice(i, i + 10).join(',');
+                            const { data: pPhones } = await supabase.from('profiles').select('id').or(chunk);
+                            if (pPhones) finalProfileIds.push(...pPhones.map(p => p.id));
+                        }
+                    }
                 }
-                query = query.in('id', profileIds);
             } else {
+                // 회사 전체 타겟: profiles 테이블에서 company_id가 일치하는 모든 프로필 + tenants에 연결된 프로필
+                const { data: profilesByCompany } = await supabase.from('profiles').select('id').eq('company_id', company.id);
+                if (profilesByCompany) finalProfileIds.push(...profilesByCompany.map(p => p.id));
+
                 const { data: tenants } = await supabase.from('tenants').select('profile_id').eq('company_id', company.id);
-                const profileIds = tenants?.map(t => t.profile_id).filter(id => id) || [];
-                if (profileIds.length === 0) return;
-                query = query.in('id', profileIds);
+                if (tenants) {
+                    const explicitIds = tenants.map(t => t.profile_id).filter(id => id) as string[];
+                    finalProfileIds.push(...explicitIds);
+                }
             }
 
-            const { data: profiles } = await query;
-            if (!profiles || profiles.length === 0) return;
+            // 중복 제거
+            finalProfileIds = Array.from(new Set(finalProfileIds));
+            if (finalProfileIds.length === 0) return;
 
-            const ids = profiles.map(p => p.id);
-            await this.sendPushNotification(ids, pushTitle, pushBody, { type: 'notice' });
+            await this.sendPushNotification(finalProfileIds, pushTitle, pushBody, { type: 'notice' });
         } catch (err) {
             console.error('sendNoticePush error:', err);
         }

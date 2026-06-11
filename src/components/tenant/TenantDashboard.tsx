@@ -56,6 +56,7 @@ export const TenantDashboard = ({
     // 규정 동의 관련 상태 (최초 1회 팝업 및 배너 처리)
     const [localTermsAgreed, setLocalTermsAgreed] = useState<boolean | null>(null);
     const [isTermsModalVisible, setIsTermsModalVisible] = useState(false);
+    const [isAutoLogin, setIsAutoLogin] = useState(true);
 
     const dismissInstallBanner = () => {
         setIsInstallBannerDismissed(true);
@@ -203,90 +204,7 @@ export const TenantDashboard = ({
         }
     }, [identifying]);
 
-    // 규정 동의 상태 동기화 및 팝업 띄우기
-    useEffect(() => {
-        const checkTerms = async () => {
-            if (myProfile && !identifying) {
-                const profileId = myProfile.id || myProfile.profile_id;
-                if (!profileId) return;
 
-                try {
-                    // 1. 먼저 로컬 저장소(AsyncStorage)에서 확인
-                    const localVal = await AsyncStorage.getItem(`terms_agreed_${profileId}`);
-                    if (localVal !== null) {
-                        const hasAgreed = localVal === 'true';
-                        setLocalTermsAgreed(hasAgreed);
-                        if (myProfile.terms_agreed !== hasAgreed) {
-                            myProfile.terms_agreed = hasAgreed;
-                        }
-                        // 로컬 상태가 있으면 팝업을 띄우지 않음
-                        return;
-                    }
-
-                    // 2. 로컬 저장소에 기록이 없으면 DB 값 확인
-                    if (myProfile.terms_agreed !== undefined) {
-                        setLocalTermsAgreed(myProfile.terms_agreed ?? null);
-                        if (myProfile.terms_agreed === null) {
-                            // DB에 아예 동의 여부가 기록 안 된 최초 진입일 때만 팝업 표시!
-                            setIsTermsModalVisible(true);
-                        } else {
-                            // DB 값이 있으면 로컬 저장소에도 캐시 저장
-                            await AsyncStorage.setItem(`terms_agreed_${profileId}`, String(myProfile.terms_agreed));
-                        }
-                    }
-                } catch (e) {
-                    console.error('[TenantDashboard] Failed to read/write AsyncStorage for terms:', e);
-                }
-            }
-        };
-        checkTerms();
-    }, [myProfile, identifying]);
-
-    const handleTermsAgree = async () => {
-        const profileId = myProfile?.id || myProfile?.profile_id;
-        if (!profileId) return;
-        try {
-            // 로컬 캐시 먼저 즉시 저장 (UI 반응성 확보)
-            await AsyncStorage.setItem(`terms_agreed_${profileId}`, 'true');
-            setLocalTermsAgreed(true);
-            setIsTermsModalVisible(false);
-            showToast('✅ 우편물 규정에 동의하셨습니다. 알림 서비스가 정상 작동합니다.');
-            if (myProfile) myProfile.terms_agreed = true;
-
-            // 백그라운드에서 DB 업데이트 시도 (DB 에러/트리거 결함이 있어도 무시)
-            profilesService.updateTenantTermsAgreement(profileId, true).catch(err => {
-                console.warn('[TenantDashboard] DB update for terms failed (trigger/RLS mismatch expected):', err);
-            });
-        } catch (error) {
-            console.error(error);
-            showToast('동의 처리 중 오류가 발생했습니다.');
-        }
-    };
-
-    const handleTermsDisagree = async () => {
-        const profileId = myProfile?.id || myProfile?.profile_id;
-        if (!profileId) return;
-        try {
-            // 로컬 캐시 먼저 즉시 저장
-            await AsyncStorage.setItem(`terms_agreed_${profileId}`, 'false');
-            setLocalTermsAgreed(false);
-            setIsTermsModalVisible(false);
-            Alert.alert(
-                '서비스 제한 안내',
-                '규정에 동의하지 않으셔서 도착 알림 서비스 이용이 제한됩니다.\n화면 상단 배너를 통해 언제든 다시 동의하실 수 있습니다.',
-                [{ text: '확인' }]
-            );
-            if (myProfile) myProfile.terms_agreed = false;
-
-            // 백그라운드에서 DB 업데이트 시도
-            profilesService.updateTenantTermsAgreement(profileId, false).catch(err => {
-                console.warn('[TenantDashboard] DB update for terms failed (trigger/RLS mismatch expected):', err);
-            });
-        } catch (error) {
-            console.error(error);
-            showToast('처리 중 오류가 발생했습니다.');
-        }
-    };
 
     useEffect(() => {
         AsyncStorage.getItem('soundEnabled').then(val => {
@@ -488,24 +406,7 @@ export const TenantDashboard = ({
         if (item.type === 'header') {
             return (
                 <View>
-                    {/* 0. 우편물 규정 동의 거부 안내 배너 */}
-                    {localTermsAgreed === false && (
-                        <View style={[styles.premiumInstallBanner, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}>
-                            <View style={[styles.installIconBox, { backgroundColor: '#FEE2E2' }]}>
-                                <Ionicons name="warning" size={32} color="#DC2626" />
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={[styles.installBannerTitle, { color: '#991B1B' }]}>서비스 이용 제한 안내 ⚠️</Text>
-                                <Text style={styles.installBannerDesc}>우편물 규정에 동의하지 않으셔서 알림 서비스가 제한됩니다.</Text>
-                                <Pressable 
-                                    style={[styles.premiumInstallButton, { backgroundColor: '#DC2626' }]} 
-                                    onPress={() => setIsTermsModalVisible(true)}
-                                >
-                                    <Text style={styles.premiumInstallButtonText}>규정 확인하고 동의하기</Text>
-                                </Pressable>
-                            </View>
-                        </View>
-                    )}
+                    {/* 우편물 규정 동의 거부 안내 배너 제거됨 */}
 
                     {/* 1. 알림 권한 거부 안내 배너 (앱 설치자 중 알림 꺼둔 사람용) */}
                     {isStandalone && permissionStatus === 'denied' && (
@@ -797,13 +698,27 @@ export const TenantDashboard = ({
                                     placeholder="010-0000-0000"
                                     placeholderTextColor="#94A3B8"
                                     keyboardType="number-pad"
-                                    maxLength={13} // "010-XXXX-XXXX" -> 13글자
+                                    maxLength={13}
                                 />
                             </View>
 
+                            <Pressable 
+                                style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15, alignSelf: 'flex-start' }}
+                                onPress={() => setIsAutoLogin(!isAutoLogin)}
+                            >
+                                <Ionicons 
+                                    name={isAutoLogin ? "checkbox" : "square-outline"} 
+                                    size={20} 
+                                    color={isAutoLogin ? "#4F46E5" : "#94A3B8"} 
+                                />
+                                <Text style={{ marginLeft: 8, fontSize: 14, color: '#64748B', fontWeight: '500' }}>
+                                    자동 로그인 유지
+                                </Text>
+                            </Pressable>
+
                             <PrimaryButton
                                 label={identifying ? '확인 중...' : '우편물 조회 시작'}
-                                onPress={() => handleIdentify()}
+                                onPress={() => handleIdentify(phoneSuffix, isAutoLogin)}
                                 loading={identifying}
                                 style={styles.premiumButton}
                                 textStyle={{ fontSize: 16, fontWeight: '700' }}
@@ -866,8 +781,6 @@ export const TenantDashboard = ({
 
             <TermsModal
                 visible={isTermsModalVisible}
-                onAgree={handleTermsAgree}
-                onDisagree={handleTermsDisagree}
                 onClose={() => setIsTermsModalVisible(false)}
             />
 

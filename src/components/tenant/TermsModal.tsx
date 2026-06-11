@@ -4,12 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 
 interface TermsModalProps {
     visible: boolean;
-    onAgree: () => void;
-    onDisagree: () => void;
     onClose: () => void;
 }
 
-export const TermsModal: React.FC<TermsModalProps> = ({ visible, onAgree, onDisagree, onClose }) => {
+export const TermsModal: React.FC<TermsModalProps> = ({ visible, onClose }) => {
     return (
         <Modal
             visible={visible}
@@ -27,7 +25,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ visible, onAgree, onDisa
                         <View style={styles.iconContainer}>
                             <Ionicons name="document-text" size={32} color="#4A60AB" />
                         </View>
-                        <Text style={styles.title}>우편물 수령 규정 동의</Text>
+                        <Text style={styles.title}>우편물 수령규정</Text>
                     </View>
 
                     <View style={styles.termsBoxContainer}>
@@ -102,20 +100,16 @@ export const TermsModal: React.FC<TermsModalProps> = ({ visible, onAgree, onDisa
                                 본 우편물 알림 서비스는 회원 편의를 위한 부가서비스이며, 회원에게만 제공됩니다. 서비스 내용은 사전 통보 없이 변경·중단·종료될 수 있습니다.
                             </Text>
 
-                            <Text style={styles.termsWarning}>
-                                본 규정에 동의하시는 경우에만 우편물 알림 서비스가 제공됩니다.{'\n'}
-                                동의하지 않으시는 경우 우편물은 보관만 가능하며 별도 알림은 제공되지 않습니다.
-                            </Text>
                         </ScrollView>
                     </View>
 
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity style={styles.disagreeButton} onPress={onDisagree}>
-                            <Text style={styles.disagreeButtonText}>동의하지 않음</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.agreeButton} onPress={onAgree}>
-                            <Text style={styles.agreeButtonText}>동의합니다</Text>
-                        </TouchableOpacity>
+                    <View style={styles.infoContainer}>
+                        <Text style={styles.infoText}>
+                            본 우편물 수령규정 동의는 워크로 가입 및 우편알림변경(26.6)시 동의하셨습니다.
+                        </Text>
+                        <Text style={styles.infoText}>
+                            철회를 원하시는 분은 010-9552-7295로 연락주시기 바랍니다.
+                        </Text>
                     </View>
                 </View>
             </View>
@@ -241,36 +235,18 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         textAlign: 'center',
     },
-    buttonContainer: {
-        flexDirection: 'row',
-        padding: 15,
+    infoContainer: {
+        padding: 16,
         borderTopWidth: 1,
         borderTopColor: '#f1f5f9',
         backgroundColor: '#fafafa',
-        gap: 10,
-    },
-    disagreeButton: {
-        flex: 1,
-        paddingVertical: 12,
-        borderRadius: 12,
-        backgroundColor: '#f1f5f9',
         alignItems: 'center',
     },
-    disagreeButtonText: {
+    infoText: {
+        fontSize: 12,
         color: '#64748b',
-        fontSize: 14,
-        fontWeight: 'bold',
-    },
-    agreeButton: {
-        flex: 1,
-        paddingVertical: 12,
-        borderRadius: 12,
-        backgroundColor: '#4A60AB',
-        alignItems: 'center',
-    },
-    agreeButtonText: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: 'bold',
+        lineHeight: 18,
+        textAlign: 'center',
+        fontWeight: '500',
     },
 });
