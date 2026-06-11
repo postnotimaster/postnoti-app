@@ -110,6 +110,9 @@ export const TermsModal: React.FC<TermsModalProps> = ({ visible, onClose }) => {
                         <Text style={styles.infoText}>
                             철회를 원하시는 분은 010-9552-7295로 연락주시기 바랍니다.
                         </Text>
+                        <Text style={[styles.infoText, { color: '#ef4444', marginTop: 4 }]}>
+                            (동의철회를 하시면 우편물 알림은 중단되며 보관만 됩니다.)
+                        </Text>
                     </View>
                 </View>
             </View>

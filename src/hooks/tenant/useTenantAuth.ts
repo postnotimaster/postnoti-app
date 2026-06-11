@@ -190,8 +190,13 @@ export const useTenantAuth = ({
 
             if (saveLogin) {
                 await AsyncStorage.setItem(`tenant_phone_${companyId}`, targetPhone);
+                // 로그아웃으로 지워졌을 수 있는 last_tenant_url 복구 (앱 재시작 시 LandingScreen으로 안 가도록)
+                const tenantId = resolvedTenant?.id || profile?.id || '';
+                const magicUrl = `https://postn.kr/view?m=${companyId}&p=${tenantId}`;
+                await AsyncStorage.setItem('last_tenant_url', magicUrl);
             } else {
                 await AsyncStorage.removeItem(`tenant_phone_${companyId}`);
+                await AsyncStorage.removeItem('last_tenant_url');
             }
 
             const rawProfile = profile || resolvedTenant;
