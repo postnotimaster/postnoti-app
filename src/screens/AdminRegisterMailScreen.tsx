@@ -15,7 +15,7 @@ import { PrimaryButton } from '../components/common/PrimaryButton';
 
 export const AdminRegisterMailScreen = () => {
     const { showToast } = useToast();
-    const { officeInfo, profiles } = useAuth();
+    const { officeInfo, profiles, setProfiles } = useAuth();
     const {
         mode,
         setMode,
@@ -133,6 +133,12 @@ export const AdminRegisterMailScreen = () => {
                 setPresets(officeInfo.settings.notification_presets);
             }
             tenantsService.getCompanyPushStatuses(officeInfo.id).then(setPushStatuses);
+            
+            // [중요] 최신 입주사 목록(tenants)을 항상 새로 불러옵니다.
+            // 입주사 관리에서 새로 추가된 업체가 OCR 매칭과 수동 검색에 즉각 반영되도록 합니다.
+            tenantsService.getTenantsByCompany(officeInfo.id).then((freshTenants) => {
+                if (setProfiles) setProfiles(freshTenants);
+            }).catch(console.error);
         }
     }, [officeInfo]);
 
@@ -670,10 +676,14 @@ export const AdminRegisterMailScreen = () => {
                                 {profiles
                                     .filter((p: any) => {
                                         const query = manualSearchQuery.toLowerCase();
+                                        const safeName = p.name ? p.name.toLowerCase() : '';
+                                        const safeCompany = p.company_name ? p.company_name.toLowerCase() : '';
+                                        const safeRoom = p.room_number ? p.room_number.toLowerCase() : '';
+                                        
                                         return (
-                                            p.name.toLowerCase().includes(query) ||
-                                            (p.company_name?.toLowerCase() || '').includes(query) ||
-                                            (p.room_number?.toLowerCase() || '').includes(query)
+                                            safeName.includes(query) ||
+                                            safeCompany.includes(query) ||
+                                            safeRoom.includes(query)
                                         );
                                     })
                                     .map((p: any) => (
@@ -692,12 +702,12 @@ export const AdminRegisterMailScreen = () => {
                                             }}
                                         >
                                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <View>
+                                                <View style={{ flex: 1, paddingRight: 10 }}>
                                                     <Text style={{ fontSize: 16, fontWeight: '700', color: !p.is_active ? '#B91C1C' : '#1E293B' }}>
-                                                        {p.name}
+                                                        {p.company_name || p.name}
                                                     </Text>
                                                     <Text style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
-                                                        {p.company_name ? `${p.company_name} | ` : ''} {p.room_number || '호실 미기재'} | {p.phone}
+                                                        {p.company_name ? `담당자: ${p.name} | ` : ''}{p.room_number || '호실 미기재'} | {p.phone}
                                                     </Text>
                                                 </View>
                                                 {!p.is_active && (
