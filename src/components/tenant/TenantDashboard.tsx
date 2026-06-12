@@ -200,7 +200,7 @@ export const TenantDashboard = ({
     // 설정 로드 및 동기화
     useEffect(() => {
         if (identifying) {
-            setFilter('unread');
+            setFilter('all');
         }
     }, [identifying]);
 
