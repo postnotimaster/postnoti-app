@@ -38,11 +38,14 @@ export const DeliveryScreen = () => {
             if (guide && guide.startsWith('{')) {
                 try {
                     const parsed = JSON.parse(guide);
+                    setGuidelinesText(parsed.text || '');
                     setAmount(parsed.amount || '');
                     setBank(parsed.bank || '');
                     setAccount(parsed.account || '');
                     setHolder(parsed.holder || '');
                 } catch (e) { }
+            } else {
+                setGuidelinesText(guide || '');
             }
 
         } catch (e) {
