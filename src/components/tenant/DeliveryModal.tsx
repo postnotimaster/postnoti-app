@@ -3,8 +3,11 @@ import {
     View, Text, StyleSheet, Modal, Pressable, TextInput,
     ScrollView, ActivityIndicator, Alert, Platform, FlatList, Switch
 } from 'react-native';
-// import { WebView } from 'react-native-webview';
-const WebView = View as any;
+// Conditionally require WebView to avoid Web crashing
+let NativeWebView: any;
+if (Platform.OS !== 'web') {
+    NativeWebView = require('react-native-webview').WebView;
+}
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PrimaryButton } from '../common/PrimaryButton';
@@ -240,8 +243,8 @@ export const DeliveryModal = ({
                     <View style={{ flex: 1 }}>
                         {Platform.OS === 'web' ? (
                             <iframe src={postcodeUrl} style={{ border: 'none', width: '100%', height: '100%' }} title="주소 검색" />
-                        ) : (
-                            <WebView
+                        ) : NativeWebView ? (
+                            <NativeWebView
                                 source={{ uri: postcodeUrl }}
                                 onMessage={(event: any) => {
                                     try {
@@ -250,7 +253,14 @@ export const DeliveryModal = ({
                                     } catch (e) { }
                                 }}
                                 style={{ flex: 1 }}
+                                javaScriptEnabled={true}
+                                domStorageEnabled={true}
+                                startInLoadingState={true}
                             />
+                        ) : (
+                            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                                <Text>웹뷰를 불러올 수 없습니다.</Text>
+                            </View>
                         )}
                     </View>
                 </SafeAreaView>
@@ -308,7 +318,7 @@ export const DeliveryModal = ({
                         <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
                             <View style={styles.guideBox}>
                                 <Ionicons name="information-circle" size={18} color="#4338CA" />
-                                <Text style={styles.guideText}>{guidelines}</Text>
+                                <Text style={styles.guideText} selectable={true}>{guidelines}</Text>
                             </View>
 
                             {paymentInfo && (
@@ -316,15 +326,15 @@ export const DeliveryModal = ({
                                     <Text style={{ fontSize: 13, fontWeight: '700', color: '#475569', marginBottom: 8 }}>배송비 안내</Text>
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
                                         <Text style={{ fontSize: 13, color: '#64748B' }}>금액</Text>
-                                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#1E293B' }}>{paymentInfo.amount}</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#1E293B' }} selectable={true}>{paymentInfo.amount}</Text>
                                     </View>
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
                                         <Text style={{ fontSize: 13, color: '#64748B' }}>입금계좌</Text>
-                                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#1E293B' }}>{paymentInfo.bank} {paymentInfo.account}</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#1E293B' }} selectable={true}>{paymentInfo.bank} {paymentInfo.account}</Text>
                                     </View>
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                                         <Text style={{ fontSize: 13, color: '#64748B' }}>예금주</Text>
-                                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#1E293B' }}>{paymentInfo.holder}</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#1E293B' }} selectable={true}>{paymentInfo.holder}</Text>
                                     </View>
                                 </View>
                             )}
@@ -408,9 +418,9 @@ export const DeliveryModal = ({
                                             <View style={styles.infoNote}>
                                                 {paymentInfo ? (
                                                     <View>
-                                                        <Text style={styles.infoNoteText}>금액: {paymentInfo.amount}</Text>
-                                                        <Text style={styles.infoNoteText}>입금계좌: {paymentInfo.bank} {paymentInfo.account}</Text>
-                                                        <Text style={styles.infoNoteText}>예금주: {paymentInfo.holder}</Text>
+                                                        <Text style={styles.infoNoteText} selectable={true}>금액: {paymentInfo.amount}</Text>
+                                                        <Text style={styles.infoNoteText} selectable={true}>입금계좌: {paymentInfo.bank} {paymentInfo.account}</Text>
+                                                        <Text style={styles.infoNoteText} selectable={true}>예금주: {paymentInfo.holder}</Text>
                                                     </View>
                                                 ) : (
                                                     <Text style={styles.infoNoteText}>결제 정보가 아직 설정되지 않았습니다.</Text>

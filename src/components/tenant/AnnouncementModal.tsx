@@ -73,7 +73,7 @@ export const AnnouncementModal = ({ visible, announcements, onClose }: Props) =>
                                     <Text style={styles.detailDate}>{formatDate(selectedNotice.created_at)}</Text>
                                 </View>
                                 <View style={styles.divider} />
-                                <Text style={styles.detailBody}>{selectedNotice.content}</Text>
+                                <Text style={styles.detailBody} selectable={true}>{selectedNotice.content}</Text>
                             </ScrollView>
                         </View>
                     ) : (
