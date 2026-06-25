@@ -236,7 +236,8 @@ export const TenantDashboard = ({
                 window.URL.revokeObjectURL(blobUrl);
                 showToast({ message: '이미지를 다운로드했습니다.', type: 'success' });
             } else {
-                Alert.alert('알림', '브라우저에서 열기 후 이미지를 길게 눌러 저장하실 수 있습니다.');
+                await Linking.openURL(uri);
+                // Alert.alert('알림', '브라우저에서 열기 후 이미지를 길게 눌러 저장하실 수 있습니다.');
             }
         } catch (error) {
             console.error('Download error:', error);
