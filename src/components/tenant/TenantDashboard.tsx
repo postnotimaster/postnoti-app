@@ -45,7 +45,8 @@ export const TenantDashboard = ({
     const { showToast, playSound } = useToast();
     const [loading, setLoading] = useState(false);
     const [filter, setFilter] = useState<'all' | 'unread'>('all');
-    const [selectedMailImage, setSelectedMailImage] = useState<string | null>(null);
+    const [selectedMailImages, setSelectedMailImages] = useState<string[] | null>(null);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [isSettingsVisible, setIsSettingsVisible] = useState(false);
     const [isNoticeVisible, setIsNoticeVisible] = useState(false);
     const [isMailDeliveryVisible, setIsMailDeliveryVisible] = useState(false);
@@ -246,7 +247,7 @@ export const TenantDashboard = ({
     // 하드웨어 뒤로가기 제어 (Native & Web PWA 대응)
     const isManualBackRef = useRef(false);
     const modalsStateRef = useRef({
-        selectedMailImage,
+        selectedMailImages,
         isMailDeliveryVisible,
         isSettingsVisible,
         isNoticeVisible,
@@ -257,7 +258,7 @@ export const TenantDashboard = ({
 
     useEffect(() => {
         modalsStateRef.current = {
-            selectedMailImage,
+            selectedMailImages,
             isMailDeliveryVisible,
             isSettingsVisible,
             isNoticeVisible,
@@ -265,15 +266,16 @@ export const TenantDashboard = ({
             isAndroidGuideVisible,
             isInstallComplete
         };
-    }, [selectedMailImage, isMailDeliveryVisible, isSettingsVisible, isNoticeVisible, isIOSGuideVisible, isAndroidGuideVisible, isInstallComplete]);
+    }, [selectedMailImages, isMailDeliveryVisible, isSettingsVisible, isNoticeVisible, isIOSGuideVisible, isAndroidGuideVisible, isInstallComplete]);
 
     useEffect(() => {
         const handleBack = () => {
             const state = modalsStateRef.current;
             
             // 1. 열려있는 팝업/모달이 있으면 해당 모달만 순차적으로 닫음
-            if (state.selectedMailImage) {
-                setSelectedMailImage(null);
+            if (state.selectedMailImages) {
+                setSelectedMailImages(null);
+                setSelectedImageIndex(0);
                 return true;
             }
             if (state.isMailDeliveryVisible) {
@@ -336,10 +338,11 @@ export const TenantDashboard = ({
                 }
 
                 const appState = modalsStateRef.current;
-                const hasModal = appState.selectedMailImage || appState.isMailDeliveryVisible || appState.isSettingsVisible || appState.isNoticeVisible || appState.isIOSGuideVisible || appState.isAndroidGuideVisible || appState.isInstallComplete;
+                const hasModal = appState.selectedMailImages || appState.isMailDeliveryVisible || appState.isSettingsVisible || appState.isNoticeVisible || appState.isIOSGuideVisible || appState.isAndroidGuideVisible || appState.isInstallComplete;
 
                 if (hasModal) {
-                    setSelectedMailImage(null);
+                    setSelectedMailImages(null);
+                    setSelectedImageIndex(0);
                     setIsMailDeliveryVisible(false);
                     setIsSettingsVisible(false);
                     setIsNoticeVisible(false);
@@ -365,7 +368,7 @@ export const TenantDashboard = ({
     // 웹(PWA) 모달 열림 상태 동기화를 위한 History 스택 제어
     useEffect(() => {
         if (Platform.OS === 'web') {
-            const hasModal = selectedMailImage || isMailDeliveryVisible || isSettingsVisible || isNoticeVisible || isIOSGuideVisible || isAndroidGuideVisible || isInstallComplete;
+            const hasModal = selectedMailImages || isMailDeliveryVisible || isSettingsVisible || isNoticeVisible || isIOSGuideVisible || isAndroidGuideVisible || isInstallComplete;
             if (hasModal) {
                 window.history.pushState({ name: 'modal' }, '');
             } else {
@@ -375,7 +378,7 @@ export const TenantDashboard = ({
                 }
             }
         }
-    }, [selectedMailImage, isMailDeliveryVisible, isSettingsVisible, isNoticeVisible, isIOSGuideVisible, isAndroidGuideVisible, isInstallComplete]);
+    }, [selectedMailImages, isMailDeliveryVisible, isSettingsVisible, isNoticeVisible, isIOSGuideVisible, isAndroidGuideVisible, isInstallComplete]);
 
     const flatData = React.useMemo(() => {
         const result: any[] = [];
@@ -654,7 +657,10 @@ export const TenantDashboard = ({
             return (
                 <MailItem
                     item={item.mail}
-                    onImagePress={(uri) => setSelectedMailImage(uri)}
+                    onImagePress={(uris) => {
+                        setSelectedMailImages(uris);
+                        setSelectedImageIndex(0);
+                    }}
                     onMarkRead={(id) => setMails(prev => prev.map(m => m.id === id ? { ...m, read_at: new Date().toISOString() } : m))}
                 />
             );
@@ -785,21 +791,49 @@ export const TenantDashboard = ({
                 onClose={() => setIsTermsModalVisible(false)}
             />
 
-            <Modal visible={!!selectedMailImage} transparent={true} animationType="fade" onRequestClose={() => setSelectedMailImage(null)}>
+            <Modal visible={!!selectedMailImages} transparent={true} animationType="fade" onRequestClose={() => { setSelectedMailImages(null); setSelectedImageIndex(0); }}>
                 <View style={styles.modalContainer}>
                     <View style={styles.modalTopBar}>
-                        <Pressable style={styles.modalActionBtn} onPress={() => downloadImage(selectedMailImage!)}>
+                        {selectedMailImages && selectedMailImages.length > 1 && (
+                            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700', marginLeft: 16 }}>
+                                {selectedImageIndex + 1} / {selectedMailImages.length}
+                            </Text>
+                        )}
+                        <View style={{ flex: 1 }} />
+                        <Pressable style={styles.modalActionBtn} onPress={() => downloadImage(selectedMailImages![selectedImageIndex])}>
                             <Ionicons name="download-outline" size={24} color="#fff" />
                             <Text style={styles.modalActionText}>저장</Text>
                         </Pressable>
-                        <Pressable style={styles.modalActionBtn} onPress={() => setSelectedMailImage(null)}>
+                        <Pressable style={styles.modalActionBtn} onPress={() => { setSelectedMailImages(null); setSelectedImageIndex(0); }}>
                             <Ionicons name="close" size={28} color="#fff" />
                         </Pressable>
                     </View>
                     
-                    <ReactNativeZoomableView maxZoom={5} minZoom={1} initialZoom={1} bindToBorders={true} style={styles.zoomWrapper}>
-                        {selectedMailImage && <Image source={{ uri: selectedMailImage }} style={styles.modalImage} resizeMode="contain" />}
-                    </ReactNativeZoomableView>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                        {selectedMailImages && selectedMailImages.length > 1 && (
+                            <Pressable 
+                                style={{ position: 'absolute', left: 16, zIndex: 10, padding: 10, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 30 }}
+                                onPress={() => setSelectedImageIndex(prev => Math.max(0, prev - 1))}
+                                disabled={selectedImageIndex === 0}
+                            >
+                                <Ionicons name="chevron-back" size={28} color={selectedImageIndex === 0 ? 'rgba(255,255,255,0.2)' : '#fff'} />
+                            </Pressable>
+                        )}
+
+                        <ReactNativeZoomableView maxZoom={5} minZoom={1} initialZoom={1} bindToBorders={true} style={styles.zoomWrapper}>
+                            {selectedMailImages && <Image source={{ uri: selectedMailImages[selectedImageIndex] }} style={styles.modalImage} resizeMode="contain" />}
+                        </ReactNativeZoomableView>
+
+                        {selectedMailImages && selectedMailImages.length > 1 && (
+                            <Pressable 
+                                style={{ position: 'absolute', right: 16, zIndex: 10, padding: 10, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 30 }}
+                                onPress={() => setSelectedImageIndex(prev => Math.min(selectedMailImages.length - 1, prev + 1))}
+                                disabled={selectedImageIndex === selectedMailImages.length - 1}
+                            >
+                                <Ionicons name="chevron-forward" size={28} color={selectedImageIndex === selectedMailImages.length - 1 ? 'rgba(255,255,255,0.2)' : '#fff'} />
+                            </Pressable>
+                        )}
+                    </View>
                     
                     <View style={styles.zoomFooter}>
                         <Text style={styles.zoomFooterText}>💡 두 손가락으로 확대할 수 있습니다</Text>

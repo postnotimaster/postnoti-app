@@ -17,14 +17,14 @@ export type MailLog = {
 
 type Props = {
     item: MailLog;
-    onImagePress: (uri: string) => void;
+    onImagePress: (uris: string[]) => void;
     onMarkRead: (id: string) => void;
 };
 
 export const MailItem = ({ item, onImagePress, onMarkRead }: Props) => {
     const handlePress = () => {
         if (item.image_url) {
-            onImagePress(item.image_url);
+            onImagePress([item.image_url, ...extraImages]);
         }
         if (!item.read_at) {
             onMarkRead(item.id);
